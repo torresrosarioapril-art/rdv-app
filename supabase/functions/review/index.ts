@@ -8,8 +8,8 @@ Deno.serve(async (req) => {
   const db = admin();
 
   if (req.method === 'POST') {
-    const { token, reason } = await req.json().catch(() => ({}));
-    const { data, error } = await db.rpc('admin_apply_review', { p_token: String(token ?? ''), p_reason: reason?.trim() || null });
+    const { token, reason, ageConfirmed } = await req.json().catch(() => ({}));
+    const { data, error } = await db.rpc('admin_apply_review', { p_token: String(token ?? ''), p_reason: reason?.trim() || null, p_age_confirmed: ageConfirmed === true });
     if (error) return json({ ok: false, message: error.message }, 400);
     return json(data);
   }

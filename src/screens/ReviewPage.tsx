@@ -10,6 +10,7 @@ export default function ReviewPage() {
   const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' };
   const [info, setInfo] = useState<any>(null);
   const [reason, setReason] = useState('');
+  const [ageOk, setAgeOk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ ok: boolean; message: string } | null>(null);
 
@@ -20,7 +21,7 @@ export default function ReviewPage() {
   const confirm = async () => {
     setBusy(true);
     try {
-      const r = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify({ token, reason }) });
+      const r = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify({ token, reason, ageConfirmed: ageOk }) });
       setDone(await r.json());
     } catch { setDone({ ok: false, message: 'Network error. Please try again.' }); }
     finally { setBusy(false); }
@@ -72,7 +73,13 @@ export default function ReviewPage() {
                 <Textarea value={reason} onChange={(e) => setReason(e.target.value)} />
               </Field>
             )}
-            <Button className="w-full" variant={danger ? 'danger' : 'gold'} busy={busy} disabled={needsNote && !reason.trim()} onClick={confirm}>Confirm: {labels[info.action]}</Button>
+            {info.action === 'approve' && info.type === 'verification' && (
+              <label className="flex items-start gap-2 text-sm rounded-xl border border-gold/40 bg-gold/5 p-3 cursor-pointer">
+                <input type="checkbox" className="mt-0.5 accent-[#c9a24a]" checked={ageOk} onChange={(e) => setAgeOk(e.target.checked)} />
+                <span>I checked the ID in the video: the date of birth matches <b>{info.member.birth_date}</b>, the face matches, and the member is 18 or older.</span>
+              </label>
+            )}
+            <Button className="w-full" variant={danger ? 'danger' : 'gold'} busy={busy} disabled={(needsNote && !reason.trim()) || (info.action === 'approve' && info.type === 'verification' && !ageOk)} onClick={confirm}>Confirm: {labels[info.action]}</Button>
           </>
         )}
       </Card>
