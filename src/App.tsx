@@ -145,7 +145,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
             <button title="Theme" onClick={toggleTheme} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer">
               {theme === 'dark' ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
             </button>
-            <button title="Plan" onClick={() => setTab('profile')} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gold/40 text-gold text-xs cursor-pointer">
+            <button title="Your plan" onClick={() => { setTab('profile'); setTimeout(() => document.getElementById('plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); }} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gold/40 text-gold text-xs cursor-pointer">
               <Crown className="w-3.5 h-3.5" /><span className="hidden sm:inline">{status.limits.label}{status.in_trial ? ' · trial' : ''}</span>
             </button>
           </div>

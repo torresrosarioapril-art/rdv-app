@@ -1,38 +1,53 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import {
-  CalendarCheck, Copy, Crown, Lock, LogOut, MapPin, Pencil, Plus, RefreshCw, Shield, ShieldCheck, Trash2, UserX,
+  CalendarCheck, Copy, Crown, ImagePlus, Lock, LogOut, MapPin, Pencil, Plus, RefreshCw, Shield, ShieldCheck, Trash2, UserX,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
-  addSafeZone, cancelConsultation, deleteAccount, deleteSafeZone, listSafeZones, myCalendar, requestConsultation, startCheckout,
-  type CalendarEvent, type Status,
+  addSafeZone, cancelConsultation, deleteAccount, deleteSafeZone, listSafeZones, myCalendar, myProfile, requestConsultation,
+  saveProfile, startCheckout, uploadFile, type CalendarEvent, type MemberCard, type Status,
 } from '@/lib/api';
 import { ANDROID_IOS_RATING, SIGNUP_COPY, SUPPORT } from '@/config/app';
-import { Badge, Button, Card, Field, Input, Modal, Photo, cx, useAction, useToast } from '@/components/ui';
+import { Badge, Button, Card, Field, Input, Modal, Photo, Spinner, cx, useAction, useToast } from '@/components/ui';
+import { ProfileView } from '@/components/ProfileView';
 import { SafetyStandardsModal } from '@/components/SafetyStandardsModal';
 
 export default function ProfileTab({ status, refresh, onEditProfile }: {
   status: Status; refresh: () => Promise<void>; onEditProfile: () => void;
 }) {
-  const [me, setMe] = useState<{ display_name: string; photos: string[] } | null>(null);
+  const [data, setData] = useState<{ profile: Record<string, any>; priv: Record<string, any> } | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [safety, setSafety] = useState(false);
+  const loadMe = () => myProfile().then(setData).catch(() => {});
   useEffect(() => {
-    supabase.from('profiles').select('display_name,photos').eq('id', status.user_id).single().then(({ data }) => setMe(data as any));
+    loadMe();
     myCalendar().then(setEvents).catch(() => {});
   }, [status.user_id]);
   const upcoming = events.filter((e) => new Date(e.starts_at) > new Date());
+  const card = data ? toCard(data.profile, data.priv) : null;
 
   return (
     <div className="grid lg:grid-cols-3 gap-5">
-      <div className="space-y-5">
-        <Card className="text-center">
-          <Photo path={me?.photos?.[0]} alt={me?.display_name ?? 'Me'} className="w-24 h-24 rounded-full mx-auto" />
-          <h1 className="text-2xl font-display mt-3">{me?.display_name}</h1>
-          <div className="mt-2"><Badge tone="green"><ShieldCheck className="w-3 h-3" />Verified member</Badge></div>
-          <Button variant="outline" className="mt-4" onClick={onEditProfile}><Pencil className="w-4 h-4" />Edit profile</Button>
+      <div className="lg:col-span-2 space-y-5">
+        <Card>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-display">My profile</h1>
+              <Badge tone="green"><ShieldCheck className="w-3 h-3" />Verified</Badge>
+            </div>
+            <Button variant="outline" onClick={onEditProfile}><Pencil className="w-4 h-4" />Edit profile</Button>
+          </div>
+          <p className="text-xs text-slate-500 mb-4">This is how other members see you.</p>
+          {card ? <ProfileView m={card} /> : <Spinner />}
         </Card>
+        {data && <PhotoManager photos={data.profile.photos ?? []} name={data.profile.display_name} onChange={loadMe} />}
+        {data && <LookingFor priv={data.priv} onEdit={onEditProfile} />}
+      </div>
+
+      <div className="space-y-5">
+        <div id="plan" className="scroll-mt-20"><PlanCard status={status} /></div>
+        {status.plan === 'plan2' && <Consultations status={status} refresh={refresh} />}
         <Referral status={status} />
         <Card>
           <h3 className="font-display text-lg mb-3">Upcoming dates</h3>
@@ -48,23 +63,113 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
             </div>
           )}
         </Card>
-      </div>
-
-      <div className="lg:col-span-2 space-y-5">
-        <PlanCard status={status} />
-        {status.plan === 'plan2' && <Consultations status={status} refresh={refresh} />}
         <Card className="space-y-3">
           <h3 className="font-display text-lg">Safety & support</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">Report or block anyone from their profile or chat. Reports go to our review team, and intimate images shared without consent are hidden immediately. Rated {ANDROID_IOS_RATING}.</p>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setSafety(true)}><Shield className="w-4 h-4" />Community standards</Button>
-            <a href={`mailto:${status.support?.email ?? SUPPORT.email}`}><Button variant="outline">Contact support · {status.support?.email ?? SUPPORT.email}</Button></a>
+            <a href={`mailto:${status.support?.email ?? SUPPORT.email}`}><Button variant="outline">Contact support</Button></a>
           </div>
         </Card>
         <Account />
       </div>
       <SafetyStandardsModal isOpen={safety} onClose={() => setSafety(false)} />
     </div>
+  );
+}
+
+function ageOf(d?: string | null) {
+  if (!d) return null;
+  const b = new Date(d), n = new Date();
+  let a = n.getFullYear() - b.getFullYear();
+  if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--;
+  return a;
+}
+
+const ELEMENT: Record<string, string> = { Aries: 'Fire', Leo: 'Fire', Sagittarius: 'Fire', Taurus: 'Earth', Virgo: 'Earth', Capricorn: 'Earth', Gemini: 'Air', Libra: 'Air', Aquarius: 'Air', Cancer: 'Water', Scorpio: 'Water', Pisces: 'Water' };
+
+function toCard(p: Record<string, any>, x: Record<string, any>): MemberCard {
+  return {
+    id: p.id, name: p.display_name, age: ageOf(x.birth_date), gender: p.gender, nationality: p.nationality, city: p.city,
+    district: p.district, occupation: p.occupation, company: p.company, industry: p.industry, university: p.university,
+    degree: p.degree, height_cm: p.height_cm, political: p.political, religion: p.religion, religion_practice: p.religion_practice,
+    marriage_timeline: p.marriage_timeline, kids: p.kids, drinking: p.drinking, smoking: p.smoking, relocation: p.relocation,
+    zodiac: { sun: p.zodiac_sun, moon: p.zodiac_moon, rising: p.zodiac_rising, element: ELEMENT[p.zodiac_sun] ?? null },
+    headline: p.headline, bio: p.bio, prompts: p.prompts ?? [], interests: p.interests ?? [], photos: p.photos ?? [],
+    voice_intro_path: p.voice_intro_path, linkedin_url: p.linkedin_url, verified: p.verification_status === 'approved',
+  };
+}
+
+function LookingFor({ priv, onEdit }: { priv: Record<string, any>; onEdit: () => void }) {
+  const rows: [string, string][] = [
+    ['Age', `${priv.desired_age_min}–${priv.desired_age_max}`],
+    ['Nationality', (priv.desired_nationalities ?? []).length ? priv.desired_nationalities.join(', ') : 'Any'],
+    ['Religion', priv.desired_religion || 'Any'],
+    ['Faith', priv.religion_flexible ? 'Flexible: open to a different faith' : 'Same faith only'],
+    ['Children', priv.kids_flexible ? 'Flexible' : 'Must match my answer'],
+    ['Drinking', priv.no_drinking_partner ? 'Partner must not drink' : 'No requirement'],
+    ['Smoking', priv.no_smoking_partner ? 'Partner must not smoke' : 'No requirement'],
+  ];
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-display text-lg">What I'm looking for</h3>
+        <Button variant="ghost" className="!py-1.5 text-xs" onClick={onEdit}><Pencil className="w-3.5 h-3.5" />Edit</Button>
+      </div>
+      <p className="text-xs text-slate-500 mb-3">Only you see this. It decides who appears in your batch, drops and radar.</p>
+      <div className="grid sm:grid-cols-2 gap-2">
+        {rows.map(([k, v]) => (
+          <div key={k} className="rounded-xl bg-slate-50 dark:bg-navy-3 px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wider text-slate-500">{k}</div>
+            <div className="text-sm">{v}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function PhotoManager({ photos, name, onChange }: { photos: string[]; name: string; onChange: () => void }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const save = async (next: string[]) => {
+    setBusy(true);
+    try { await saveProfile({ photos: next }, {}); onChange(); }
+    catch (e) { toast(e instanceof Error ? e.message : 'Could not save', 'err'); }
+    finally { setBusy(false); }
+  };
+  const add = async (file: File) => {
+    if (photos.length >= 6) return toast('Up to 6 photos', 'err');
+    setBusy(true);
+    try { const path = await uploadFile('photos', file, (file.name.split('.').pop() || 'jpg').toLowerCase()); await saveProfile({ photos: [...photos, path] }, {}); onChange(); toast('Photo added'); }
+    catch (e) { toast(e instanceof Error ? e.message : 'Upload failed', 'err'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-display text-lg">My photos <span className="text-sm text-slate-500 font-sans">{photos.length} / 6</span></h3>
+      </div>
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+        {photos.map((p, i) => (
+          <div key={p} className="relative aspect-[3/4] rounded-xl overflow-hidden group">
+            <Photo path={p} alt={name} className="w-full h-full" />
+            {i === 0 ? <span className="absolute left-1 top-1"><Badge>Main</Badge></span>
+              : <button disabled={busy} onClick={() => save([p, ...photos.filter((x) => x !== p)])} className="absolute left-1 bottom-1 rounded-md bg-black/60 text-white text-[10px] px-1.5 py-0.5 cursor-pointer">Make main</button>}
+            {photos.length > 1 && (
+              <button disabled={busy} onClick={() => save(photos.filter((x) => x !== p))} className="absolute right-1 top-1 p-1 rounded-md bg-black/60 text-white cursor-pointer" aria-label="Remove photo"><Trash2 className="w-3 h-3" /></button>
+            )}
+          </div>
+        ))}
+        {photos.length < 6 && (
+          <label className="aspect-[3/4] rounded-xl border-2 border-dashed border-slate-300 dark:border-white/15 flex flex-col items-center justify-center gap-1 text-[11px] text-slate-500 cursor-pointer hover:border-gold">
+            <ImagePlus className="w-5 h-5" />{busy ? 'Saving…' : 'Add'}
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) add(f); e.target.value = ''; }} />
+          </label>
+        )}
+      </div>
+      <p className="text-xs text-slate-500 mt-2">Add up to 6 clear, recent photos. The first one is shown on your card and the radar.</p>
+    </Card>
   );
 }
 
@@ -98,21 +203,34 @@ function PlanCard({ status }: { status: Status }) {
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+      <div className="grid grid-cols-2 gap-2 text-sm">
         <Stat k="Profiles / day" v={String(status.limits.swipes_per_day)} />
         <Stat k="Drops this week" v={`${status.drops_this_week} / ${status.limits.drops_per_week}`} />
         <Stat k="Radar" v={status.limits.radar_cap == null ? 'Unlimited' : `Up to ${status.limits.radar_cap}`} />
         <Stat k="Refresh credits" v={String(status.swipe_credits)} />
       </div>
       {plans && (
-        <div className="grid sm:grid-cols-2 gap-3">
-          {(['plan1', 'plan2'] as const).map((k) => {
+        <div className="grid gap-3">
+          {(['free', 'plan1', 'plan2'] as const).map((k) => {
             const p = plans[k];
-            const current = paid && sub?.plan === k;
+            if (!p) return null;
+            const current = k === 'free' ? !paid && !status.in_trial : paid && sub?.plan === k;
+            if (k === 'free') {
+              return (
+                <div key={k} className={cx('rounded-xl border p-4', current ? 'border-gold' : 'border-slate-200 dark:border-white/10')}>
+                  <div className="flex items-baseline justify-between"><div className="font-display text-lg">{p.label}</div><div className="text-xl font-semibold">0 AED</div></div>
+                  <ul className="text-xs text-slate-500 mt-2 space-y-1">
+                    <li>{p.swipes_per_day} profiles a day</li>
+                    <li>{p.drops_per_week} curated 75%+ drops a week</li>
+                    <li>Radar: up to {p.radar_cap}</li>
+                  </ul>
+                  <div className="text-xs mt-3 text-slate-500">{current ? 'Your current plan' : status.in_trial && !paid ? 'You move to this after your trial unless you upgrade' : 'Always available, no payment'}</div>
+                </div>
+              );
+            }
             return (
               <div key={k} className={cx('rounded-xl border p-4', k === 'plan2' ? 'border-gold/50' : 'border-slate-200 dark:border-white/10')}>
-                <div className="font-display text-lg">{p.label}</div>
-                <div className="text-xl font-semibold">{p.price_aed} AED<span className="text-xs font-normal text-slate-500"> / month</span></div>
+                <div className="flex items-baseline justify-between"><div className="font-display text-lg">{p.label}</div><div className="text-xl font-semibold">{p.price_aed} AED<span className="text-xs font-normal text-slate-500"> / month</span></div></div>
                 <ul className="text-xs text-slate-500 mt-2 space-y-1">
                   <li>{p.swipes_per_day} profiles a day</li>
                   <li>{p.drops_per_week} curated 75%+ drops a week</li>

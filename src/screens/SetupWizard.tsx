@@ -388,7 +388,7 @@ function StepStory({ f, set }: StepProps) {
 }
 
 function StepPlan({ plans, status, f, set }: { plans: Record<string, any> | null; status: Status } & StepProps) {
-  const order: [string, string][] = [['free', 'Free after the trial'], ['plan1', 'Plan 1'], ['plan2', 'Plan 2']];
+  const order: [string, string][] = [['free', 'After the trial'], ['plan1', 'Plan 1'], ['plan2', 'Plan 2']];
   const chosen = f.preferred_plan ?? 'free';
   return (
     <>
@@ -440,7 +440,7 @@ function StepReview({ f, goTo }: { f: Form; goTo: (n: number) => void }) {
     ['Photos', String((f.photos ?? []).length), 4], ['Voice intro', f.voice_intro_path ? 'Yes' : 'No', 4],
     ['Video ID', f.verification_video_path ? 'Received' : 'Missing', 0],
     ['Place of birth', [f.birth_city, f.birth_country].filter(Boolean).join(', '), 2],
-    ['Chosen plan', f.preferred_plan === 'plan2' ? 'Plan 2 · Premium' : f.preferred_plan === 'plan1' ? 'Plan 1 · Normal' : 'Free after trial', 5],
+    ['Chosen plan', f.preferred_plan === 'plan2' ? 'Premium' : f.preferred_plan === 'plan1' ? 'Regular' : 'Free after trial', 5],
   ];
   return (
     <Card>
