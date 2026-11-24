@@ -6,11 +6,12 @@ import {
 import { supabase } from '@/lib/supabase';
 import {
   addSafeZone, astroSync, cancelConsultation, manageSubscription, deleteAccount, deleteSafeZone, listSafeZones, myProfile, requestConsultation,
-  saveNotifyPrefs, saveProfile, startCheckout, uploadFile, type MemberCard, type NotifyPrefs, type Status,
+  saveNotifyPrefs, saveProfile, signedUrl, startCheckout, uploadFile, type MemberCard, type NotifyPrefs, type Status,
 } from '@/lib/api';
 import { ANDROID_IOS_RATING, SIGNUP_COPY, SUPPORT } from '@/config/app';
 import { Badge, Button, Card, Field, Input, Modal, Photo, Spinner, Toggle, cx, useAction, useToast } from '@/components/ui';
 import { ProfileView } from '@/components/ProfileView';
+import { Recorder } from '@/components/Recorder';
 import { SafetyStandardsModal } from '@/components/SafetyStandardsModal';
 
 export default function ProfileTab({ status, refresh, onEditProfile }: {
@@ -46,6 +47,7 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
           {card ? <ProfileView m={card} self /> : <Spinner />}
         </Card>
         {data && <PhotoManager uid={data.profile.id} photos={data.profile.photos ?? []} name={data.profile.display_name} onChange={loadMe} />}
+        {data && <VoiceIntro uid={data.profile.id} path={data.profile.voice_intro_path ?? null} onChange={loadMe} />}
         {data && <LookingFor priv={data.priv} onEdit={onEditProfile} />}
       </div>
 
@@ -121,6 +123,34 @@ function LookingFor({ priv, onEdit }: { priv: Record<string, any>; onEdit: () =>
             <div className="text-sm">{v}</div>
           </div>
         ))}
+      </div>
+    </Card>
+  );
+}
+
+function VoiceIntro({ uid, path, onChange }: { uid: string; path: string | null; onChange: () => void }) {
+  const toast = useToast();
+  const [url, setUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { signedUrl('voice', path).then(setUrl); }, [path]);
+  const save = async (next: string | null, ok: string) => {
+    setBusy(true);
+    try { await saveProfile({ voice_intro_path: next }, {}); toast(ok); onChange(); }
+    catch (e) { toast(e instanceof Error ? e.message : 'Could not save', 'err'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <Card className="space-y-3">
+      <h3 className="font-display text-lg">Voice intro</h3>
+      <p className="text-sm text-slate-500 dark:text-slate-400">Up to 45 seconds in your own voice, shown on your profile. Record a new one anytime.</p>
+      {path && url ? <audio src={url} controls className="w-full" /> : <p className="text-sm text-slate-500">No voice intro yet.</p>}
+      <div className="flex flex-wrap gap-2 items-start">
+        <Recorder kind="audio" maxSeconds={45} label={path ? 'Re-record' : 'Record voice intro'} onDone={async (b, _s, ext) => {
+          setBusy(true);
+          try { const np = await uploadFile('voice', b, ext, uid); await save(np, path ? 'Voice intro updated' : 'Voice intro added'); }
+          catch (e) { toast(e instanceof Error ? e.message : 'Upload failed', 'err'); setBusy(false); }
+        }} />
+        {path && <Button type="button" variant="ghost" busy={busy} onClick={() => save(null, 'Voice intro removed')}><Trash2 className="w-4 h-4" />Remove</Button>}
       </div>
     </Card>
   );

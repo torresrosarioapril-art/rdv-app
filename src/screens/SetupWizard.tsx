@@ -401,7 +401,7 @@ function StepPlan({ plans, status, f, set }: { plans: Record<string, any> | null
     <>
       <Card>
         <p className="text-sm">
-          Every member starts with a <b>7-day full-access trial</b> at Plan 1 level{status.trial_ends_at ? `, until ${new Date(status.trial_ends_at).toLocaleDateString()}` : ''}.
+          Every member starts with a <b>7-day full-access trial</b> at Regular level{status.trial_ends_at ? `, until ${new Date(status.trial_ends_at).toLocaleDateString()}` : ''}.
           Choose the plan you'd like. Nothing is charged now. Once you're verified, you'll be asked to confirm payment. Free members keep access with lower limits.
         </p>
       </Card>
