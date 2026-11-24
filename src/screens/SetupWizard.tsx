@@ -191,8 +191,9 @@ function StepIdentity({ f, set, approved }: StepProps & { approved: boolean }) {
         <div>
           <h3 className="font-display text-lg">Video ID check</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Record a short video (about 15 seconds): hold your Emirates ID or passport next to your face, say your first name and today's date, then turn your head slowly left and right.
-            A founder reviews it by hand. It's never shown to other members, and it also confirms you're 18+.
+            Record a short video (about 20 seconds): hold your Emirates ID or passport next to your face, then bring it close to the camera for 2–3 seconds so your <b>date of birth</b> can be read
+            (on older Emirates IDs the date of birth is on the back, so show both sides). Then say your first name and today's date, and turn your head slowly left and right.
+            A founder reviews it by hand and checks your date of birth matches what you entered. It's never shown to other members.
           </p>
         </div>
         {f.verification_video_path ? (
