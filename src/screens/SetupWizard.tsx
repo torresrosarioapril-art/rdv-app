@@ -8,6 +8,7 @@ import {
 import { Badge, Button, Card, Field, Input, Photo, Select, Spinner, Textarea, Toggle, cx, useToast } from '@/components/ui';
 import { Recorder } from '@/components/Recorder';
 import { CityPicker } from '@/components/CityPicker';
+import { SafetyStandardsModal } from '@/components/SafetyStandardsModal';
 import { COUNTRIES } from '@/config/app';
 
 const STEPS = ['Identity & verification', 'Basic info', 'Marriage & lifestyle', 'Desired partner', 'Your story', 'Plan', 'Review'];
@@ -163,6 +164,7 @@ function Grid({ children }: { children: React.ReactNode }) {
 
 function StepIdentity({ f, set, approved }: StepProps & { approved: boolean }) {
   const toast = useToast();
+  const [charterOpen, setCharterOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   useEffect(() => { signedUrl('verification', f.verification_video_path).then(setVideoUrl); }, [f.verification_video_path]);
@@ -214,9 +216,10 @@ function StepIdentity({ f, set, approved }: StepProps & { approved: boolean }) {
           <input type="checkbox" className="mt-1 accent-[#c9a24a]" checked={!!f.biometric} disabled={approved} onChange={(e) => set('biometric', e.target.checked)} />
           <span>I consent to Rendez-vous processing my ID video to verify my identity and age (UAE PDPL). It's stored privately and only seen by the review team.</span>
         </label>
+        <SafetyStandardsModal isOpen={charterOpen} onClose={() => setCharterOpen(false)} onAccept={approved ? undefined : () => set('terms', true)} />
         <label className="flex items-start gap-2">
           <input type="checkbox" className="mt-1 accent-[#c9a24a]" checked={!!f.terms} disabled={approved} onChange={(e) => set('terms', e.target.checked)} />
-          <span>I accept the Terms and Community Standards, including zero tolerance for abusive content or behaviour. Rendez-vous is rated 17+ and open to adults 18 and over only.</span>
+          <span>I accept the Terms and the <button type="button" onClick={() => setCharterOpen(true)} className="text-gold underline cursor-pointer">Community Charter</button>, including zero tolerance for abusive content or behaviour. Rendez-vous is rated 17+ and open to adults 18 and over only.</span>
         </label>
       </Card>
     </>

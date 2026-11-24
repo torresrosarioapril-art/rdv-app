@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { checkInviteCode, signupOptions } from '@/lib/api';
 import { BRAND, SIGNUP_COPY, SUPPORT } from '@/config/app';
 import { Button, Card, Field, Input, cx, useToast } from '@/components/ui';
+import { CHARTER_VERSION, SafetyStandardsModal } from '@/components/SafetyStandardsModal';
 
 type Mode = 'signin' | 'signup' | 'reset';
 type Route = 'manual' | 'code';
@@ -21,6 +22,8 @@ export default function AuthScreen() {
   const [code, setCode] = useState(codeFromLink.toUpperCase());
   const [adult, setAdult] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const [charter, setCharter] = useState(false);
+  const [charterOpen, setCharterOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
 
@@ -47,6 +50,7 @@ export default function AuthScreen() {
         if (error) throw error;
         setSent('We sent a password reset link to ' + email);
       } else {
+        if (!charter) throw new Error('Please read and agree to the Community Charter.');
         if (!adult) throw new Error('Rendez-vous is for adults 18 and over.');
         const useCode = route === 'code';
         if (useCode) {
@@ -57,7 +61,7 @@ export default function AuthScreen() {
           email, password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { display_name: name.trim(), invite_code: useCode ? code.trim().toUpperCase() : '' },
+            data: { display_name: name.trim(), invite_code: useCode ? code.trim().toUpperCase() : '', charter_version: CHARTER_VERSION, charter_accepted_at: new Date().toISOString() },
           },
         });
         if (error) throw new Error(error.message.includes('Database error') ? 'Sign-up is not open for this route right now.' : error.message);
@@ -132,13 +136,23 @@ export default function AuthScreen() {
               )}
 
               {mode === 'signup' && (
+                <div className="rounded-xl border border-gold/30 bg-gold/5 p-3 text-xs text-slate-200 space-y-2">
+                  <p>Before you join, please read our Community Charter: real people only, video ID check, zero tolerance for harassment.</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <button type="button" onClick={() => setCharterOpen(true)} className="text-gold underline cursor-pointer">Read the Community Charter</button>
+                    {charter ? <span className="text-emerald-300">✓ Agreed</span> : <span className="text-slate-400">Not yet agreed</span>}
+                  </div>
+                </div>
+              )}
+
+              {mode === 'signup' && (
                 <label className="flex items-start gap-2 text-xs text-slate-300">
                   <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} className="mt-0.5 accent-[#c9a24a]" />
                   I am 18 or older. I understand every member is verified by video ID before appearing to anyone, and that my age is checked during verification.
                 </label>
               )}
 
-              <Button type="submit" busy={busy} className="w-full" disabled={mode === 'signup' && !!opts && !opts.manual && !codesOpen}>
+              <Button type="submit" busy={busy} className="w-full" disabled={mode === 'signup' && ((!!opts && !opts.manual && !codesOpen) || !charter)}>
                 {mode === 'signin' ? <><KeyRound className="w-4 h-4" /> Sign in</> : mode === 'reset' ? 'Send reset link' : <><ShieldCheck className="w-4 h-4" /> Create my application</>}
               </Button>
 
@@ -151,6 +165,7 @@ export default function AuthScreen() {
           )}
         </Card>
         <p className="text-center text-[11px] text-slate-500 mt-6">{BRAND.pitch}</p>
+        <SafetyStandardsModal isOpen={charterOpen} onClose={() => setCharterOpen(false)} onAccept={() => setCharter(true)} />
       </div>
     </div>
   );
