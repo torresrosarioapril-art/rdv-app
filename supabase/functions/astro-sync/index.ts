@@ -10,16 +10,30 @@ const POINTS: [string, string][] = [['sun', 'Sun'], ['moon', 'Moon'], ['ascendan
 const BASE = 'https://astrologer.p.rapidapi.com/api/v5';
 const PAIRS_PER_RUN = 15;
 
-async function call(path: string, body: unknown) {
+async function post(path: string, body: unknown) {
   const r = await fetch(`${BASE}/${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-RapidAPI-Key': Deno.env.get('ASTROLOGER_API_KEY')!, 'X-RapidAPI-Host': 'astrologer.p.rapidapi.com' },
     body: JSON.stringify(body),
   });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(`astrologer ${path} ${r.status} ${JSON.stringify(j).slice(0, 200)}`);
-  return j;
+  return { status: r.status, ok: r.ok, j };
 }
+
+// Endpoint names differ between API versions; try the known spellings in order.
+async function call(paths: string[], body: unknown) {
+  let last = '';
+  for (const path of paths) {
+    const { status, ok, j } = await post(path, body);
+    if (ok) return j;
+    last = `astrologer ${path} ${status} ${JSON.stringify(j).slice(0, 200)}`;
+    if (status !== 404) break;
+  }
+  throw new Error(last);
+}
+const SUBJECT = ['data/subject', 'subject'];
+const COMPAT = ['data/compatibility-score', 'data/compatibility_score', 'compatibility-score'];
+const CHART = ['chart/birth-chart', 'charts/birth-chart'];
 
 // Discepolo score -> 0-100 for the 10% zodiac weight
 function normalise(score: number, desc?: string) {
@@ -56,8 +70,9 @@ Deno.serve(async (req) => {
         city: b.city ?? '', longitude: b.lng, latitude: b.lat, timezone: tzlookup(b.lat, b.lng),
         zodiac_type: 'Tropical', houses_system_identifier: 'P',
       };
-      const res = await call('subject', { subject });
-      const s = res.subject ?? res;
+      const res = await call(SUBJECT, { subject });
+      const s = res.subject ?? res.data?.subject ?? res.chart_data?.subject ?? res;
+      if (!s?.sun) throw new Error('unexpected subject response: ' + JSON.stringify(Object.keys(res)));
       const sign = (p: any) => (p?.sign_num != null ? SIGNS[p.sign_num] : null);
       const placements = POINTS.filter(([k]) => s[k]).map(([k, label]) => ({
         point: label, sign: sign(s[k]), degree: s[k].position != null ? Math.floor(s[k].position) : null,
@@ -67,7 +82,7 @@ Deno.serve(async (req) => {
       // Chart wheel image for the profile (best effort)
       let chartPath: string | null = null;
       try {
-        const c = await call('chart/birth-chart', { subject, theme: 'dark', split_chart: true, transparent_background: true, language: 'EN' });
+        const c = await call(CHART, { subject, theme: 'dark', split_chart: true, transparent_background: true, language: 'EN' });
         const svg: string | undefined = c.chart_wheel ?? c.chart;
         if (svg && svg.startsWith('<')) {
           chartPath = `${uid}/natal-${Date.now()}.svg`;
@@ -87,7 +102,7 @@ Deno.serve(async (req) => {
     const { data: pairs } = await db.rpc('admin_pending_synastry_for', { p_user: uid, p_limit: PAIRS_PER_RUN });
     let scored = 0;
     for (const p of pairs ?? []) {
-      const r = await call('compatibility-score', { first_subject: p.chart_me.subject, second_subject: p.chart_other.subject });
+      const r = await call(COMPAT, { first_subject: p.chart_me.subject, second_subject: p.chart_other.subject });
       const desc = r.score_description ?? r.description ?? r.relationship_score_description;
       const raw = Number(r.score ?? r.score_value ?? 0);
       await db.rpc('admin_set_zodiac_compat', { a: uid, b: p.other, p_score: normalise(raw, desc), p_band: desc ?? null });
