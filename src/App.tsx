@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Compass, Heart, MessageCircle, Moon, Sun, UserRound, Crown, EyeOff, Waves } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { myStatus, setPrivacy, type Privacy, type Status } from '@/lib/api';
+import { myStatus, setPrivacy, updateMyLocation, type Privacy, type Status } from '@/lib/api';
 import { BRAND, VISIBILITY } from '@/config/app';
 import { ToastProvider, Spinner, cx, useToast } from '@/components/ui';
 import AuthScreen from '@/screens/AuthScreen';
@@ -109,6 +109,8 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
     return () => { alive = false; supabase.removeChannel(ch); };
   }, [status.user_id]);
 
+  useBackgroundLocation(status, refresh);
+
   const openChat = (matchId: string) => { setOpenMatch(matchId); setTab('chat'); };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -174,6 +176,7 @@ function VisibilityShortcut({ status, refresh }: { status: Status; refresh: () =
   const [open, setOpen] = useState(false);
   const toast = useToast();
   const current: Privacy = status.privacy === 'ghost' ? 'ghost' : 'blur';
+  const zoneHidden = current !== 'ghost' && status.in_safe_zone;
   const choose = async (p: Privacy) => {
     setOpen(false);
     try { await setPrivacy(p); await refresh(); toast(p === 'ghost' ? "You're hidden from the radar" : 'You show up approximately (500 m)'); }
@@ -183,15 +186,16 @@ function VisibilityShortcut({ status, refresh }: { status: Status; refresh: () =
     <div className="relative">
       <button title="How others see you" onClick={() => setOpen((o) => !o)}
         className={cx('flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs cursor-pointer border',
-          current === 'ghost' ? 'border-slate-400/40 text-slate-500' : 'border-emerald-400/40 text-emerald-600 dark:text-emerald-300')}>
-        {current === 'ghost' ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />}
-        <span className="hidden md:inline">{current === 'ghost' ? 'Hidden' : 'Visible'}</span>
+          current === 'ghost' || zoneHidden ? 'border-slate-400/40 text-slate-500' : 'border-emerald-400/40 text-emerald-600 dark:text-emerald-300')}>
+        {current === 'ghost' || zoneHidden ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />}
+        <span className="hidden md:inline">{current === 'ghost' ? 'Hidden' : zoneHidden ? 'Hidden · Safe Zone' : 'Visible'}</span>
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 mt-2 z-50 w-64 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-navy-2 shadow-xl p-1.5">
             <div className="px-2.5 pt-1.5 pb-1 text-[10px] uppercase tracking-widest text-gold">How others see you</div>
+            {zoneHidden && <div className="mx-2.5 mb-1.5 rounded-lg bg-gold/10 px-2.5 py-2 text-[11px]">You're inside one of your Safe Zones, so Ghost is on automatically until you leave.</div>}
             {VISIBILITY.map((v) => (
               <button key={v.id} onClick={() => choose(v.id as Privacy)} className={cx('w-full text-left rounded-lg px-2.5 py-2 cursor-pointer', current === v.id ? 'bg-gold/15' : 'hover:bg-black/5 dark:hover:bg-white/5')}>
                 <div className="text-sm font-medium flex items-center gap-1.5">{v.id === 'ghost' ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />}{v.label}</div>
@@ -203,4 +207,24 @@ function VisibilityShortcut({ status, refresh }: { status: Status; refresh: () =
       )}
     </div>
   );
+}
+
+/** Keeps the member's location fresh across the whole app (once they've consented), so Safe Zones
+ *  switch them to Ghost automatically even when the Radar tab isn't open. */
+function useBackgroundLocation(status: Status, refresh: () => Promise<void>) {
+  const last = useRef(0);
+  const zone = useRef(status.in_safe_zone);
+  useEffect(() => { zone.current = status.in_safe_zone; }, [status.in_safe_zone]);
+  useEffect(() => {
+    if (!status.consents.location || !navigator.geolocation) return;
+    const id = navigator.geolocation.watchPosition(async (p) => {
+      if (Date.now() - last.current < 60_000) return;
+      last.current = Date.now();
+      try {
+        const r = await updateMyLocation(p.coords.latitude, p.coords.longitude);
+        if (r.in_safe_zone !== zone.current) { zone.current = r.in_safe_zone; refresh(); }
+      } catch { /* ignore */ }
+    }, () => {}, { enableHighAccuracy: false, maximumAge: 60_000, timeout: 30_000 });
+    return () => navigator.geolocation.clearWatch(id);
+  }, [status.consents.location, refresh]);
 }

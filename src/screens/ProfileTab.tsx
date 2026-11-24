@@ -172,11 +172,11 @@ export function SafeZones({ status }: { status: Status }) {
   return (
     <Card className="space-y-3">
       <h3 className="font-display text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-gold" />Safe Zones</h3>
-      <p className="text-sm text-slate-500">Places like home or the office where you're hidden from the radar while you're there, on top of Exact / Blur / Ghost.</p>
+      <p className="text-sm text-slate-500">Save places like home or the office. Whenever your location shows you're inside one, you're switched to Ghost automatically, even if you forgot to turn it on. You become visible again once you leave.</p>
       {!status.safe_zones_enabled ? (
         <div className="rounded-xl border border-dashed border-gold/40 p-4 text-center space-y-2">
           <Lock className="w-5 h-5 text-gold mx-auto" />
-          <p className="text-sm">Safe Zones is a one-time add-on.</p>
+          <p className="text-sm">Safe Zones is a one-time add-on: automatic Ghost mode at the places you choose.</p>
           <Button onClick={() => startCheckout('safe_zones').catch((e) => toast(e.message, 'err'))}>Unlock Safe Zones</Button>
         </div>
       ) : (

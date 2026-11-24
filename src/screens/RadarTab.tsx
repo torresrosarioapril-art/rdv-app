@@ -132,7 +132,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat }: {
           </div>
           {geoErr && <p className="text-sm text-rose-500 text-center mt-2">{geoErr}</p>}
           {!pos && !geoErr && <p className="text-sm text-slate-500 text-center mt-2">Finding your location…</p>}
-          {inZone && <p className="text-sm text-gold text-center mt-2 flex items-center justify-center gap-1.5"><ShieldCheck className="w-4 h-4" />You're in a Safe Zone, so you're hidden here.</p>}
+          {inZone && <p className="text-sm text-gold text-center mt-2 flex items-center justify-center gap-1.5"><ShieldCheck className="w-4 h-4" />You're in one of your Safe Zones, so Ghost mode is on automatically.</p>}
         </Card>
 
         <Card className="!p-4">

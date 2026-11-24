@@ -78,6 +78,7 @@ export interface Status {
   safe_zones_enabled: boolean;
   referral_code: string | null;
   privacy: Privacy;
+  in_safe_zone: boolean;
   consents: { location: string | null; biometric: string | null; terms: string | null };
   drops_this_week: number;
   consultations_this_month: number;
