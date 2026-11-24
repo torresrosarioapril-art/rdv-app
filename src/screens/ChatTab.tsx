@@ -1,0 +1,354 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ArrowLeft, CalendarCheck, CalendarPlus, Check, Clock, Hand, MapPin, MessageCircle, Mic, Send, X,
+} from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import {
+  getMyMatches, loadThread, markRead, respondInvitation, sendInvitation, sendMessage, sendPing, sendVoice, signedUrl, uploadFile,
+  type Invitation, type MatchSummary, type Message, type Status,
+} from '@/lib/api';
+import { Button, Card, Empty, Field, Input, Modal, Photo, Spinner, cx, useToast } from '@/components/ui';
+import { ProfileView } from '@/components/ProfileView';
+import { SafetyMenu } from '@/components/SafetyMenu';
+import { Recorder } from '@/components/Recorder';
+
+const fmt = (d: string) => new Date(d).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const toLocalInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+const mapUrl = (i: Invitation) => `https://www.google.com/maps/search/?api=1&query=${i.venue_lat != null && i.venue_lng != null ? `${i.venue_lat},${i.venue_lng}` : encodeURIComponent(i.venue_name)}`;
+
+function calendarLinks(i: Invitation, partner: string) {
+  const start = new Date(i.proposed_at);
+  const end = new Date(start.getTime() + 2 * 3600 * 1000);
+  const z = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const title = `Rendez-vous with ${partner}`;
+  const google = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${z(start)}/${z(end)}&location=${encodeURIComponent(i.venue_name)}&details=${encodeURIComponent(mapUrl(i))}`;
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Rendez-vous//EN', 'BEGIN:VEVENT', `UID:${i.id}@rendezvous`, `DTSTAMP:${z(new Date())}`,
+    `DTSTART:${z(start)}`, `DTEND:${z(end)}`, `SUMMARY:${title}`, `LOCATION:${i.venue_name}`, `DESCRIPTION:${mapUrl(i)}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  return { google, ics: 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics) };
+}
+
+export default function ChatTab({ status, openMatch, setOpenMatch, onRead }: {
+  status: Status; openMatch: string | null; setOpenMatch: (id: string | null) => void; onRead: () => void;
+}) {
+  const [matches, setMatches] = useState<MatchSummary[] | null>(null);
+  const [gender, setGender] = useState<string | null>(null);
+  const toast = useToast();
+
+  const load = useCallback(async () => {
+    try { setMatches(await getMyMatches()); } catch (e) { toast(e instanceof Error ? e.message : 'Could not load chats', 'err'); }
+  }, [toast]);
+
+  useEffect(() => {
+    load();
+    supabase.from('profiles').select('gender').eq('id', status.user_id).single().then(({ data }) => setGender(data?.gender ?? null));
+    supabase.from('notifications').update({ read_at: new Date().toISOString() }).is('read_at', null).then(() => onRead());
+    const ch = supabase.channel('matches-' + status.user_id)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${status.user_id}` }, load)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [load, status.user_id, onRead]);
+
+  if (!matches) return <Spinner label="Loading conversations…" />;
+  const active = matches.find((m) => m.match_id === openMatch) ?? null;
+
+  return (
+    <div className="grid md:grid-cols-3 gap-4 md:h-[calc(100vh-8rem)]">
+      <div className={cx('md:col-span-1 space-y-2 overflow-y-auto', active && 'hidden md:block')}>
+        <h1 className="text-2xl font-display mb-2">Chat</h1>
+        {matches.length === 0 && (
+          <Card><Empty icon={<MessageCircle className="w-5 h-5" />} title="No conversations yet">When you and someone are both interested, or you connect from the radar, your chat appears here.</Empty></Card>
+        )}
+        {matches.map((m) => (
+          <button key={m.match_id} onClick={() => setOpenMatch(m.match_id)} className="w-full text-left cursor-pointer">
+            <Card className={cx('!p-3 flex items-center gap-3', m.match_id === openMatch && '!border-gold/60')}>
+              <Photo path={m.partner.photos?.[0]} alt={m.partner.name} className="w-12 h-12 rounded-full" />
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between gap-2">
+                  <span className="font-medium truncate">{m.partner.name}</span>
+                  {m.last_message && <span className="text-[10px] text-slate-500 shrink-0">{new Date(m.last_message.at).toLocaleDateString()}</span>}
+                </div>
+                <div className="text-xs text-slate-500 truncate">
+                  {m.last_message ? preview(m.last_message) : m.source === 'radar' ? 'Connected on the radar' : 'New match. Say hello.'}
+                </div>
+              </div>
+              {m.unread > 0 && <span className="rounded-full bg-gold text-navy text-[10px] px-1.5 py-0.5">{m.unread}</span>}
+            </Card>
+          </button>
+        ))}
+      </div>
+      <div className={cx('md:col-span-2', !active && 'hidden md:block')}>
+        {active ? <Thread key={active.match_id} m={active} me={status.user_id} gender={gender} onBack={() => setOpenMatch(null)} onChanged={load} />
+          : <Card className="h-full flex items-center justify-center"><Empty icon={<MessageCircle className="w-5 h-5" />} title="Choose a conversation" /></Card>}
+      </div>
+    </div>
+  );
+}
+
+function preview(l: NonNullable<MatchSummary['last_message']>) {
+  const who = l.mine ? 'You: ' : '';
+  if (l.kind === 'voice') return who + 'Voice note';
+  if (l.kind === 'ping') return who + 'Sent a Ping';
+  if (l.kind === 'invitation') return who + 'Sent an invitation';
+  return who + (l.body ?? '');
+}
+
+function Thread({ m, me, gender, onBack, onChanged }: {
+  m: MatchSummary; me: string; gender: string | null; onBack: () => void; onChanged: () => void;
+}) {
+  const toast = useToast();
+  const [msgs, setMsgs] = useState<Message[]>([]);
+  const [invs, setInvs] = useState<Invitation[]>([]);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const bottom = useRef<HTMLDivElement | null>(null);
+  const partner = m.partner;
+
+  const reload = useCallback(async () => {
+    const t = await loadThread(m.match_id);
+    setMsgs(t.messages); setInvs(t.invitations);
+    markRead(m.match_id).catch(() => {});
+  }, [m.match_id]);
+
+  useEffect(() => {
+    reload();
+    const ch = supabase.channel('thread-' + m.match_id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `match_id=eq.${m.match_id}` }, reload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations', filter: `match_id=eq.${m.match_id}` }, reload)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [m.match_id, reload]);
+
+  useEffect(() => { bottom.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs.length]);
+
+  const invById = useMemo(() => new Map(invs.map((i) => [i.id, i])), [invs]);
+  const hasPending = invs.some((i) => i.status === 'pending');
+  const used = invs.filter((i) => i.from_id === me && !i.counter_of).length;
+  const talked = msgs.some((x) => x.sender_id && (x.kind === 'text' || x.kind === 'voice'));
+  const prompts = (partner.prompts ?? []).filter((p) => p.answer?.trim());
+
+  const send = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!text.trim()) return;
+    setSending(true);
+    try { await sendMessage(m.match_id, text.trim()); setText(''); await reload(); onChanged(); }
+    catch (err) { toast(err instanceof Error ? err.message : 'Not sent', 'err'); }
+    finally { setSending(false); }
+  };
+
+  const act = async (fn: () => Promise<unknown>, ok?: string) => {
+    try { await fn(); if (ok) toast(ok); await reload(); onChanged(); }
+    catch (err) { toast(err instanceof Error ? err.message : 'Something went wrong', 'err'); }
+  };
+
+  return (
+    <Card className="!p-0 flex flex-col h-[calc(100vh-10rem)] md:h-full overflow-hidden">
+      <div className="flex items-center gap-3 p-3 border-b border-slate-200 dark:border-white/10">
+        <button onClick={onBack} className="md:hidden p-1 cursor-pointer"><ArrowLeft className="w-5 h-5" /></button>
+        <button onClick={() => setProfileOpen(true)} className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer">
+          <Photo path={partner.photos?.[0]} alt={partner.name} className="w-10 h-10 rounded-full" />
+          <div className="min-w-0">
+            <div className="font-medium truncate">{partner.name}{partner.age ? `, ${partner.age}` : ''}</div>
+            <div className="text-[11px] text-slate-500 truncate">{partner.occupation} · tap for profile</div>
+          </div>
+        </button>
+        <SafetyMenu memberId={partner.id} name={partner.name} onDone={() => { onBack(); onChanged(); }} />
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {!talked && prompts.length > 0 && (
+          <div className="rounded-xl border border-gold/30 bg-gold/5 p-3">
+            <div className="text-[11px] uppercase tracking-widest text-gold mb-2">Open with one of {partner.name}'s prompts</div>
+            <div className="space-y-2">
+              {prompts.slice(0, 3).map((p) => (
+                <button key={p.key} onClick={() => setText(`About your "${p.question}": `)} className="block w-full text-left text-sm rounded-lg bg-white/70 dark:bg-navy-3 p-2.5 cursor-pointer hover:ring-1 hover:ring-gold/50">
+                  <span className="text-xs text-slate-500">{p.question}</span><br />{p.answer}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {msgs.map((x) => (
+          <Bubble key={x.id} x={x} mine={x.sender_id === me} inv={x.invitation_id ? invById.get(x.invitation_id) : undefined}
+            me={me} partnerName={partner.name} partnerId={partner.id} act={act} />
+        ))}
+        <div ref={bottom} />
+      </div>
+
+      <div className="border-t border-slate-200 dark:border-white/10 p-3 space-y-2">
+        <div className="flex flex-wrap gap-2">
+          {gender === 'woman' && m.source !== 'radar' && (
+            <Button variant="outline" className="!py-1.5 text-xs" onClick={() => act(() => sendPing(m.match_id), 'Ping sent')}><Hand className="w-3.5 h-3.5" />Ping: I'd like to meet</Button>
+          )}
+          {gender === 'man' && (
+            <Button variant="outline" className="!py-1.5 text-xs" disabled={hasPending || used >= m.invitation_cap} onClick={() => setInviteOpen(true)}>
+              <CalendarPlus className="w-3.5 h-3.5" />Invite to a date ({used}/{m.invitation_cap})
+            </Button>
+          )}
+        </div>
+        <form onSubmit={send} className="flex items-end gap-2">
+          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a message…" maxLength={4000} className="flex-1" />
+          <VoiceButton matchId={m.match_id} onSent={async () => { await reload(); onChanged(); }} />
+          <Button type="submit" busy={sending} className="!px-3"><Send className="w-4 h-4" /></Button>
+        </form>
+      </div>
+
+      <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} onSend={async (at, venue, lat, lng) => {
+        await act(() => sendInvitation(m.match_id, at, venue, lat, lng), 'Invitation sent');
+        setInviteOpen(false);
+      }} />
+      <Modal open={profileOpen} onClose={() => setProfileOpen(false)} wide><ProfileView m={partner} /></Modal>
+    </Card>
+  );
+}
+
+function VoiceButton({ matchId, onSent }: { matchId: string; onSent: () => void }) {
+  const [open, setOpen] = useState(false);
+  const toast = useToast();
+  return (
+    <>
+      <Button type="button" variant="outline" className="!px-3" onClick={() => setOpen(true)} title="Voice note"><Mic className="w-4 h-4" /></Button>
+      <Modal open={open} onClose={() => setOpen(false)} title="Voice note">
+        <p className="text-sm text-slate-500 mb-3">Up to 2 minutes. It sends when you stop recording.</p>
+        <Recorder kind="audio" maxSeconds={120} label="Start recording" onDone={async (blob, secs, ext) => {
+          try { const path = await uploadFile('voice', blob, ext); await sendVoice(matchId, path, secs); setOpen(false); onSent(); }
+          catch (e) { toast(e instanceof Error ? e.message : 'Not sent', 'err'); }
+        }} />
+      </Modal>
+    </>
+  );
+}
+
+function VoiceNote({ path, seconds }: { path: string; seconds: number | null }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => { signedUrl('voice', path).then(setUrl); }, [path]);
+  return url ? <audio src={url} controls className="h-9 max-w-[240px]" /> : <span className="text-xs">Voice note {seconds ? `· ${seconds}s` : ''}</span>;
+}
+
+function Bubble({ x, mine, inv, me, partnerName, partnerId, act }: {
+  x: Message; mine: boolean; inv?: Invitation; me: string; partnerName: string; partnerId: string;
+  act: (fn: () => Promise<unknown>, ok?: string) => Promise<void>;
+}) {
+  if (x.kind === 'system') {
+    return <div className="text-center text-[11px] text-slate-500 py-1">{x.body} · {fmt(x.created_at)}</div>;
+  }
+  if (x.kind === 'ping') {
+    return (
+      <div className={cx('flex', mine ? 'justify-end' : 'justify-start')}>
+        <div className="rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5 text-sm flex items-center gap-2">
+          <Hand className="w-4 h-4 text-gold" />{mine ? 'You sent a Ping: you would like to meet' : `${partnerName} would like to meet`}
+        </div>
+      </div>
+    );
+  }
+  if (x.kind === 'invitation' && inv) return <InvitationCard inv={inv} me={me} partnerName={partnerName} act={act} />;
+  return (
+    <div className={cx('flex group', mine ? 'justify-end' : 'justify-start')}>
+      <div className={cx('max-w-[78%] rounded-2xl px-4 py-2.5 text-sm', mine ? 'bg-gold text-navy rounded-br-md' : 'bg-slate-100 dark:bg-navy-3 rounded-bl-md')}>
+        {x.is_hidden ? <i className="opacity-70">Hidden pending review</i>
+          : x.kind === 'voice' && x.voice_path ? <VoiceNote path={x.voice_path} seconds={x.voice_seconds} /> : <span className="whitespace-pre-wrap">{x.body}</span>}
+        <div className={cx('text-[10px] mt-1', mine ? 'text-navy/60' : 'text-slate-500')}>{new Date(x.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}{mine && x.read_at ? ' · Read' : ''}</div>
+      </div>
+      {!mine && !x.is_hidden && (
+        <div className="opacity-0 group-hover:opacity-100 self-center ml-1">
+          <SafetyMenu memberId={partnerId} name={partnerName} target={x.kind === 'voice' ? 'voice' : 'message'} refId={x.id} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InvitationCard({ inv, me, partnerName, act }: {
+  inv: Invitation; me: string; partnerName: string; act: (fn: () => Promise<unknown>, ok?: string) => Promise<void>;
+}) {
+  const mine = inv.from_id === me;
+  const [counterOpen, setCounterOpen] = useState(false);
+  const [counterAt, setCounterAt] = useState(toLocalInput(new Date(new Date(inv.proposed_at).getTime() + 86400000)));
+  const cal = calendarLinks(inv, partnerName);
+  const statusText: Record<Invitation['status'], string> = {
+    pending: mine ? 'Waiting for an answer' : 'Waiting for your answer',
+    accepted: 'Confirmed', declined: 'Declined', countered: 'New time suggested', cancelled: 'Cancelled',
+  };
+
+  return (
+    <div className={cx('flex', mine ? 'justify-end' : 'justify-start')}>
+      <div className={cx('w-full max-w-sm rounded-2xl border p-4 space-y-2', inv.status === 'accepted' ? 'border-emerald-400/50 bg-emerald-500/5' : 'border-gold/40 bg-gold/5')}>
+        <div className="flex items-center justify-between text-[11px] uppercase tracking-widest">
+          <span className="text-gold">{inv.counter_of ? 'Suggested time' : 'Invitation'}{mine ? ' (sent)' : ''}</span>
+          <span className={inv.status === 'accepted' ? 'text-emerald-500' : 'text-slate-500'}>{statusText[inv.status]}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm font-medium"><Clock className="w-4 h-4 text-gold" />{fmt(inv.proposed_at)}</div>
+        <a href={mapUrl(inv)} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm hover:text-gold"><MapPin className="w-4 h-4 text-gold" />{inv.venue_name}</a>
+
+        {!mine && inv.status === 'pending' && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button className="!py-1.5 text-xs" onClick={() => act(() => respondInvitation(inv.id, 'accept'), 'Date confirmed')}><Check className="w-3.5 h-3.5" />Accept</Button>
+            <Button variant="outline" className="!py-1.5 text-xs" onClick={() => act(() => respondInvitation(inv.id, 'decline'))}><X className="w-3.5 h-3.5" />Decline</Button>
+            {!inv.counter_of && <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setCounterOpen(true)}>Suggest another time</Button>}
+          </div>
+        )}
+        {inv.status === 'accepted' && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            <a href={cal.google} target="_blank" rel="noreferrer"><Button variant="outline" className="!py-1.5 text-xs"><CalendarCheck className="w-3.5 h-3.5" />Google Calendar</Button></a>
+            <a href={cal.ics} download="rendez-vous.ics"><Button variant="outline" className="!py-1.5 text-xs"><CalendarPlus className="w-3.5 h-3.5" />Apple / Outlook</Button></a>
+          </div>
+        )}
+
+        <Modal open={counterOpen} onClose={() => setCounterOpen(false)} title="Suggest another time">
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500">You can suggest one new time. Same venue: {inv.venue_name}.</p>
+            <Field label="New date & time"><Input type="datetime-local" value={counterAt} min={toLocalInput(new Date(Date.now() + 3600000))} onChange={(e) => setCounterAt(e.target.value)} /></Field>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setCounterOpen(false)}>Cancel</Button>
+              <Button onClick={async () => { await act(() => respondInvitation(inv.id, 'counter', new Date(counterAt)), 'New time suggested'); setCounterOpen(false); }}>Suggest</Button>
+            </div>
+          </div>
+        </Modal>
+      </div>
+    </div>
+  );
+}
+
+function InviteModal({ open, onClose, onSend }: {
+  open: boolean; onClose: () => void; onSend: (at: Date, venue: string, lat?: number | null, lng?: number | null) => Promise<void>;
+}) {
+  const [at, setAt] = useState(toLocalInput(new Date(Date.now() + 2 * 86400000)));
+  const [venue, setVenue] = useState('');
+  const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
+
+  const pinHere = () => navigator.geolocation?.getCurrentPosition(
+    (p) => setPin({ lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6) }),
+    () => toast('Location is blocked', 'err'),
+  );
+  const pinFromLink = (v: string) => {
+    const mm = v.match(/(-?\d{1,2}\.\d+),\s*(-?\d{1,3}\.\d+)/);
+    if (mm) setPin({ lat: parseFloat(mm[1]), lng: parseFloat(mm[2]) });
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Invite to a date">
+      <div className="space-y-4">
+        <Field label="Date & time"><Input type="datetime-local" value={at} min={toLocalInput(new Date(Date.now() + 3600000))} onChange={(e) => setAt(e.target.value)} /></Field>
+        <Field label="Venue name"><Input value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="e.g. The Arts Club, DIFC" /></Field>
+        <Field label="Map pin" optional hint="Paste a Google Maps link or coordinates, or pin where you are now. Without a pin we search the venue name.">
+          <div className="flex gap-2">
+            <Input placeholder="25.2138, 55.2797" onChange={(e) => pinFromLink(e.target.value)} />
+            <Button type="button" variant="outline" onClick={pinHere}><MapPin className="w-4 h-4" /></Button>
+          </div>
+          {pin && <div className="text-xs text-gold mt-1.5">Pinned: {pin.lat}, {pin.lng}</div>}
+        </Field>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button busy={busy} disabled={!venue.trim()} onClick={async () => { setBusy(true); await onSend(new Date(at), venue.trim(), pin?.lat, pin?.lng); setBusy(false); }}>
+            <CalendarPlus className="w-4 h-4" />Send invitation
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+

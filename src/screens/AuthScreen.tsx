@@ -1,0 +1,161 @@
+import { useEffect, useState } from 'react';
+import { KeyRound, Mail, ShieldCheck } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { checkInviteCode, signupOptions } from '@/lib/api';
+import { BRAND, SIGNUP_COPY, SUPPORT } from '@/config/app';
+import { Button, Card, Field, Input, cx, useToast } from '@/components/ui';
+
+type Mode = 'signin' | 'signup' | 'reset';
+type Route = 'manual' | 'code';
+
+export default function AuthScreen() {
+  const toast = useToast();
+  const params = new URLSearchParams(window.location.search);
+  const codeFromLink = params.get(SIGNUP_COPY.codeParam) ?? '';
+  const [mode, setMode] = useState<Mode>(codeFromLink ? 'signup' : 'signin');
+  const [opts, setOpts] = useState<{ manual: boolean; invite: boolean; referral: boolean } | null>(null);
+  const [route, setRoute] = useState<Route>(codeFromLink ? 'code' : 'manual');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [code, setCode] = useState(codeFromLink.toUpperCase());
+  const [adult, setAdult] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState<string | null>(null);
+
+  useEffect(() => {
+    signupOptions().then((o) => {
+      setOpts(o);
+      if (!o.manual) setRoute('code');
+      if (!o.invite && !o.referral) setRoute('manual');
+    }).catch(() => setOpts({ manual: false, invite: true, referral: true }));
+  }, []);
+
+  const codesOpen = !!opts && (opts.invite || opts.referral);
+  const codeLabel = opts?.invite && opts?.referral ? 'Invite or referral code' : opts?.invite ? 'Invite code' : 'Referral code';
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      if (mode === 'signin') {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      } else if (mode === 'reset') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+        if (error) throw error;
+        setSent('We sent a password reset link to ' + email);
+      } else {
+        if (!adult) throw new Error('Rendez-vous is for adults 18 and over.');
+        const useCode = route === 'code';
+        if (useCode) {
+          if (!code.trim()) throw new Error('Enter your code');
+          if (!(await checkInviteCode(code))) throw new Error('This code is not valid or has been used up.');
+        }
+        const { data, error } = await supabase.auth.signUp({
+          email, password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { display_name: name.trim(), invite_code: useCode ? code.trim().toUpperCase() : '' },
+          },
+        });
+        if (error) throw new Error(error.message.includes('Database error') ? 'Sign-up is not open for this route right now.' : error.message);
+        if (!data.session) setSent('Check ' + email + ' to confirm your address, then sign in.');
+      }
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Something went wrong', 'err');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-navy via-navy to-navy-2">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8 text-slate-100">
+          <img src={BRAND.logo} alt="" className="w-20 h-20 mx-auto rounded-full mb-4 shadow-lg shadow-gold/10" />
+          <h1 className="text-3xl font-display">{BRAND.name}</h1>
+          <p className="text-gold text-sm mt-1">{BRAND.tagline}</p>
+        </div>
+
+        <Card className="!bg-navy-2 !border-white/10 text-slate-100">
+          {sent ? (
+            <div className="text-center py-4">
+              <Mail className="w-8 h-8 text-gold mx-auto mb-3" />
+              <p className="text-sm">{sent}</p>
+              <Button variant="outline" className="mt-5" onClick={() => { setSent(null); setMode('signin'); }}>Back to sign in</Button>
+            </div>
+          ) : (
+            <form onSubmit={submit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-navy-3">
+                {(['signin', 'signup'] as const).map((m) => (
+                  <button type="button" key={m} onClick={() => setMode(m)}
+                    className={cx('py-2 rounded-lg text-sm cursor-pointer', mode === m ? 'bg-gold text-navy font-semibold' : 'text-slate-300')}>
+                    {m === 'signin' ? 'Sign in' : 'Join'}
+                  </button>
+                ))}
+              </div>
+
+              {mode === 'signup' && opts && (
+                <>
+                  {opts.manual && codesOpen && (
+                    <div className="space-y-2">
+                      <RouteOption active={route === 'manual'} onClick={() => setRoute('manual')} title={SIGNUP_COPY.manual.title} hint={SIGNUP_COPY.manual.hint} />
+                      <RouteOption active={route === 'code'} onClick={() => setRoute('code')}
+                        title={opts.invite && opts.referral ? 'I have an invite or referral code' : opts.invite ? SIGNUP_COPY.invite.title : SIGNUP_COPY.referral.title}
+                        hint={opts.invite && opts.referral ? `${SIGNUP_COPY.invite.hint} Or a member's referral code.` : opts.invite ? SIGNUP_COPY.invite.hint : SIGNUP_COPY.referral.hint} />
+                    </div>
+                  )}
+                  {!opts.manual && !codesOpen && (
+                    <p className="text-sm text-slate-300">New memberships are paused right now. Please check back soon.</p>
+                  )}
+                  <Field label="First name"><Input required value={name} onChange={(e) => setName(e.target.value)} autoComplete="given-name" /></Field>
+                  {route === 'code' && codesOpen && (
+                    <Field label={codeLabel}>
+                      <Input required value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="e.g. RDV12345" className="tracking-widest uppercase" />
+                    </Field>
+                  )}
+                </>
+              )}
+
+              <Field label="Email"><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></Field>
+              {mode !== 'reset' && (
+                <Field label="Password" hint={mode === 'signup' ? 'At least 8 characters.' : undefined}>
+                  <Input type="password" required minLength={mode === 'signup' ? 8 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
+                </Field>
+              )}
+
+              {mode === 'signup' && (
+                <label className="flex items-start gap-2 text-xs text-slate-300">
+                  <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} className="mt-0.5 accent-[#c9a24a]" />
+                  I am 18 or older. I understand every member is verified by video ID before appearing to anyone, and that my age is checked during verification.
+                </label>
+              )}
+
+              <Button type="submit" busy={busy} className="w-full" disabled={mode === 'signup' && !!opts && !opts.manual && !codesOpen}>
+                {mode === 'signin' ? <><KeyRound className="w-4 h-4" /> Sign in</> : mode === 'reset' ? 'Send reset link' : <><ShieldCheck className="w-4 h-4" /> Create my application</>}
+              </Button>
+
+              <div className="flex justify-between text-xs text-slate-400">
+                {mode === 'signin' ? <button type="button" onClick={() => setMode('reset')} className="hover:text-gold cursor-pointer">Forgot password?</button>
+                  : <button type="button" onClick={() => setMode('signin')} className="hover:text-gold cursor-pointer">Back to sign in</button>}
+                <a href={`mailto:${SUPPORT.email}`} className="hover:text-gold">Support</a>
+              </div>
+            </form>
+          )}
+        </Card>
+        <p className="text-center text-[11px] text-slate-500 mt-6">{BRAND.pitch}</p>
+      </div>
+    </div>
+  );
+}
+
+function RouteOption({ active, onClick, title, hint }: { active: boolean; onClick: () => void; title: string; hint: string }) {
+  return (
+    <button type="button" onClick={onClick} className={cx('w-full text-left rounded-xl border p-3 cursor-pointer transition',
+      active ? 'border-gold bg-gold/10' : 'border-white/10 hover:border-white/25')}>
+      <div className="text-sm font-medium">{title}</div>
+      <div className="text-[11px] text-slate-400 mt-0.5">{hint}</div>
+    </button>
+  );
+}

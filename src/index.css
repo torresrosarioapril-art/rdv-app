@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Brand palette (brief: deep navy #0a1322, warm gold #c9a24a; Fraunces + Sora) */
+@theme {
+  --color-navy: #0a1322;
+  --color-navy-2: #0f1b2f;
+  --color-navy-3: #16243c;
+  --color-gold: #c9a24a;
+  --color-gold-soft: #e2c992;
+  --color-ivory: #f7f4ee;
+  --font-display: 'Fraunces', serif;
+  --font-sans: 'Sora', system-ui, sans-serif;
+}
+
+@layer base {
+  html { background: var(--color-ivory); color: #0f172a; }
+  html.dark { background: var(--color-navy); color: #e8ecf3; }
+  body { font-family: var(--font-sans); overflow-x: hidden; }
+  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+  input, select, textarea, button { font: inherit; }
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(201, 162, 74, 0.3); border-radius: 9999px; }
+
+.radar-sweep { animation: sweep 4s linear infinite; transform-origin: 50% 50%; }
+@keyframes sweep { to { transform: rotate(360deg); } }
+.pulse-dot { animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.45; } }
