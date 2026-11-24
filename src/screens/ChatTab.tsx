@@ -12,6 +12,7 @@ import { Button, Card, Empty, Field, Input, Modal, Photo, Spinner, cx, useToast 
 import { ProfileView } from '@/components/ProfileView';
 import { SafetyMenu } from '@/components/SafetyMenu';
 import { Recorder } from '@/components/Recorder';
+import { VenueSearch, type PickedPlace } from '@/components/VenueSearch';
 
 const fmt = (d: string) => new Date(d).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const toLocalInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -199,8 +200,8 @@ function Thread({ m, me, gender, onBack, onChanged }: {
         </form>
       </div>
 
-      <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} onSend={async (at, venue, lat, lng) => {
-        await act(() => sendInvitation(m.match_id, at, venue, lat, lng), 'Invitation sent');
+      <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} onSend={async (at, venue, lat, lng, venueId) => {
+        await act(() => sendInvitation(m.match_id, at, venue, lat, lng, venueId), 'Invitation sent');
         setInviteOpen(false);
       }} />
       <Modal open={profileOpen} onClose={() => setProfileOpen(false)} wide><ProfileView m={partner} /></Modal>
@@ -361,38 +362,25 @@ function InvitationCard({ inv, me, partnerName, act }: {
 }
 
 function InviteModal({ open, onClose, onSend }: {
-  open: boolean; onClose: () => void; onSend: (at: Date, venue: string, lat?: number | null, lng?: number | null) => Promise<void>;
+  open: boolean; onClose: () => void;
+  onSend: (at: Date, venue: string, lat?: number | null, lng?: number | null, venueId?: string | null) => Promise<void>;
 }) {
   const [at, setAt] = useState(toLocalInput(new Date(Date.now() + 2 * 86400000)));
-  const [venue, setVenue] = useState('');
-  const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
+  const [place, setPlace] = useState<PickedPlace | null>(null);
   const [busy, setBusy] = useState(false);
-  const toast = useToast();
-
-  const pinHere = () => navigator.geolocation?.getCurrentPosition(
-    (p) => setPin({ lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6) }),
-    () => toast('Location is blocked', 'err'),
-  );
-  const pinFromLink = (v: string) => {
-    const mm = v.match(/(-?\d{1,2}\.\d+),\s*(-?\d{1,3}\.\d+)/);
-    if (mm) setPin({ lat: parseFloat(mm[1]), lng: parseFloat(mm[2]) });
-  };
 
   return (
     <Modal open={open} onClose={onClose} title="Invite to a date">
       <div className="space-y-4">
         <Field label="Date & time"><Input type="datetime-local" value={at} min={toLocalInput(new Date(Date.now() + 3600000))} onChange={(e) => setAt(e.target.value)} /></Field>
-        <Field label="Venue name"><Input value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="e.g. The Arts Club, DIFC" /></Field>
-        <Field label="Map pin" optional hint="Paste a Google Maps link or coordinates, or pin where you are now. Without a pin we search the venue name.">
-          <div className="flex gap-2">
-            <Input placeholder="25.2138, 55.2797" onChange={(e) => pinFromLink(e.target.value)} />
-            <Button type="button" variant="outline" onClick={pinHere}><MapPin className="w-4 h-4" /></Button>
-          </div>
-          {pin && <div className="text-xs text-gold mt-1.5">Pinned: {pin.lat}, {pin.lng}</div>}
-        </Field>
+        <VenueSearch value={place} onChange={setPlace} />
+        <p className="text-xs text-slate-500">Once she accepts, you both get the date in your RDV calendar with options to add it to Google, Apple or Outlook.</p>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button busy={busy} disabled={!venue.trim()} onClick={async () => { setBusy(true); await onSend(new Date(at), venue.trim(), pin?.lat, pin?.lng); setBusy(false); }}>
+          <Button busy={busy} disabled={!place?.name.trim()} onClick={async () => {
+            if (!place) return;
+            setBusy(true); await onSend(new Date(at), place.name.trim(), place.lat, place.lng, place.venueId); setBusy(false);
+          }}>
             <CalendarPlus className="w-4 h-4" />Send invitation
           </Button>
         </div>

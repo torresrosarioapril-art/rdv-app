@@ -112,7 +112,7 @@ export interface Message {
 
 export interface Invitation {
   id: string; match_id: string; from_id: string; to_id: string; proposed_at: string;
-  venue_name: string; venue_lat: number | null; venue_lng: number | null;
+  venue_name: string; venue_lat: number | null; venue_lng: number | null; venue_id?: string | null;
   status: 'pending' | 'accepted' | 'declined' | 'countered' | 'cancelled';
   counter_of: string | null; created_at: string;
 }
@@ -221,8 +221,15 @@ export async function sendImage(match: string, uid: string, file: File, caption?
 }
 export const markRead = (match: string) => rpc<void>('mark_read', { p_match: match });
 export const sendPing = (match: string) => rpc<string>('send_ping', { p_match: match });
-export const sendInvitation = (match: string, at: Date, venue: string, lat?: number | null, lng?: number | null) =>
-  rpc<string>('send_invitation', { p_match: match, p_at: at.toISOString(), p_venue: venue, p_lat: lat ?? null, p_lng: lng ?? null });
+export const sendInvitation = (match: string, at: Date, venue: string, lat?: number | null, lng?: number | null, venueId?: string | null) =>
+  rpc<string>('send_invitation', { p_match: match, p_at: at.toISOString(), p_venue: venue, p_lat: lat ?? null, p_lng: lng ?? null, p_venue_id: venueId ?? null });
+
+/** Phase 2: RDV partner venues (restaurants with a member perk). Empty until partners are added. */
+export interface Venue { id: string; name: string; area: string | null; address: string | null; lat: number | null; lng: number | null; is_partner: boolean; perk: string | null }
+export async function listVenues(): Promise<Venue[]> {
+  const { data } = await supabase.from('venues').select('id,name,area,address,lat,lng,is_partner,perk').eq('active', true).order('sort_order').order('name');
+  return (data ?? []) as Venue[];
+}
 export const respondInvitation = (id: string, action: 'accept' | 'decline' | 'counter', counterAt?: Date) =>
   rpc<string>('respond_invitation', { p_invitation: id, p_action: action, p_counter_at: counterAt?.toISOString() ?? null });
 

@@ -1,0 +1,4 @@
+-- Applied to Supabase on 25 Nov 2026 (migrations phase2_ready_venues_events + respond_invitation_keep_venue_id).
+-- venues: partner restaurants (inactive until phase 2); invitations/calendar_events.venue_id (optional link);
+-- events + event_registrations: local events that members or non-members (name/email) can register for.
+-- send_invitation gained p_venue_id; respond_invitation carries venue_id through counters and calendar entries.
