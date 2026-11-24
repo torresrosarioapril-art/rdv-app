@@ -158,7 +158,8 @@ function PhotoManager({ photos, name, onChange }: { photos: string[]; name: stri
         <h3 className="font-display text-lg">My photos <span className="text-sm text-slate-500 font-sans">{list.length} / 6</span></h3>
         {list.length < 6 && <Button variant="outline" className="!py-1.5 text-xs" busy={busy} onClick={() => input.current?.click()}><ImagePlus className="w-4 h-4" />Add photos</Button>}
       </div>
-      <input ref={input} type="file" accept="image/*" multiple className="sr-only" onChange={(e) => add(e.target.files)} />
+      <input ref={input} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-hidden="true"
+        onChange={(e) => add(e.currentTarget.files)} />
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
         {list.map((p, i) => (
           <div key={p} className="relative aspect-[3/4] rounded-xl overflow-hidden">

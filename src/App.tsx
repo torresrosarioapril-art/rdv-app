@@ -53,13 +53,18 @@ function Member() {
     return () => data.subscription.unsubscribe();
   }, []);
 
+  // Keep the last good status if a refresh fails (e.g. a brief network drop when the
+  // phone returns from the photo picker) so screens aren't torn down mid-action.
   const refresh = useCallback(async () => {
-    try { setStatus(await myStatus()); } catch { setStatus(null); }
+    try { setStatus(await myStatus()); }
+    catch { /* keep the previous status */ }
   }, []);
 
+  // Only reload on real sign-in / sign-out, not on background token refreshes
+  const userId = session?.user?.id ?? null;
   useEffect(() => {
-    if (session) refresh(); else setStatus(null);
-  }, [session, refresh]);
+    if (userId) refresh(); else setStatus(null);
+  }, [userId, refresh]);
 
   // Payment return (?checkout=success) → refresh plan
   useEffect(() => {

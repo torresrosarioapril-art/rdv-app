@@ -7,7 +7,7 @@ import { admin, cors, json, userId } from '../_shared/util.ts';
 // Members without time/place keep the sun-sign fallback in the database scoring.
 const SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
 const POINTS: [string, string][] = [['sun', 'Sun'], ['moon', 'Moon'], ['ascendant', 'Rising'], ['mercury', 'Mercury'], ['venus', 'Venus'], ['mars', 'Mars'], ['jupiter', 'Jupiter'], ['saturn', 'Saturn']];
-const BASE = 'https://astrologer.p.rapidapi.com/api/v5';
+const BASE = 'https://astrologer.p.rapidapi.com/api';
 const PAIRS_PER_RUN = 15;
 
 async function post(path: string, body: unknown) {
@@ -31,9 +31,10 @@ async function call(paths: string[], body: unknown) {
   }
   throw new Error(last);
 }
-const SUBJECT = ['data/subject', 'subject'];
-const COMPAT = ['data/compatibility-score', 'data/compatibility_score', 'compatibility-score'];
-const CHART = ['chart/birth-chart', 'charts/birth-chart'];
+// RapidAPI listing is v6 (Nov 2026); older spellings kept as fallbacks.
+const SUBJECT = ['v6/subject', 'v5/data/subject', 'v5/subject'];
+const COMPAT = ['v6/compatibility-score', 'v5/compatibility-score'];
+const CHART = ['v6/chart/birth-chart', 'v5/chart/birth-chart'];
 
 // Discepolo score -> 0-100 for the 10% zodiac weight
 function normalise(score: number, desc?: string) {
