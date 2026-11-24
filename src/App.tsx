@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Compass, Heart, MessageCircle, Moon, Sun, UserRound, Crown, EyeOff, Waves } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { myStatus, setPrivacy, updateMyLocation, type Privacy, type Status } from '@/lib/api';
+import { myCalendar, myStatus, setPrivacy, updateMyLocation, type CalendarEvent, type Privacy, type Status } from '@/lib/api';
 import { BRAND, VISIBILITY } from '@/config/app';
 import { ToastProvider, Spinner, cx, useToast } from '@/components/ui';
 import AuthScreen from '@/screens/AuthScreen';
@@ -13,6 +13,7 @@ import RadarTab from '@/screens/RadarTab';
 import ChatTab from '@/screens/ChatTab';
 import ProfileTab from '@/screens/ProfileTab';
 import ReviewPage from '@/screens/ReviewPage';
+import { NextDateBanner } from '@/components/UpcomingDates';
 
 export type Tab = 'radar' | 'matches' | 'chat' | 'profile';
 
@@ -93,6 +94,9 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
   const [tab, setTab] = useState<Tab>('matches');
   const [openMatch, setOpenMatch] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const loadEvents = useCallback(() => { myCalendar().then(setEvents).catch(() => {}); }, []);
+  useEffect(() => { loadEvents(); }, [loadEvents]);
 
   // Unread badge: count new message notifications live
   useEffect(() => {
@@ -104,10 +108,10 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
     };
     load();
     const ch = supabase.channel('notif-' + status.user_id)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${status.user_id}` }, load)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${status.user_id}` }, () => { load(); loadEvents(); })
       .subscribe();
     return () => { alive = false; supabase.removeChannel(ch); };
-  }, [status.user_id]);
+  }, [status.user_id, loadEvents]);
 
   useBackgroundLocation(status, refresh);
 
@@ -151,11 +155,12 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
           </div>
         </div>
       </header>
+      <NextDateBanner events={events} onOpen={() => setTab('chat')} />
 
       <main className="max-w-6xl mx-auto px-4 py-6">
         {tab === 'matches' && <MatchesTab status={status} onOpenChat={openChat} />}
         {tab === 'radar' && <RadarTab status={status} refreshStatus={refresh} onOpenChat={openChat} />}
-        {tab === 'chat' && <ChatTab status={status} openMatch={openMatch} setOpenMatch={setOpenMatch} onRead={() => setUnread(0)} />}
+        {tab === 'chat' && <ChatTab status={status} openMatch={openMatch} setOpenMatch={setOpenMatch} onRead={() => setUnread(0)} events={events} onDatesChanged={loadEvents} />}
         {tab === 'profile' && <ProfileTab status={status} refresh={refresh} onEditProfile={onEditProfile} />}
       </main>
 

@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import {
-  CalendarCheck, Copy, Crown, ImagePlus, Lock, LogOut, MapPin, Pencil, Plus, RefreshCw, Shield, ShieldCheck, Trash2, UserX,
+  Copy, Crown, ImagePlus, Lock, LogOut, MapPin, Pencil, Plus, RefreshCw, Shield, ShieldCheck, Trash2, UserX,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
-  addSafeZone, cancelConsultation, deleteAccount, deleteSafeZone, listSafeZones, myCalendar, myProfile, requestConsultation,
-  saveProfile, startCheckout, uploadFile, type CalendarEvent, type MemberCard, type Status,
+  addSafeZone, cancelConsultation, deleteAccount, deleteSafeZone, listSafeZones, myProfile, requestConsultation,
+  saveProfile, startCheckout, uploadFile, type MemberCard, type Status,
 } from '@/lib/api';
 import { ANDROID_IOS_RATING, SIGNUP_COPY, SUPPORT } from '@/config/app';
 import { Badge, Button, Card, Field, Input, Modal, Photo, Spinner, cx, useAction, useToast } from '@/components/ui';
@@ -17,14 +17,11 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
   status: Status; refresh: () => Promise<void>; onEditProfile: () => void;
 }) {
   const [data, setData] = useState<{ profile: Record<string, any>; priv: Record<string, any> } | null>(null);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [safety, setSafety] = useState(false);
   const loadMe = () => myProfile().then(setData).catch(() => {});
   useEffect(() => {
     loadMe();
-    myCalendar().then(setEvents).catch(() => {});
   }, [status.user_id]);
-  const upcoming = events.filter((e) => new Date(e.starts_at) > new Date());
   const card = data ? toCard(data.profile, data.priv) : null;
 
   return (
@@ -49,20 +46,6 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
         <div id="plan" className="scroll-mt-20"><PlanCard status={status} /></div>
         {status.plan === 'plan2' && <Consultations status={status} refresh={refresh} />}
         <Referral status={status} />
-        <Card>
-          <h3 className="font-display text-lg mb-3">Upcoming dates</h3>
-          {upcoming.length === 0 ? <p className="text-sm text-slate-500">No confirmed dates yet.</p> : (
-            <div className="space-y-2">
-              {upcoming.map((e) => (
-                <div key={e.id} className="rounded-xl bg-slate-50 dark:bg-navy-3 p-3 text-sm">
-                  <div className="font-medium flex items-center gap-1.5"><CalendarCheck className="w-4 h-4 text-gold" />{e.title}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{new Date(e.starts_at).toLocaleString()}</div>
-                  {e.map_url && <a className="text-xs text-gold flex items-center gap-1 mt-1" href={e.map_url} target="_blank" rel="noreferrer"><MapPin className="w-3 h-3" />{e.venue_name}</a>}
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
         <Card className="space-y-3">
           <h3 className="font-display text-lg">Safety & support</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">Report or block anyone from their profile or chat. Reports go to our review team, and intimate images shared without consent are hidden immediately. Rated {ANDROID_IOS_RATING}.</p>

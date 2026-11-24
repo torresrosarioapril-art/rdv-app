@@ -5,8 +5,9 @@ import {
 import { supabase } from '@/lib/supabase';
 import {
   getMyMatches, loadThread, markRead, respondInvitation, sendInvitation, sendMessage, sendPing, sendVoice, signedUrl, uploadFile,
-  type Invitation, type MatchSummary, type Message, type Status,
+  type CalendarEvent, type Invitation, type MatchSummary, type Message, type Status,
 } from '@/lib/api';
+import { DatesList } from '@/components/UpcomingDates';
 import { Button, Card, Empty, Field, Input, Modal, Photo, Spinner, cx, useToast } from '@/components/ui';
 import { ProfileView } from '@/components/ProfileView';
 import { SafetyMenu } from '@/components/SafetyMenu';
@@ -27,8 +28,9 @@ function calendarLinks(i: Invitation, partner: string) {
   return { google, ics: 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics) };
 }
 
-export default function ChatTab({ status, openMatch, setOpenMatch, onRead }: {
+export default function ChatTab({ status, openMatch, setOpenMatch, onRead, events, onDatesChanged }: {
   status: Status; openMatch: string | null; setOpenMatch: (id: string | null) => void; onRead: () => void;
+  events: CalendarEvent[]; onDatesChanged: () => void;
 }) {
   const [matches, setMatches] = useState<MatchSummary[] | null>(null);
   const [gender, setGender] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead }: {
     <div className="grid md:grid-cols-3 gap-4 md:h-[calc(100vh-8rem)]">
       <div className={cx('md:col-span-1 space-y-2 overflow-y-auto', active && 'hidden md:block')}>
         <h1 className="text-2xl font-display mb-2">Chat</h1>
+        <DatesList events={events} />
         {matches.length === 0 && (
           <Card><Empty icon={<MessageCircle className="w-5 h-5" />} title="No conversations yet">When you and someone are both interested, or you connect from the radar, your chat appears here.</Empty></Card>
         )}
@@ -77,7 +80,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead }: {
         ))}
       </div>
       <div className={cx('md:col-span-2', !active && 'hidden md:block')}>
-        {active ? <Thread key={active.match_id} m={active} me={status.user_id} gender={gender} onBack={() => setOpenMatch(null)} onChanged={load} />
+        {active ? <Thread key={active.match_id} m={active} me={status.user_id} gender={gender} onBack={() => setOpenMatch(null)} onChanged={() => { load(); onDatesChanged(); }} />
           : <Card className="h-full flex items-center justify-center"><Empty icon={<MessageCircle className="w-5 h-5" />} title="Choose a conversation" /></Card>}
       </div>
     </div>
