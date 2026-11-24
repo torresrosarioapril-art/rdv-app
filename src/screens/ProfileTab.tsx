@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import {
-  Bell, Copy, Crown, Eye, ImagePlus, Lock, LogOut, MapPin, Pencil, Plus, RefreshCw, Shield, ShieldCheck, Trash2, UserX,
+  Bell, Copy, Crown, Eye, ImagePlus, Lock, LogOut, MapPin, Pencil, Plus, Shield, ShieldCheck, Trash2, UserX,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
@@ -211,7 +211,7 @@ function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<
   useEffect(() => { supabase.from('app_config').select('value').eq('key', 'plans').single().then(({ data }) => setPlans(data?.value ?? null)); }, []);
   const sub = status.subscription;
   const paid = sub && sub.plan !== 'free' && ['active', 'trialing', 'past_due'].includes(sub.status);
-  const buy = (item: 'plan1' | 'plan2' | 'safe_zones' | 'swipe_refresh') => startCheckout(item).catch((e) => toast(e.message, 'err'));
+  const buy = (item: 'plan1' | 'plan2' | 'safe_zones') => startCheckout(item).catch((e) => toast(e.message, 'err'));
   const [confirm, setConfirm] = useState<null | { kind: 'switch'; plan: 'plan1' | 'plan2' } | { kind: 'cancel' }>(null);
   const { busy, run } = useAction();
   const until = sub?.current_period_end ? new Date(sub.current_period_end).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
@@ -248,11 +248,10 @@ function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<
             : <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setConfirm({ kind: 'cancel' })}>Cancel subscription</Button>}
         </div>
       )}
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <Stat k="Profiles / day" v={String(status.limits.swipes_per_day)} />
+      <div className="grid grid-cols-3 gap-2 text-sm">
+        <Stat k="Daily profile swipes" v={String(status.limits.swipes_per_day)} />
         <Stat k="Drops this week" v={`${status.drops_this_week} / ${status.limits.drops_per_week}`} />
         <Stat k="Radar" v={status.limits.radar_cap == null ? 'Unlimited' : `Up to ${status.limits.radar_cap}`} />
-        <Stat k="Refresh credits" v={String(status.swipe_credits)} />
       </div>
       {plans && (
         <div className="grid gap-3">
@@ -265,7 +264,7 @@ function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<
                 <div key={k} className={cx('rounded-xl border p-4', current ? 'border-gold' : 'border-slate-200 dark:border-white/10')}>
                   <div className="flex items-baseline justify-between"><div className="font-display text-lg">{p.label}</div><div className="text-xl font-semibold">0 AED</div></div>
                   <ul className="text-xs text-slate-500 mt-2 space-y-1">
-                    <li>{p.swipes_per_day} profiles a day</li>
+                    <li>{p.swipes_per_day} daily profile swipes</li>
                     <li>{p.drops_per_week} curated 75%+ drops a week</li>
                     <li>Radar: up to {p.radar_cap}</li>
                   </ul>
@@ -277,7 +276,7 @@ function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<
               <div key={k} className={cx('rounded-xl border p-4', k === 'plan2' ? 'border-gold/50' : 'border-slate-200 dark:border-white/10')}>
                 <div className="flex items-baseline justify-between"><div className="font-display text-lg">{p.label}</div><div className="text-xl font-semibold">{p.price_aed} AED<span className="text-xs font-normal text-slate-500"> / month</span></div></div>
                 <ul className="text-xs text-slate-500 mt-2 space-y-1">
-                  <li>{p.swipes_per_day} profiles a day</li>
+                  <li>{p.swipes_per_day} daily profile swipes</li>
                   <li>{p.drops_per_week} curated 75%+ drops a week</li>
                   <li>Radar: {p.radar_cap == null ? 'everyone compatible in range' : `up to ${p.radar_cap}`}</li>
                   {p.consultations_per_month > 0 && <li>Weekly 1-on-1 consultation with our matchmaker</li>}
@@ -292,7 +291,6 @@ function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<
       )}
       <div className="flex flex-wrap gap-2 pt-1">
         {paid && <Button variant="outline" onClick={() => startCheckout('portal').catch((e) => toast(e.message, 'err'))}><Crown className="w-4 h-4" />Billing & invoices</Button>}
-        <Button variant="outline" onClick={() => buy('swipe_refresh')}><RefreshCw className="w-4 h-4" />Buy an early refresh</Button>
         {!status.safe_zones_enabled && <Button variant="outline" onClick={() => buy('safe_zones')}><Shield className="w-4 h-4" />Unlock Safe Zones</Button>}
       </div>
       <p className="text-[11px] text-slate-500">Plans renew automatically each month until cancelled. Payments are in test mode until Rendez-vous's trade license is active.</p>
