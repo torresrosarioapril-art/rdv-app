@@ -15,7 +15,7 @@ export const SUPABASE_PUBLISHABLE_KEY =
 export const BRAND = {
   name: 'Rendez-vous',
   short: 'RDV',
-  tagline: 'Where intention meets the moment',
+  tagline: '“Where intention meets the moment.”',
   pitch: "We were right next to each other and had no idea.",
   logo: '/assets/brand/rdv_logo.png',
   icon: '/assets/brand/rdv_app_icon.png',

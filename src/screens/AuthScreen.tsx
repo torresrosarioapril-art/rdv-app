@@ -80,7 +80,7 @@ export default function AuthScreen() {
         <div className="text-center mb-8 text-slate-100">
           <img src={BRAND.logo} alt="" className="w-20 h-20 mx-auto rounded-full mb-4 shadow-lg shadow-gold/10" />
           <h1 className="text-3xl font-display">{BRAND.name}</h1>
-          <p className="text-gold text-sm mt-1">{BRAND.tagline}</p>
+          <p className="text-gold text-sm mt-1 italic">{BRAND.tagline}</p>
         </div>
 
         <Card className="!bg-navy-2 !border-white/10 text-slate-100">

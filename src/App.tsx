@@ -140,7 +140,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
             <img src={BRAND.logo} alt="" className="w-8 h-8 rounded-full shrink-0" />
             <span className="min-w-0 leading-tight">
               <span className="block font-display text-[15px] sm:text-base whitespace-nowrap">{BRAND.name}</span>
-              <span className="block text-[9px] sm:text-[10px] text-gold whitespace-nowrap">{BRAND.tagline}</span>
+              <span className="block text-[9px] sm:text-[10px] text-gold italic whitespace-nowrap">{BRAND.tagline}</span>
             </span>
           </button>
           <nav className="hidden sm:flex items-center gap-1">
