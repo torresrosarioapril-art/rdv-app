@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Eye, EyeOff, LocateFixed, MapPin, MessageCircle, Radar as RadarIcon, ShieldCheck, Waves } from 'lucide-react';
+import { Eye, EyeOff, MapPin, MessageCircle, Radar as RadarIcon, ShieldCheck, Waves } from 'lucide-react';
 import {
   giveConsent, radar, radarConnect, setPrivacy, updateMyLocation, type MemberCard, type Privacy, type Status,
 } from '@/lib/api';
-import { RADAR } from '@/config/app';
-import { Badge, Button, Card, Empty, Field, Modal, Photo, Select, cx, useToast } from '@/components/ui';
+import { RADAR, VISIBILITY } from '@/config/app';
+import { Badge, Button, Card, Empty, Modal, Photo, Select, cx, useToast } from '@/components/ui';
+import { SafeZones } from '@/screens/ProfileTab';
 import { ProfileView, ScoreBadge } from '@/components/ProfileView';
 import { SafetyMenu } from '@/components/SafetyMenu';
 
@@ -19,21 +20,16 @@ function bearingKm(from: Pos, to: Pos) {
   return { bearing: Math.atan2(y, x), km: 2 * R * Math.asin(Math.sqrt(a)) };
 }
 
-const PRIVACY: { id: Privacy; label: string; hint: string; icon: React.ReactNode }[] = [
-  { id: 'exact', label: 'Exact', hint: 'Matches see your real distance', icon: <LocateFixed className="w-4 h-4" /> },
-  { id: 'blur', label: '500m blur', hint: 'Shown to the nearest 500 m only', icon: <Waves className="w-4 h-4" /> },
-  { id: 'ghost', label: 'Ghost', hint: 'Invisible to everyone on the radar', icon: <EyeOff className="w-4 h-4" /> },
-];
 
-export default function RadarTab({ status, refreshStatus, onOpenChat, filtersOpen, setFiltersOpen }: {
+export default function RadarTab({ status, refreshStatus, onOpenChat }: {
   status: Status; refreshStatus: () => Promise<void>; onOpenChat: (id: string) => void;
-  filtersOpen: boolean; setFiltersOpen: (v: boolean) => void;
 }) {
   const toast = useToast();
   const [consented, setConsented] = useState(!!status.consents.location);
   const [pos, setPos] = useState<Pos | null>(null);
   const [geoErr, setGeoErr] = useState('');
-  const [privacy, setPriv] = useState<Privacy>(status.privacy ?? 'exact');
+  const [privacy, setPriv] = useState<Privacy>(status.privacy === 'ghost' ? 'ghost' : 'blur');
+  useEffect(() => { setPriv(status.privacy === 'ghost' ? 'ghost' : 'blur'); }, [status.privacy]);
   const [inZone, setInZone] = useState(false);
   const [radius, setRadius] = useState(RADAR.defaultRadiusKm);
   const [minScore, setMinScore] = useState(0);
@@ -76,7 +72,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, filtersOpe
 
   const changePrivacy = async (p: Privacy) => {
     setPriv(p);
-    try { await setPrivacy(p); toast(p === 'ghost' ? "You're invisible on the radar" : p === 'blur' ? 'Your location is blurred to 500 m' : 'Exact distance on'); refreshStatus(); }
+    try { await setPrivacy(p); toast(p === 'ghost' ? "You're hidden from the radar" : 'You show up approximately (500 m)'); refreshStatus(); }
     catch (e) { toast(e instanceof Error ? e.message : 'Could not change', 'err'); }
   };
 
@@ -91,7 +87,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, filtersOpe
     return (
       <Card className="max-w-xl mx-auto">
         <Empty icon={<RadarIcon className="w-6 h-6" />} title="You've probably already crossed paths">
-          <p>The radar shows verified, compatible members who are near you right now. We use your location only while the app is open. You choose how precisely others see you: exact, blurred to 500 m, or invisible (Ghost).</p>
+          <p>The radar shows verified, compatible members who are near you right now. We use your location only while the app is open. For your safety nobody ever sees your exact spot: you appear to the nearest 500 m, or not at all (Ghost).</p>
           <Button className="mt-5" onClick={async () => { try { await giveConsent('location'); setConsented(true); } catch (e) { toast(e instanceof Error ? e.message : 'Error', 'err'); } }}>
             <MapPin className="w-4 h-4" />Turn on the radar
           </Button>
@@ -141,22 +137,36 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, filtersOpe
 
         <Card className="!p-4">
           <div className="text-[11px] uppercase tracking-widest text-gold mb-2">How others see you</div>
-          <div className="grid grid-cols-3 gap-2">
-            {PRIVACY.map((p) => (
-              <button key={p.id} onClick={() => changePrivacy(p.id)} className={cx('rounded-xl border p-3 text-left cursor-pointer', privacy === p.id ? 'border-gold bg-gold/10' : 'border-slate-200 dark:border-white/10')}>
-                <div className="flex items-center gap-1.5 text-sm font-medium">{p.icon}{p.label}</div>
+          <div className="grid grid-cols-2 gap-2">
+            {VISIBILITY.map((p) => (
+              <button key={p.id} onClick={() => changePrivacy(p.id as Privacy)} className={cx('rounded-xl border p-3 text-left cursor-pointer', privacy === p.id ? 'border-gold bg-gold/10' : 'border-slate-200 dark:border-white/10')}>
+                <div className="flex items-center gap-1.5 text-sm font-medium">{p.id === 'ghost' ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />}{p.label}</div>
                 <div className="text-[11px] text-slate-500 mt-1">{p.hint}</div>
               </button>
             ))}
           </div>
         </Card>
+        <SafeZones status={status} />
       </div>
 
       <div className="lg:col-span-2 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg">Nearby now</h2>
-          <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setFiltersOpen(true)}>Filters</Button>
-        </div>
+        <Card className="!p-4 space-y-3">
+          <div className="text-[11px] uppercase tracking-widest text-gold">Filters</div>
+          <div>
+            <div className="text-xs text-slate-500 mb-1.5">Distance</div>
+            <div className="flex flex-wrap gap-1.5">
+              {RADAR.radiusOptionsKm.map((k) => (
+                <button key={k} onClick={() => setRadius(k)} className={cx('px-3 py-1.5 rounded-full text-xs border cursor-pointer', radius === k ? 'bg-gold text-navy border-gold font-semibold' : 'border-slate-300 dark:border-white/15')}>{k} km</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-slate-500 mb-1.5">Compatibility</div>
+            <Select value={String(minScore)} onChange={(e) => setMinScore(Number(e.target.value))} placeholder="All compatible"
+              options={RADAR.minScoreOptions.filter((x) => x > 0).map((x) => ({ value: String(x), label: `${x}% and above` }))} />
+          </div>
+        </Card>
+        <h2 className="font-display text-lg pt-1">Nearby now</h2>
         {items.length === 0 ? (
           <Card><Empty icon={<Eye className="w-5 h-5" />} title="No compatible members in range">Try a wider radius, or check back later. People appear when they open the app nearby.</Empty></Card>
         ) : items.map((m) => (
@@ -165,7 +175,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, filtersOpe
               <Photo path={m.photos?.[0]} alt={m.name} className="w-14 h-14 rounded-xl" />
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{m.name}{m.age ? `, ${m.age}` : ''}</div>
-                <div className="text-xs text-slate-500 truncate">{m.occupation} · {m.distance_km} km{m.privacy === 'blur' ? ' (approx.)' : ''}</div>
+                <div className="text-xs text-slate-500 truncate">{m.occupation} · {m.distance_km} km (approx.)</div>
               </div>
               <ScoreBadge score={m.score} band={undefined} />
             </Card>
@@ -176,15 +186,6 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, filtersOpe
         )}
       </div>
 
-      <Modal open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Radar filters">
-        <div className="space-y-4">
-          <Field label="Distance"><Select value={String(radius)} onChange={(e) => setRadius(Number(e.target.value))} options={RADAR.radiusOptionsKm.map((k) => ({ value: String(k), label: `Within ${k} km` }))} placeholder="Distance" /></Field>
-          <Field label="Compatibility" hint="Based on your full compatibility score: faith, children, timeline, habits, relocation and zodiac.">
-            <Select value={String(minScore)} onChange={(e) => setMinScore(Number(e.target.value))} options={RADAR.minScoreOptions.map((s) => ({ value: String(s), label: s === 0 ? 'All compatible' : `${s}% and above` }))} placeholder="Compatibility" />
-          </Field>
-          <div className="flex justify-end"><Button onClick={() => { setFiltersOpen(false); scan(); }}>Apply</Button></div>
-        </div>
-      </Modal>
 
       <Modal open={!!selected} onClose={() => setSelected(null)} wide>
         {selected && (

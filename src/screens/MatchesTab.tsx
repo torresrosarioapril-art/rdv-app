@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CalendarHeart, Heart, Hourglass, RefreshCw, Sparkles, X } from 'lucide-react';
 import {
-  getCuratedDrops, getDailyBatch, redeemSwipeCredit, startCheckout, swipe,
+  astroSync, getCuratedDrops, getDailyBatch, redeemSwipeCredit, startCheckout, swipe,
   type Batch, type Drops, type MemberCard, type Status,
 } from '@/lib/api';
 import { Button, Card, Empty, Modal, Spinner, cx, useToast } from '@/components/ui';
@@ -35,7 +35,7 @@ export default function MatchesTab({ status, onOpenChat }: { status: Status; onO
     } catch (e) { toast(e instanceof Error ? e.message : 'Could not load matches', 'err'); }
     finally { setLoading(false); }
   }, [toast]);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); astroSync(); }, [load]);
 
   const countdown = useCountdown(batch?.refresh_at ?? null);
   useEffect(() => { if (countdown === '00:00:00') load(); }, [countdown, load]);

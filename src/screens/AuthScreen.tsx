@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { KeyRound, Mail, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, Mail, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { checkInviteCode, signupOptions } from '@/lib/api';
 import { BRAND, SIGNUP_COPY, SUPPORT } from '@/config/app';
@@ -20,6 +20,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [code, setCode] = useState(codeFromLink.toUpperCase());
   const [adult, setAdult] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
 
@@ -121,7 +122,12 @@ export default function AuthScreen() {
               <Field label="Email"><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></Field>
               {mode !== 'reset' && (
                 <Field label="Password" hint={mode === 'signup' ? 'At least 8 characters.' : undefined}>
-                  <Input type="password" required minLength={mode === 'signup' ? 8 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
+                  <div className="relative">
+                    <Input type={showPw ? 'text' : 'password'} required minLength={mode === 'signup' ? 8 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} className="pr-10" />
+                    <button type="button" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? 'Hide password' : 'Show password'} className="absolute right-3 top-2.5 text-slate-400 hover:text-gold cursor-pointer">
+                      {showPw ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                    </button>
+                  </div>
                 </Field>
               )}
 

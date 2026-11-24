@@ -224,10 +224,13 @@ export async function myCalendar() {
 
 // ---------- Safety ----------
 export const blockMember = (target: string) => rpc<void>('block_member', { p_target: target });
-export const reportMember = (target: string, type: 'profile' | 'photo' | 'message' | 'voice', reason: string,
-  ref?: string | null, details?: string, block = true) =>
-  rpc<string>('report_member', { p_target: target, p_type: type, p_reason: reason, p_ref: ref ?? null,
+export async function reportMember(target: string, type: 'profile' | 'photo' | 'message' | 'voice', reason: string,
+  ref?: string | null, details?: string, block = true) {
+  const id = await rpc<string>('report_member', { p_target: target, p_type: type, p_reason: reason, p_ref: ref ?? null,
     p_details: details ?? null, p_block: block });
+  supabase.functions.invoke('notify-report', { body: { report_id: id } }).catch(() => {});
+  return id;
+}
 
 // ---------- Premium ----------
 export const requestConsultation = (slot: Date, notes?: string) =>
@@ -235,12 +238,22 @@ export const requestConsultation = (slot: Date, notes?: string) =>
 export const cancelConsultation = (id: string) => rpc<void>('cancel_consultation', { p_id: id });
 
 // ---------- Billing (Stripe sandbox via edge function) ----------
-export async function startCheckout(item: 'plan1' | 'plan2' | 'safe_zones' | 'swipe_refresh') {
+export async function startCheckout(item: 'plan1' | 'plan2' | 'safe_zones' | 'swipe_refresh' | 'portal') {
   const { data, error } = await supabase.functions.invoke('create-checkout', {
     body: { item, return_url: window.location.origin },
   });
-  if (error) throw new Error('Payments are not switched on yet. Please try again later.');
+  if (error) {
+    let msg = 'Payments are not switched on yet. Please try again later.';
+    try { const j = await (error as any).context?.json(); if (j?.error) msg = j.error; } catch { /* keep default */ }
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
   if (data?.url) window.location.href = data.url;
+}
+
+/** Builds the natal chart and zodiac synastry scores in the background (no-op if nothing to do). */
+export function astroSync() {
+  supabase.functions.invoke('astro-sync', { body: {} }).catch(() => {});
 }
 
 // ---------- Storage ----------

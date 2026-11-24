@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import {
-  CalendarCheck, Copy, Crown, LogOut, MapPin, Pencil, Plus, RefreshCw, Shield, ShieldCheck, Trash2, UserX,
+  CalendarCheck, Copy, Crown, Lock, LogOut, MapPin, Pencil, Plus, RefreshCw, Shield, ShieldCheck, Trash2, UserX,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
@@ -53,7 +53,6 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
       <div className="lg:col-span-2 space-y-5">
         <PlanCard status={status} />
         {status.plan === 'plan2' && <Consultations status={status} refresh={refresh} />}
-        <SafeZones status={status} />
         <Card className="space-y-3">
           <h3 className="font-display text-lg">Safety & support</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">Report or block anyone from their profile or chat. Reports go to our review team, and intimate images shared without consent are hidden immediately. Rated {ANDROID_IOS_RATING}.</p>
@@ -77,8 +76,17 @@ function PlanCard({ status }: { status: Status }) {
   const paid = sub && sub.plan !== 'free' && ['active', 'trialing', 'past_due'].includes(sub.status);
   const buy = (item: 'plan1' | 'plan2' | 'safe_zones' | 'swipe_refresh') => startCheckout(item).catch((e) => toast(e.message, 'err'));
 
+  const [preferred, setPreferred] = useState<string | null>(null);
+  useEffect(() => { supabase.from('profile_private').select('preferred_plan').eq('user_id', status.user_id).single().then(({ data }) => setPreferred(data?.preferred_plan ?? null)); }, [status.user_id]);
+  const pending = !paid && (preferred === 'plan1' || preferred === 'plan2') ? preferred : null;
   return (
     <Card className="space-y-4">
+      {pending && plans?.[pending] && (
+        <div className="rounded-xl border border-gold/50 bg-gold/10 p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm">You chose <b>{plans[pending].label}</b> when you applied. Confirm it to keep those limits after your trial.</div>
+          <Button onClick={() => buy(pending as 'plan1' | 'plan2')}>Confirm {plans[pending].label} · {plans[pending].price_aed} AED/month</Button>
+        </div>
+      )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="text-[11px] uppercase tracking-widest text-gold">Your plan</div>
@@ -118,6 +126,7 @@ function PlanCard({ status }: { status: Status }) {
         </div>
       )}
       <div className="flex flex-wrap gap-2 pt-1">
+        {paid && <Button variant="outline" onClick={() => startCheckout('portal').catch((e) => toast(e.message, 'err'))}><Crown className="w-4 h-4" />Manage billing & cancel</Button>}
         <Button variant="outline" onClick={() => buy('swipe_refresh')}><RefreshCw className="w-4 h-4" />Buy an early refresh</Button>
         {!status.safe_zones_enabled && <Button variant="outline" onClick={() => buy('safe_zones')}><Shield className="w-4 h-4" />Unlock Safe Zones</Button>}
       </div>
@@ -152,7 +161,7 @@ function Consultations({ status, refresh }: { status: Status; refresh: () => Pro
   );
 }
 
-function SafeZones({ status }: { status: Status }) {
+export function SafeZones({ status }: { status: Status }) {
   const [zones, setZones] = useState<{ id: string; label: string; radius_m: number }[]>([]);
   const [label, setLabel] = useState('');
   const { busy, run } = useAction();
@@ -164,7 +173,13 @@ function SafeZones({ status }: { status: Status }) {
     <Card className="space-y-3">
       <h3 className="font-display text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-gold" />Safe Zones</h3>
       <p className="text-sm text-slate-500">Places like home or the office where you're hidden from the radar while you're there, on top of Exact / Blur / Ghost.</p>
-      {!status.safe_zones_enabled ? <Badge tone="slate">Add-on: unlock from your plan above</Badge> : (
+      {!status.safe_zones_enabled ? (
+        <div className="rounded-xl border border-dashed border-gold/40 p-4 text-center space-y-2">
+          <Lock className="w-5 h-5 text-gold mx-auto" />
+          <p className="text-sm">Safe Zones is a one-time add-on.</p>
+          <Button onClick={() => startCheckout('safe_zones').catch((e) => toast(e.message, 'err'))}>Unlock Safe Zones</Button>
+        </div>
+      ) : (
         <>
           {zones.map((z) => (
             <div key={z.id} className="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-navy-3 p-3 text-sm">

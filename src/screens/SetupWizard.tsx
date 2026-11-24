@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, ImagePlus, Link2, Play, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { giveConsent, myProfile, saveProfile, signedUrl, submitForReview, uploadFile, type Status } from '@/lib/api';
+import { astroSync, giveConsent, myProfile, saveProfile, signedUrl, submitForReview, uploadFile, type Status } from '@/lib/api';
 import {
   BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELOCATION, TIMELINE, UAE_CITIES, labelOf,
 } from '@/config/app';
 import { Badge, Button, Card, Field, Input, Photo, Select, Spinner, Textarea, Toggle, cx, useToast } from '@/components/ui';
 import { Recorder } from '@/components/Recorder';
+import { CityPicker } from '@/components/CityPicker';
+import { COUNTRIES } from '@/config/app';
 
 const STEPS = ['Identity & verification', 'Basic info', 'Marriage & lifestyle', 'Desired partner', 'Your story', 'Plan', 'Review'];
 
@@ -17,7 +19,7 @@ const PROFILE_KEYS = ['display_name', 'gender', 'nationality', 'country_residenc
   'drinking', 'smoking', 'relocation', 'headline', 'bio', 'prompts', 'photos', 'voice_intro_path', 'linkedin_url'];
 const PRIVATE_KEYS = ['legal_name', 'birth_date', 'birth_time', 'birth_city', 'birth_country', 'religion_flexible', 'kids_flexible',
   'no_drinking_partner', 'no_smoking_partner', 'desired_age_min', 'desired_age_max', 'desired_nationalities', 'desired_religion',
-  'verification_video_path'];
+  'verification_video_path', 'birth_lat', 'birth_lng', 'preferred_plan'];
 
 const clean = (v: unknown) => (v === '' || v === undefined ? null : v);
 
@@ -95,6 +97,7 @@ export default function SetupWizard({ status, onDone, onCancel }: { status: Stat
     setBusy(true);
     try {
       await persist();
+      astroSync();
       if (approved) { toast('Profile updated'); onDone(); return; }
       const r = await submitForReview();
       if (r.ok || r.status === 'pending') { toast('Application sent for review'); onDone(); }
@@ -138,7 +141,7 @@ export default function SetupWizard({ status, onDone, onCancel }: { status: Stat
         {step === 2 && <StepLifestyle f={f} set={set} />}
         {step === 3 && <StepPartner f={f} set={set} />}
         {step === 4 && <StepStory f={f} set={set} />}
-        {step === 5 && <StepPlan plans={plans} status={status} />}
+        {step === 5 && <StepPlan plans={plans} status={status} f={f} set={set} />}
         {step === 6 && <StepReview f={f} goTo={setStep} />}
 
         <div className="flex items-center justify-between pt-2">
@@ -280,9 +283,14 @@ function StepLifestyle({ f, set }: StepProps) {
         <p className="text-sm text-slate-500 dark:text-slate-400">Adding your time and place of birth gives the most accurate match compatibility reading (full natal chart). Without them we use your sun sign.</p>
         <Grid>
           <Field label="Time of birth" optional><Input type="time" value={f.birth_time?.slice(0, 5) ?? ''} onChange={(e) => set('birth_time', e.target.value)} /></Field>
-          <Field label="City of birth" optional><Input value={f.birth_city ?? ''} onChange={(e) => set('birth_city', e.target.value)} /></Field>
-          <Field label="Country of birth" optional><Input value={f.birth_country ?? ''} onChange={(e) => set('birth_country', e.target.value)} /></Field>
         </Grid>
+        <CityPicker
+          value={f.birth_city && f.birth_lat != null ? {
+            city: f.birth_city, country: f.birth_country ?? '', lat: f.birth_lat, lng: f.birth_lng,
+            countryCode: COUNTRIES.find(([, n]) => n === f.birth_country)?.[0] ?? '',
+          } : null}
+          onChange={(pl) => { set('birth_city', pl?.city ?? null); set('birth_country', pl?.country ?? null); set('birth_lat', pl?.lat ?? null); set('birth_lng', pl?.lng ?? null); }}
+        />
       </Card>
     </>
   );
@@ -379,32 +387,41 @@ function StepStory({ f, set }: StepProps) {
   );
 }
 
-function StepPlan({ plans, status }: { plans: Record<string, any> | null; status: Status }) {
-  const order: [string, string][] = [['free', 'After your trial, free'], ['plan1', 'Plan 1'], ['plan2', 'Plan 2']];
+function StepPlan({ plans, status, f, set }: { plans: Record<string, any> | null; status: Status } & StepProps) {
+  const order: [string, string][] = [['free', 'Free after the trial'], ['plan1', 'Plan 1'], ['plan2', 'Plan 2']];
+  const chosen = f.preferred_plan ?? 'free';
   return (
     <>
       <Card>
         <p className="text-sm">
           Every member starts with a <b>7-day full-access trial</b> at Plan 1 level{status.trial_ends_at ? `, until ${new Date(status.trial_ends_at).toLocaleDateString()}` : ''}.
-          After that you stay on the free plan unless you upgrade. Nobody is locked out. Upgrade anytime from Profile → Plan once you're verified.
+          Choose the plan you'd like. Nothing is charged now. Once you're verified, you'll be asked to confirm payment. Free members keep access with lower limits.
         </p>
       </Card>
       <div className="grid sm:grid-cols-3 gap-3">
         {plans && order.map(([k, kicker]) => {
           const p = plans[k];
           if (!p) return null;
+          const on = chosen === k;
           return (
-            <Card key={k} className={cx(k === 'plan2' && '!border-gold/50')}>
-              <div className="text-[10px] uppercase tracking-widest text-gold">{kicker}</div>
-              <div className="font-display text-lg mt-1">{p.label}</div>
-              <div className="text-2xl font-semibold mt-1">{p.price_aed ? `${p.price_aed} AED` : 'Free'}<span className="text-xs font-normal text-slate-500">{p.price_aed ? ' / month' : ''}</span></div>
-              <ul className="mt-3 space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
-                <li>{p.swipes_per_day} profiles a day</li>
-                <li>{p.drops_per_week} curated 75%+ drops a week</li>
-                <li>Radar: {p.radar_cap == null ? 'all compatible members in range' : `up to ${p.radar_cap} compatible members`}</li>
-                {p.consultations_per_month > 0 && <li>Weekly 1-on-1 matchmaking consultation</li>}
-              </ul>
-            </Card>
+            <button type="button" key={k} onClick={() => set('preferred_plan', k)} className="text-left cursor-pointer">
+              <Card className={cx('h-full transition', on ? '!border-gold ring-2 ring-gold/40' : 'hover:!border-gold/50')}>
+                <div className="flex items-center justify-between">
+                  <div className="text-[10px] uppercase tracking-widest text-gold">{kicker}</div>
+                  <span className={cx('w-5 h-5 rounded-full border-2 flex items-center justify-center', on ? 'border-gold bg-gold' : 'border-slate-300 dark:border-white/20')}>
+                    {on && <Check className="w-3 h-3 text-navy" />}
+                  </span>
+                </div>
+                <div className="font-display text-lg mt-1">{p.label}</div>
+                <div className="text-2xl font-semibold mt-1">{p.price_aed ? `${p.price_aed} AED` : 'Free'}<span className="text-xs font-normal text-slate-500">{p.price_aed ? ' / month' : ''}</span></div>
+                <ul className="mt-3 space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
+                  <li>{p.swipes_per_day} profiles a day</li>
+                  <li>{p.drops_per_week} curated 75%+ drops a week</li>
+                  <li>Radar: {p.radar_cap == null ? 'all compatible members in range' : `up to ${p.radar_cap} compatible members`}</li>
+                  {p.consultations_per_month > 0 && <li>Weekly 1-on-1 matchmaking consultation</li>}
+                </ul>
+              </Card>
+            </button>
           );
         })}
       </div>
@@ -422,6 +439,8 @@ function StepReview({ f, goTo }: { f: Form; goTo: (n: number) => void }) {
     ['Looking for', `${f.desired_age_min}–${f.desired_age_max}, ${(f.desired_nationalities ?? []).join(', ') || 'any nationality'}, ${f.desired_religion || 'any religion'}`, 3],
     ['Photos', String((f.photos ?? []).length), 4], ['Voice intro', f.voice_intro_path ? 'Yes' : 'No', 4],
     ['Video ID', f.verification_video_path ? 'Received' : 'Missing', 0],
+    ['Place of birth', [f.birth_city, f.birth_country].filter(Boolean).join(', '), 2],
+    ['Chosen plan', f.preferred_plan === 'plan2' ? 'Plan 2 · Premium' : f.preferred_plan === 'plan1' ? 'Plan 1 · Normal' : 'Free after trial', 5],
   ];
   return (
     <Card>

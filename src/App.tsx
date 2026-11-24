@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { Compass, Heart, MessageCircle, Moon, SlidersHorizontal, Sun, UserRound, Crown } from 'lucide-react';
+import { Compass, Heart, MessageCircle, Moon, Sun, UserRound, Crown, EyeOff, Waves } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { myStatus, type Status } from '@/lib/api';
-import { BRAND } from '@/config/app';
-import { ToastProvider, Spinner, cx } from '@/components/ui';
+import { myStatus, setPrivacy, type Privacy, type Status } from '@/lib/api';
+import { BRAND, VISIBILITY } from '@/config/app';
+import { ToastProvider, Spinner, cx, useToast } from '@/components/ui';
 import AuthScreen from '@/screens/AuthScreen';
 import SetupWizard from '@/screens/SetupWizard';
 import PendingScreen from '@/screens/PendingScreen';
@@ -92,7 +92,6 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
 }) {
   const [tab, setTab] = useState<Tab>('matches');
   const [openMatch, setOpenMatch] = useState<string | null>(null);
-  const [radarFilters, setRadarFilters] = useState(false);
   const [unread, setUnread] = useState(0);
 
   // Unread badge: count new message notifications live
@@ -123,9 +122,12 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
     <div className="min-h-screen pb-20 sm:pb-0">
       <header className="sticky top-0 z-40 backdrop-blur bg-ivory/85 dark:bg-navy/85 border-b border-slate-200 dark:border-white/10">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <button onClick={() => setTab('matches')} className="flex items-center gap-2 cursor-pointer">
-            <img src={BRAND.logo} alt="" className="w-8 h-8 rounded-full" />
-            <span className="font-display text-lg tracking-wide">{BRAND.name}</span>
+          <button onClick={() => setTab('matches')} className="flex items-center gap-2 cursor-pointer min-w-0 text-left">
+            <img src={BRAND.logo} alt="" className="w-8 h-8 rounded-full shrink-0" />
+            <span className="min-w-0 leading-tight">
+              <span className="block font-display text-[15px] sm:text-base whitespace-nowrap">{BRAND.name}</span>
+              <span className="block text-[9px] sm:text-[10px] text-gold whitespace-nowrap">{BRAND.tagline}</span>
+            </span>
           </button>
           <nav className="hidden sm:flex items-center gap-1">
             {tabs.map((t) => (
@@ -137,12 +139,12 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
             ))}
           </nav>
           <div className="flex items-center gap-1">
-            <button title="Radar filters" onClick={() => { setTab('radar'); setRadarFilters(true); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"><SlidersHorizontal className="w-4.5 h-4.5" /></button>
+            <VisibilityShortcut status={status} refresh={refresh} />
             <button title="Theme" onClick={toggleTheme} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer">
               {theme === 'dark' ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
             </button>
             <button title="Plan" onClick={() => setTab('profile')} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gold/40 text-gold text-xs cursor-pointer">
-              <Crown className="w-3.5 h-3.5" />{status.limits.label}{status.in_trial ? ' · trial' : ''}
+              <Crown className="w-3.5 h-3.5" /><span className="hidden sm:inline">{status.limits.label}{status.in_trial ? ' · trial' : ''}</span>
             </button>
           </div>
         </div>
@@ -150,7 +152,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
 
       <main className="max-w-6xl mx-auto px-4 py-6">
         {tab === 'matches' && <MatchesTab status={status} onOpenChat={openChat} />}
-        {tab === 'radar' && <RadarTab status={status} refreshStatus={refresh} onOpenChat={openChat} filtersOpen={radarFilters} setFiltersOpen={setRadarFilters} />}
+        {tab === 'radar' && <RadarTab status={status} refreshStatus={refresh} onOpenChat={openChat} />}
         {tab === 'chat' && <ChatTab status={status} openMatch={openMatch} setOpenMatch={setOpenMatch} onRead={() => setUnread(0)} />}
         {tab === 'profile' && <ProfileTab status={status} refresh={refresh} onEditProfile={onEditProfile} />}
       </main>
@@ -163,6 +165,42 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
           </button>
         ))}
       </nav>
+    </div>
+  );
+}
+
+/** Header shortcut: how others see you on the radar (approximate or hidden). */
+function VisibilityShortcut({ status, refresh }: { status: Status; refresh: () => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const toast = useToast();
+  const current: Privacy = status.privacy === 'ghost' ? 'ghost' : 'blur';
+  const choose = async (p: Privacy) => {
+    setOpen(false);
+    try { await setPrivacy(p); await refresh(); toast(p === 'ghost' ? "You're hidden from the radar" : 'You show up approximately (500 m)'); }
+    catch (e) { toast(e instanceof Error ? e.message : 'Could not change', 'err'); }
+  };
+  return (
+    <div className="relative">
+      <button title="How others see you" onClick={() => setOpen((o) => !o)}
+        className={cx('flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs cursor-pointer border',
+          current === 'ghost' ? 'border-slate-400/40 text-slate-500' : 'border-emerald-400/40 text-emerald-600 dark:text-emerald-300')}>
+        {current === 'ghost' ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />}
+        <span className="hidden md:inline">{current === 'ghost' ? 'Hidden' : 'Visible'}</span>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 mt-2 z-50 w-64 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-navy-2 shadow-xl p-1.5">
+            <div className="px-2.5 pt-1.5 pb-1 text-[10px] uppercase tracking-widest text-gold">How others see you</div>
+            {VISIBILITY.map((v) => (
+              <button key={v.id} onClick={() => choose(v.id as Privacy)} className={cx('w-full text-left rounded-lg px-2.5 py-2 cursor-pointer', current === v.id ? 'bg-gold/15' : 'hover:bg-black/5 dark:hover:bg-white/5')}>
+                <div className="text-sm font-medium flex items-center gap-1.5">{v.id === 'ghost' ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />}{v.label}</div>
+                <div className="text-[11px] text-slate-500">{v.hint}</div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
