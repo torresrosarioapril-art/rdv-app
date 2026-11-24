@@ -5,9 +5,9 @@ import { REPORT_REASONS, SUPPORT } from '@/config/app';
 import { Button, Field, Modal, Select, Textarea, Toggle, useAction } from './ui';
 
 /** Report & block (Apple Guideline 1.2). */
-export function SafetyMenu({ memberId, name, onDone, target = 'profile', refId }: {
+export function SafetyMenu({ memberId, name, onDone, target = 'profile', refId, compact }: {
   memberId: string; name: string; onDone?: () => void;
-  target?: 'profile' | 'photo' | 'message' | 'voice'; refId?: string | null;
+  target?: 'profile' | 'photo' | 'message' | 'voice'; refId?: string | null; compact?: boolean;
 }) {
   const [open, setOpen] = useState<'report' | 'block' | null>(null);
   const [reason, setReason] = useState('');
@@ -17,10 +17,15 @@ export function SafetyMenu({ memberId, name, onDone, target = 'profile', refId }
 
   return (
     <>
-      <div className="flex gap-2">
-        <Button variant="ghost" className="!px-2.5 !py-1.5 text-xs" onClick={() => setOpen('report')}><Flag className="w-3.5 h-3.5" />Report</Button>
-        <Button variant="ghost" className="!px-2.5 !py-1.5 text-xs" onClick={() => setOpen('block')}><Ban className="w-3.5 h-3.5" />Block</Button>
-      </div>
+      {compact ? (
+        <button onClick={() => setOpen('report')} aria-label={`Report this ${target}`} title={`Report this ${target}`}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer"><Flag className="w-3.5 h-3.5" /></button>
+      ) : (
+        <div className="flex gap-2">
+          <Button variant="ghost" className="!px-2.5 !py-1.5 text-xs" onClick={() => setOpen('report')}><Flag className="w-3.5 h-3.5" />Report</Button>
+          <Button variant="ghost" className="!px-2.5 !py-1.5 text-xs" onClick={() => setOpen('block')}><Ban className="w-3.5 h-3.5" />Block</Button>
+        </div>
+      )}
 
       <Modal open={open === 'block'} onClose={() => setOpen(null)} title={`Block ${name}?`}>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">You won't see each other anywhere: radar, daily batch, curated drops or chat. They aren't told.</p>
@@ -33,7 +38,7 @@ export function SafetyMenu({ memberId, name, onDone, target = 'profile', refId }
         </div>
       </Modal>
 
-      <Modal open={open === 'report'} onClose={() => setOpen(null)} title={`Report ${name}`}>
+      <Modal open={open === 'report'} onClose={() => setOpen(null)} title={target === 'message' || target === 'voice' ? `Report this ${target === 'voice' ? 'voice note' : 'message'}` : `Report ${name}`}>
         <div className="space-y-4">
           <Field label="Reason"><Select options={REPORT_REASONS} value={reason} onChange={(e) => setReason(e.target.value)} /></Field>
           <Field label="What happened?" optional><Textarea value={details} onChange={(e) => setDetails(e.target.value)} maxLength={2000} /></Field>

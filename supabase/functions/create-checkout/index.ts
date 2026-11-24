@@ -1,20 +1,8 @@
 import { admin, cors, json, userId } from '../_shared/util.ts';
+import { planPrice, stripe } from '../_shared/stripe.ts';
 
 // Starts a Stripe Checkout (sandbox until RDV's trade license is active) or opens the billing portal.
 // Prices come from app_config (plans / addons), so partners can change them without code.
-const stripe = async (path: string, params: Record<string, string>) => {
-  const key = Deno.env.get('STRIPE_SECRET_KEY');
-  if (!key) throw new Error('Payments are not switched on yet.');
-  const r = await fetch(`https://api.stripe.com/v1/${path}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(params),
-  });
-  const j = await r.json();
-  if (!r.ok) throw new Error(j.error?.message ?? 'Stripe error');
-  return j;
-};
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const uid = await userId(req);
@@ -59,16 +47,11 @@ Deno.serve(async (req) => {
       const p = plans[item];
       if (!p?.price_aed) return json({ error: 'This plan has no price set.' }, 400);
       const active = sub?.stripe_subscription_id && ['active', 'trialing', 'past_due'].includes(sub?.status ?? '');
-      if (active) {
-        // Already subscribed: change plan in the billing portal
-        const s = await stripe('billing_portal/sessions', { customer: customer!, return_url: origin });
-        return json({ url: s.url });
-      }
+      if (active) return json({ error: 'You already have a subscription. Use "Switch plan" instead.' }, 400);
+      const { 'line_items[0][price_data][currency]': _c, ...rest } = base;
       const s = await stripe('checkout/sessions', {
-        ...base, mode: 'subscription',
-        'line_items[0][price_data][unit_amount]': String(Math.round(p.price_aed * 100)),
-        'line_items[0][price_data][recurring][interval]': 'month',
-        'line_items[0][price_data][product_data][name]': `Rendez-vous ${p.label} (${item === 'plan1' ? 'Plan 1' : 'Plan 2'})`,
+        ...rest, mode: 'subscription',
+        'line_items[0][price]': await planPrice(item, p),
         'subscription_data[metadata][user_id]': uid,
         'subscription_data[metadata][plan]': item,
       });

@@ -254,8 +254,8 @@ function Bubble({ x, mine, inv, me, partnerName, partnerId, act }: {
         <div className={cx('text-[10px] mt-1', mine ? 'text-navy/60' : 'text-slate-500')}>{new Date(x.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}{mine && x.read_at ? ' · Read' : ''}</div>
       </div>
       {!mine && !x.is_hidden && (
-        <div className="opacity-0 group-hover:opacity-100 self-center ml-1">
-          <SafetyMenu memberId={partnerId} name={partnerName} target={x.kind === 'voice' ? 'voice' : 'message'} refId={x.id} />
+        <div className="self-center ml-0.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition">
+          <SafetyMenu compact memberId={partnerId} name={partnerName} target={x.kind === 'voice' ? 'voice' : 'message'} refId={x.id} />
         </div>
       )}
     </div>

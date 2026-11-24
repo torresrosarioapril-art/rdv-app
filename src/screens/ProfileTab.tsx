@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
-  addSafeZone, astroSync, cancelConsultation, deleteAccount, deleteSafeZone, listSafeZones, myProfile, requestConsultation,
+  addSafeZone, astroSync, cancelConsultation, manageSubscription, deleteAccount, deleteSafeZone, listSafeZones, myProfile, requestConsultation,
   saveProfile, startCheckout, uploadFile, type MemberCard, type Status,
 } from '@/lib/api';
 import { ANDROID_IOS_RATING, SIGNUP_COPY, SUPPORT } from '@/config/app';
@@ -46,7 +46,7 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
       </div>
 
       <div className="space-y-5">
-        <div id="plan" className="scroll-mt-20"><PlanCard status={status} /></div>
+        <div id="plan" className="scroll-mt-20"><PlanCard status={status} refresh={refresh} /></div>
         {status.plan === 'plan2' && <Consultations status={status} refresh={refresh} />}
         <Referral status={status} />
         <Card className="space-y-3">
@@ -195,13 +195,17 @@ function PhotoManager({ uid, photos, name, onChange }: { uid: string; photos: st
   );
 }
 
-function PlanCard({ status }: { status: Status }) {
+function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<void> }) {
   const [plans, setPlans] = useState<Record<string, any> | null>(null);
   const toast = useToast();
   useEffect(() => { supabase.from('app_config').select('value').eq('key', 'plans').single().then(({ data }) => setPlans(data?.value ?? null)); }, []);
   const sub = status.subscription;
   const paid = sub && sub.plan !== 'free' && ['active', 'trialing', 'past_due'].includes(sub.status);
   const buy = (item: 'plan1' | 'plan2' | 'safe_zones' | 'swipe_refresh') => startCheckout(item).catch((e) => toast(e.message, 'err'));
+  const [confirm, setConfirm] = useState<null | { kind: 'switch'; plan: 'plan1' | 'plan2' } | { kind: 'cancel' }>(null);
+  const { busy, run } = useAction();
+  const until = sub?.current_period_end ? new Date(sub.current_period_end).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  const cancelling = !!(paid && sub?.cancel_at_period_end);
 
   const [preferred, setPreferred] = useState<string | null>(null);
   useEffect(() => { supabase.from('profile_private').select('preferred_plan').eq('user_id', status.user_id).single().then(({ data }) => setPreferred(data?.preferred_plan ?? null)); }, [status.user_id]);
@@ -221,11 +225,19 @@ function PlanCard({ status }: { status: Status }) {
           <p className="text-sm text-slate-500 mt-1">
             {status.comp && !paid ? `${status.comp.label ?? 'Complimentary'}: ${plans?.[status.comp.plan]?.label ?? 'Regular'} free until ${new Date(status.comp.until).toLocaleDateString()}. Thank you for helping us test.`
               : status.in_trial && !paid && status.trial_ends_at ? `Full-access trial until ${new Date(status.trial_ends_at).toLocaleDateString()}, then the free plan unless you upgrade.`
-              : paid && sub?.current_period_end ? `${sub.cancel_at_period_end ? 'Ends' : 'Renews'} on ${new Date(sub.current_period_end).toLocaleDateString()}.`
+              : paid && until ? (cancelling ? `Cancelled. You keep ${status.limits.label} until ${until}, then move to Free.` : `Auto-renews monthly on ${until}.`)
               : 'Free plan. Upgrade anytime.'}
           </p>
         </div>
       </div>
+      {paid && (
+        <div className={cx('rounded-xl border p-3 text-sm flex flex-wrap items-center justify-between gap-2', cancelling ? 'border-amber-400/50 bg-amber-500/10' : 'border-emerald-400/40 bg-emerald-500/10')}>
+          <span>{cancelling ? `Auto-renewal is off. Access continues until ${until}.` : `Auto-renewal is on. Next payment ${until}.`}</span>
+          {cancelling
+            ? <Button className="!py-1.5 text-xs" busy={busy} onClick={async () => { if (await run(() => manageSubscription('resume'), 'Subscription resumed: auto-renewal is back on')) refresh(); }}>Resume subscription</Button>
+            : <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setConfirm({ kind: 'cancel' })}>Cancel subscription</Button>}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-2 text-sm">
         <Stat k="Profiles / day" v={String(status.limits.swipes_per_day)} />
         <Stat k="Drops this week" v={`${status.drops_this_week} / ${status.limits.drops_per_week}`} />
@@ -247,7 +259,7 @@ function PlanCard({ status }: { status: Status }) {
                     <li>{p.drops_per_week} curated 75%+ drops a week</li>
                     <li>Radar: up to {p.radar_cap}</li>
                   </ul>
-                  <div className="text-xs mt-3 text-slate-500">{current ? 'Your current plan' : (status.in_trial || status.comp) && !paid ? 'You move to this afterwards unless you upgrade' : 'Always available, no payment'}</div>
+                  <div className="text-xs mt-3 text-slate-500">{current ? 'Your current plan' : cancelling ? `You move to Free on ${until}` : paid ? 'Cancel your subscription to move to Free at the end of the paid month' : (status.in_trial || status.comp) ? 'You move to this afterwards unless you upgrade' : 'Always available, no payment'}</div>
                 </div>
               );
             }
@@ -260,18 +272,44 @@ function PlanCard({ status }: { status: Status }) {
                   <li>Radar: {p.radar_cap == null ? 'everyone compatible in range' : `up to ${p.radar_cap}`}</li>
                   {p.consultations_per_month > 0 && <li>Weekly 1-on-1 consultation with our matchmaker</li>}
                 </ul>
-                <Button className="w-full mt-3" variant={current ? 'outline' : 'gold'} disabled={current} onClick={() => buy(k)}>{current ? 'Current plan' : `Choose ${p.label}`}</Button>
+                {paid
+                  ? <Button className="w-full mt-3" variant={current ? 'outline' : 'gold'} disabled={current} onClick={() => setConfirm({ kind: 'switch', plan: k })}>{current ? 'Current plan' : `Switch to ${p.label}`}</Button>
+                  : <Button className="w-full mt-3" variant={current ? 'outline' : 'gold'} disabled={current && !status.comp} onClick={() => buy(k)}>{current && !status.comp ? 'Current plan' : current ? `Subscribe to keep ${p.label}` : `Choose ${p.label}`}</Button>}
               </div>
             );
           })}
         </div>
       )}
       <div className="flex flex-wrap gap-2 pt-1">
-        {paid && <Button variant="outline" onClick={() => startCheckout('portal').catch((e) => toast(e.message, 'err'))}><Crown className="w-4 h-4" />Manage billing & cancel</Button>}
+        {paid && <Button variant="outline" onClick={() => startCheckout('portal').catch((e) => toast(e.message, 'err'))}><Crown className="w-4 h-4" />Billing & invoices</Button>}
         <Button variant="outline" onClick={() => buy('swipe_refresh')}><RefreshCw className="w-4 h-4" />Buy an early refresh</Button>
         {!status.safe_zones_enabled && <Button variant="outline" onClick={() => buy('safe_zones')}><Shield className="w-4 h-4" />Unlock Safe Zones</Button>}
       </div>
-      <p className="text-[11px] text-slate-500">Payments are in test mode until Rendez-vous's trade license is active.</p>
+      <p className="text-[11px] text-slate-500">Plans renew automatically each month until cancelled. Payments are in test mode until Rendez-vous's trade license is active.</p>
+
+      <Modal open={confirm?.kind === 'switch'} onClose={() => setConfirm(null)} title={confirm?.kind === 'switch' && plans ? `Switch to ${plans[confirm.plan].label}?` : ''}>
+        {confirm?.kind === 'switch' && plans && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500">
+              Your plan changes straight away to {plans[confirm.plan].label} ({plans[confirm.plan].price_aed} AED/month). The difference for the rest of this month is
+              {plans[confirm.plan].price_aed > (plans[sub!.plan]?.price_aed ?? 0) ? ' added to your next invoice' : ' credited to your next invoice'}, and it keeps renewing monthly.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setConfirm(null)}>Keep my plan</Button>
+              <Button busy={busy} onClick={async () => { const k = confirm.plan; if (await run(() => manageSubscription('change', k), `You're now on ${plans[k].label}`)) { setConfirm(null); refresh(); } }}>Switch plan</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+      <Modal open={confirm?.kind === 'cancel'} onClose={() => setConfirm(null)} title="Cancel your subscription?">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500">Auto-renewal stops, but you keep {status.limits.label} and everything in it until <b>{until}</b>. After that you move to the Free plan. You can resume any time before then.</p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setConfirm(null)}>Keep subscription</Button>
+            <Button variant="danger" busy={busy} onClick={async () => { if (await run(() => manageSubscription('cancel'), `Cancelled. You keep your plan until ${until}`)) { setConfirm(null); refresh(); } }}>Cancel at end of period</Button>
+          </div>
+        </div>
+      </Modal>
     </Card>
   );
 }

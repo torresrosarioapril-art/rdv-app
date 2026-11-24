@@ -257,6 +257,17 @@ export async function startCheckout(item: 'plan1' | 'plan2' | 'safe_zones' | 'sw
   if (data?.url) window.location.href = data.url;
 }
 
+export async function manageSubscription(action: 'change' | 'cancel' | 'resume', plan?: 'plan1' | 'plan2') {
+  const { data, error } = await supabase.functions.invoke('manage-subscription', { body: { action, plan } });
+  if (error) {
+    let msg = 'Could not update your subscription. Please try again.';
+    try { const j = await (error as any).context?.json(); if (j?.error) msg = j.error; } catch { /* keep default */ }
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
 /** Builds the natal chart and zodiac synastry scores in the background (no-op if nothing to do). */
 let astroInFlight: Promise<unknown> | null = null;
 let astroLast = 0;
