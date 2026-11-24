@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Briefcase, Flag, GraduationCap, Link2, MapPin, Ruler, ShieldCheck, Sparkles } from 'lucide-react';
+import { Briefcase, Flag, GraduationCap, Link2, MapPin, Ruler, ShieldCheck, Sparkles, Star } from 'lucide-react';
 import { signedUrl, type MemberCard } from '@/lib/api';
 import { HABITS, KIDS, POLITICAL, RELOCATION, TIMELINE, labelOf } from '@/config/app';
 import { Badge, Photo, cx } from './ui';
@@ -15,7 +15,7 @@ export function ScoreBadge({ score, band }: { score?: number; band?: string }) {
 }
 
 /** Full member profile as other members see it. */
-export function ProfileView({ m, compact }: { m: MemberCard; compact?: boolean }) {
+export function ProfileView({ m, compact, self }: { m: MemberCard; compact?: boolean; self?: boolean }) {
   const [photo, setPhoto] = useState(0);
   const [voice, setVoice] = useState<string | null>(null);
   useEffect(() => { setPhoto(0); signedUrl('voice', m.voice_intro_path).then(setVoice); }, [m.id, m.voice_intro_path]);
@@ -74,8 +74,9 @@ export function ProfileView({ m, compact }: { m: MemberCard; compact?: boolean }
           <Fact k="Drinking" v={labelOf(HABITS, m.drinking)} />
           <Fact k="Smoking" v={labelOf(HABITS, m.smoking)} />
           {m.political && <Fact k="Outlook" v={labelOf(POLITICAL, m.political)} />}
-          {m.zodiac?.sun && <Fact k="Zodiac" v={[m.zodiac.sun, m.zodiac.moon && `${m.zodiac.moon} moon`, m.zodiac.rising && `${m.zodiac.rising} rising`].filter(Boolean).join(' · ')} />}
         </div>
+
+        <BirthChart z={m.zodiac} self={self} />
 
         {!compact && answered.map((p) => (
           <div key={p.key} className="rounded-xl bg-slate-50 dark:bg-navy-3 p-4">
@@ -93,6 +94,59 @@ function Fact({ k, v }: { k: string; v: string }) {
     <div className="rounded-xl bg-slate-50 dark:bg-navy-3 px-3 py-2">
       <div className="text-[10px] uppercase tracking-wider text-slate-500">{k}</div>
       <div className="text-sm">{v || '—'}</div>
+    </div>
+  );
+}
+
+const GLYPH: Record<string, string> = {
+  Aries: '♈', Taurus: '♉', Gemini: '♊', Cancer: '♋', Leo: '♌', Virgo: '♍', Libra: '♎', Scorpio: '♏',
+  Sagittarius: '♐', Capricorn: '♑', Aquarius: '♒', Pisces: '♓',
+};
+const ord = (n: number) => `${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}`;
+
+/** Birth chart: sun/moon/rising and planet placements, plus the chart wheel when available. */
+function BirthChart({ z, self }: { z: MemberCard['zodiac']; self?: boolean }) {
+  const [wheel, setWheel] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  useEffect(() => { signedUrl('charts', z?.chart_path).then(setWheel); }, [z?.chart_path]);
+  if (!z?.sun) return null;
+  const big3: [string, string | null][] = [['Sun', z.sun], ['Moon', z.moon], ['Rising', z.rising]];
+  const others = (z.placements ?? []).filter((p) => !['Sun', 'Moon', 'Rising'].includes(p.point));
+  const full = !!z.moon;
+  return (
+    <div className="rounded-xl border border-gold/30 bg-gold/5 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="text-[11px] uppercase tracking-widest text-gold flex items-center gap-1.5"><Star className="w-3.5 h-3.5" />Birth chart</div>
+        {z.element && <span className="text-[11px] text-slate-500">{z.element} sun</span>}
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {big3.map(([k, v]) => (
+          <div key={k} className="rounded-lg bg-white/60 dark:bg-navy-3 p-2.5 text-center">
+            <div className="text-xl leading-none text-gold">{v ? GLYPH[v] : '–'}</div>
+            <div className="text-sm mt-1">{v ?? '—'}</div>
+            <div className="text-[10px] uppercase tracking-wider text-slate-500">{k}</div>
+          </div>
+        ))}
+      </div>
+      {others.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {others.map((p) => (
+            <span key={p.point} className="text-xs rounded-full border border-gold/30 px-2 py-0.5">
+              {p.point} in {p.sign}{p.house ? ` · ${ord(p.house)} house` : ''}{p.retrograde ? ' · Rx' : ''}
+            </span>
+          ))}
+        </div>
+      )}
+      {wheel && (
+        <>
+          <button onClick={() => setOpen((o) => !o)} className="text-xs text-gold cursor-pointer">{open ? 'Hide chart wheel' : 'Show chart wheel'}</button>
+          {open && <img src={wheel} alt="Birth chart wheel" className="w-full max-w-md mx-auto rounded-xl bg-navy" />}
+        </>
+      )}
+      {!full && self && (
+        <p className="text-xs text-slate-500">Add your time and city of birth (Edit profile → Marriage & lifestyle) for your full chart: moon, rising and planets. It also makes your match compatibility more accurate.</p>
+      )}
+      {!full && !self && <p className="text-[11px] text-slate-500">Sun sign only. They haven't added birth time and place.</p>}
     </div>
   );
 }

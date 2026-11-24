@@ -30,7 +30,11 @@ export interface MemberCard {
   drinking: string | null;
   smoking: string | null;
   relocation: string | null;
-  zodiac: { sun: string | null; moon: string | null; rising: string | null; element: string | null };
+  zodiac: {
+    sun: string | null; moon: string | null; rising: string | null; element: string | null;
+    placements?: { point: string; sign: string | null; degree: number | null; house: number | null; retrograde: boolean }[] | null;
+    chart_path?: string | null;
+  };
   headline: string | null;
   bio: string | null;
   prompts: Prompt[];
@@ -261,7 +265,7 @@ export function astroSync() {
 // ---------- Storage ----------
 const urlCache = new Map<string, { url: string; exp: number }>();
 
-export async function signedUrl(bucket: 'photos' | 'voice' | 'verification', path: string | null | undefined) {
+export async function signedUrl(bucket: 'photos' | 'voice' | 'verification' | 'charts', path: string | null | undefined) {
   if (!path) return null;
   const key = `${bucket}/${path}`;
   const hit = urlCache.get(key);

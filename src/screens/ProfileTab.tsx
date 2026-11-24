@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
-  addSafeZone, cancelConsultation, deleteAccount, deleteSafeZone, listSafeZones, myProfile, requestConsultation,
+  addSafeZone, astroSync, cancelConsultation, deleteAccount, deleteSafeZone, listSafeZones, myProfile, requestConsultation,
   saveProfile, startCheckout, uploadFile, type MemberCard, type Status,
 } from '@/lib/api';
 import { ANDROID_IOS_RATING, SIGNUP_COPY, SUPPORT } from '@/config/app';
@@ -21,6 +21,9 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
   const loadMe = () => myProfile().then(setData).catch(() => {});
   useEffect(() => {
     loadMe();
+    astroSync();
+    const t = setTimeout(loadMe, 8000); // pick up a freshly built birth chart
+    return () => clearTimeout(t);
   }, [status.user_id]);
   const card = data ? toCard(data.profile, data.priv) : null;
 
@@ -36,7 +39,7 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
             <Button variant="outline" onClick={onEditProfile}><Pencil className="w-4 h-4" />Edit profile</Button>
           </div>
           <p className="text-xs text-slate-500 mb-4">This is how other members see you.</p>
-          {card ? <ProfileView m={card} /> : <Spinner />}
+          {card ? <ProfileView m={card} self /> : <Spinner />}
         </Card>
         {data && <PhotoManager photos={data.profile.photos ?? []} name={data.profile.display_name} onChange={loadMe} />}
         {data && <LookingFor priv={data.priv} onEdit={onEditProfile} />}
@@ -77,7 +80,8 @@ function toCard(p: Record<string, any>, x: Record<string, any>): MemberCard {
     district: p.district, occupation: p.occupation, company: p.company, industry: p.industry, university: p.university,
     degree: p.degree, height_cm: p.height_cm, political: p.political, religion: p.religion, religion_practice: p.religion_practice,
     marriage_timeline: p.marriage_timeline, kids: p.kids, drinking: p.drinking, smoking: p.smoking, relocation: p.relocation,
-    zodiac: { sun: p.zodiac_sun, moon: p.zodiac_moon, rising: p.zodiac_rising, element: ELEMENT[p.zodiac_sun] ?? null },
+    zodiac: { sun: p.zodiac_sun, moon: p.zodiac_moon, rising: p.zodiac_rising, element: ELEMENT[p.zodiac_sun] ?? null,
+      placements: p.natal_placements, chart_path: p.natal_chart_path },
     headline: p.headline, bio: p.bio, prompts: p.prompts ?? [], interests: p.interests ?? [], photos: p.photos ?? [],
     voice_intro_path: p.voice_intro_path, linkedin_url: p.linkedin_url, verified: p.verification_status === 'approved',
   };
