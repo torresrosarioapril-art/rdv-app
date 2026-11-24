@@ -84,7 +84,10 @@ function Member() {
       <PendingScreen status={status} onRefresh={refresh} suspended />
     );
   }
-  if (editing || status.verification_status === 'incomplete' || status.verification_status === 'rejected') {
+  if (status.verification_status === 'rejected') {
+    return <PendingScreen status={status} onRefresh={refresh} rejected />;
+  }
+  if (editing || status.verification_status === 'incomplete' || status.verification_status === 'changes_requested') {
     return <SetupWizard status={status} onDone={() => { setEditing(false); refresh(); }} onCancel={status.verification_status === 'approved' || status.verification_status === 'pending' ? () => setEditing(false) : undefined} />;
   }
   if (status.verification_status === 'pending') {

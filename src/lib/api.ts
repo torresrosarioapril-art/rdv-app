@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 export type Gender = 'man' | 'woman';
 export type Privacy = 'exact' | 'blur' | 'ghost';
 export type Plan = 'free' | 'plan1' | 'plan2';
-export type Verification = 'incomplete' | 'pending' | 'approved' | 'rejected';
+export type Verification = 'incomplete' | 'pending' | 'approved' | 'rejected' | 'changes_requested';
 
 export interface Prompt { key: string; question: string; answer: string }
 
@@ -73,6 +73,7 @@ export interface Status {
   verification_status: Verification;
   is_suspended: boolean;
   rejection_reason: string | null;
+  review_note: string | null;
   plan: Plan;
   limits: PlanLimits;
   trial_ends_at: string | null;

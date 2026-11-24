@@ -20,6 +20,7 @@ Deno.serve(async (req) => {
     video = v.data?.signedUrl ?? '';
   }
   const rows = [
+    ['Status', data.resubmission ? 'Resubmitted after changes' : 'New application'],
     ['Name (profile)', s?.name], ['Legal name', s?.legal_name], ['Birth date', s?.birth_date], ['Age', s?.age],
     ['Gender', s?.gender], ['Nationality', s?.nationality], ['City', s?.city], ['Occupation', s?.occupation],
     ['LinkedIn', s?.linkedin_url], ['Joined via', `${s?.signup_method ?? ''}${s?.invited_by_code ? ` (${s.invited_by_code})` : ''}`],
@@ -27,17 +28,20 @@ Deno.serve(async (req) => {
 
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:560px">
-      <h2 style="color:#0a1322">New member to verify</h2>
+      <h2 style="color:#0a1322">${data.resubmission ? 'Resubmitted application' : 'New member to verify'}</h2>
+      ${data.resubmission && data.previous_note ? `<p style="background:#fff7e0;padding:10px;border-radius:8px"><b>You asked for:</b> ${esc(data.previous_note)}</p>` : ''}
       <table>${rows}</table>
       ${video ? `<p><a href="${video}">▶ Watch the ID video</a> (link valid 7 days)</p>` : '<p><b>No video found.</b></p>'}
       <p style="margin-top:24px">
         <a href="${base}?token=${data.approve_token}" style="background:#c9a24a;color:#0a1322;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:bold">Approve</a>
         &nbsp;&nbsp;
+        <a href="${base}?token=${data.changes_token}" style="border:1px solid #c9a24a;color:#8a6d1f;padding:10px 18px;border-radius:8px;text-decoration:none">Request changes</a>
+        &nbsp;&nbsp;
         <a href="${base}?token=${data.reject_token}" style="border:1px solid #c33;color:#c33;padding:10px 18px;border-radius:8px;text-decoration:none">Reject</a>
       </p>
-      <p style="color:#888;font-size:12px">Each link opens a confirmation page in the RDV app (with the ID video). The first reviewer to act decides; the other link then stops working.</p>
+      <p style="color:#888;font-size:12px">Each link opens a confirmation page in the RDV app (with the ID video). Request changes sends the application back with your note; Reject is final. The first reviewer to act decides.</p>
     </div>`;
 
-  if (inbox) await sendEmail(inbox, `RDV verification: ${s?.name ?? 'new member'}`, html);
+  if (inbox) await sendEmail(inbox, `RDV verification${data.resubmission ? ' (resubmitted)' : ''}: ${s?.name ?? 'new member'}`, html);
   return json({ ok: true });
 });

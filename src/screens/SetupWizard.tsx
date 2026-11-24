@@ -101,7 +101,7 @@ export default function SetupWizard({ status, onDone, onCancel }: { status: Stat
       astroSync();
       if (approved) { toast('Profile updated'); onDone(); return; }
       const r = await submitForReview();
-      if (r.ok || r.status === 'pending') { toast('Application sent for review'); onDone(); }
+      if (r.ok || r.status === 'pending') { toast(status.verification_status === 'changes_requested' ? 'Thanks! Your updated application was sent for review' : 'Application sent for review'); onDone(); }
       else if (r.missing?.length) toast('Still missing: ' + r.missing.join(', ').replaceAll('_', ' '), 'err');
       else onDone();
     } catch (e) { toast(e instanceof Error ? e.message : 'Could not submit', 'err'); }
@@ -130,8 +130,12 @@ export default function SetupWizard({ status, onDone, onCancel }: { status: Stat
             ))}
           </div>
           <h1 className="text-xl font-display mt-3">{STEPS[step]}</h1>
-          {status.verification_status === 'rejected' && step === 0 && (
-            <p className="mt-2 text-sm text-rose-600 dark:text-rose-300">Your last application wasn't approved{status.rejection_reason ? `: ${status.rejection_reason}` : '.'} Please update it and resubmit.</p>
+          {status.verification_status === 'changes_requested' && (
+            <div className="mt-2 rounded-xl border border-gold/50 bg-gold/10 p-3 text-sm">
+              <div className="text-[10px] uppercase tracking-widest text-gold mb-0.5">Our team asked you to update your application</div>
+              <p className="whitespace-pre-line">{status.review_note}</p>
+              <p className="text-xs text-slate-500 mt-1">Make the change, then go to the last step and submit again.</p>
+            </div>
           )}
         </div>
       </div>

@@ -4,14 +4,21 @@ import type { Status } from '@/lib/api';
 import { BRAND, SUPPORT } from '@/config/app';
 import { Button, Card } from '@/components/ui';
 
-export default function PendingScreen({ status, onRefresh, onEdit, suspended }: {
-  status: Status; onRefresh: () => void; onEdit?: () => void; suspended?: boolean;
+export default function PendingScreen({ status, onRefresh, onEdit, suspended, rejected }: {
+  status: Status; onRefresh: () => void; onEdit?: () => void; suspended?: boolean; rejected?: boolean;
 }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="max-w-md w-full text-center space-y-4">
         <img src={BRAND.logo} alt="" className="w-14 h-14 rounded-full mx-auto" />
-        {suspended ? (
+        {rejected ? (
+          <>
+            <ShieldAlert className="w-7 h-7 text-rose-500 mx-auto" />
+            <h1 className="text-2xl font-display">Your application wasn't approved</h1>
+            {status.rejection_reason && <p className="text-sm rounded-xl bg-slate-50 dark:bg-navy-3 p-3">{status.rejection_reason}</p>}
+            <p className="text-sm text-slate-500 dark:text-slate-400">If you believe this is a mistake, contact <a className="text-gold" href={`mailto:${SUPPORT.email}`}>{SUPPORT.email}</a>.</p>
+          </>
+        ) : suspended ? (
           <>
             <ShieldAlert className="w-7 h-7 text-rose-500 mx-auto" />
             <h1 className="text-2xl font-display">Account on hold</h1>

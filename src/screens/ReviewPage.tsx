@@ -26,8 +26,9 @@ export default function ReviewPage() {
     finally { setBusy(false); }
   };
 
-  const labels: Record<string, string> = { approve: 'Approve member', reject: 'Reject application', action: 'Suspend reported member', dismiss: 'Dismiss report' };
+  const labels: Record<string, string> = { approve: 'Approve member', changes: 'Request changes', reject: 'Reject application (final)', action: 'Suspend reported member', dismiss: 'Dismiss report' };
   const danger = info?.action === 'reject' || info?.action === 'action';
+  const needsNote = info?.action === 'changes';
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -66,11 +67,12 @@ export default function ReviewPage() {
               </div>
             )}
             {info.action !== 'approve' && (
-              <Field label={info.action === 'reject' ? 'Reason shown to the member' : 'Note'} optional>
+              <Field label={needsNote ? 'What should the member change?' : info.action === 'reject' ? 'Reason shown to the member' : 'Note'} optional={!needsNote}
+                hint={needsNote ? 'They see this note at the top of their application, e.g. "Your video is too dark, please re-record in good light."' : info.action === 'reject' ? 'Rejection is final: they cannot resubmit. Use Request changes if they can fix the problem.' : undefined}>
                 <Textarea value={reason} onChange={(e) => setReason(e.target.value)} />
               </Field>
             )}
-            <Button className="w-full" variant={danger ? 'danger' : 'gold'} busy={busy} onClick={confirm}>Confirm: {labels[info.action]}</Button>
+            <Button className="w-full" variant={danger ? 'danger' : 'gold'} busy={busy} disabled={needsNote && !reason.trim()} onClick={confirm}>Confirm: {labels[info.action]}</Button>
           </>
         )}
       </Card>
