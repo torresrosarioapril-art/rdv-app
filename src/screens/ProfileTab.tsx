@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import {
   Copy, Crown, ImagePlus, Lock, LogOut, MapPin, Pencil, Plus, RefreshCw, Shield, ShieldCheck, Trash2, UserX,
@@ -119,43 +119,64 @@ function LookingFor({ priv, onEdit }: { priv: Record<string, any>; onEdit: () =>
 function PhotoManager({ photos, name, onChange }: { photos: string[]; name: string; onChange: () => void }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const save = async (next: string[]) => {
+  const [list, setList] = useState<string[]>(photos);
+  const input = useRef<HTMLInputElement | null>(null);
+  useEffect(() => { setList(photos); }, [photos]);
+
+  const persist = async (next: string[], ok?: string) => {
+    const prev = list;
+    setList(next); // show the change straight away
     setBusy(true);
-    try { await saveProfile({ photos: next }, {}); onChange(); }
-    catch (e) { toast(e instanceof Error ? e.message : 'Could not save', 'err'); }
+    try { await saveProfile({ photos: next }, {}); if (ok) toast(ok); onChange(); }
+    catch (e) { setList(prev); toast(e instanceof Error ? e.message : 'Could not save', 'err'); }
     finally { setBusy(false); }
   };
-  const add = async (file: File) => {
-    if (photos.length >= 6) return toast('Up to 6 photos', 'err');
+
+  const add = async (files: FileList | null) => {
+    const picked = Array.from(files ?? []).slice(0, 6 - list.length);
+    if (!picked.length) return;
     setBusy(true);
-    try { const path = await uploadFile('photos', file, (file.name.split('.').pop() || 'jpg').toLowerCase()); await saveProfile({ photos: [...photos, path] }, {}); onChange(); toast('Photo added'); }
-    catch (e) { toast(e instanceof Error ? e.message : 'Upload failed', 'err'); }
-    finally { setBusy(false); }
+    try {
+      const paths: string[] = [];
+      for (const file of picked) {
+        if (file.size > 10 * 1024 * 1024) { toast(`${file.name} is over 10 MB`, 'err'); continue; }
+        const ext = (file.name.split('.').pop() || (file.type.split('/')[1] ?? 'jpg')).toLowerCase();
+        paths.push(await uploadFile('photos', file, ext));
+      }
+      if (paths.length) await persist([...list, ...paths], paths.length > 1 ? `${paths.length} photos added` : 'Photo added');
+    } catch (e) {
+      toast(e instanceof Error ? `Upload failed: ${e.message}` : 'Upload failed', 'err');
+    } finally {
+      setBusy(false);
+      if (input.current) input.current.value = '';
+    }
   };
+
   return (
     <Card>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-display text-lg">My photos <span className="text-sm text-slate-500 font-sans">{photos.length} / 6</span></h3>
+        <h3 className="font-display text-lg">My photos <span className="text-sm text-slate-500 font-sans">{list.length} / 6</span></h3>
+        {list.length < 6 && <Button variant="outline" className="!py-1.5 text-xs" busy={busy} onClick={() => input.current?.click()}><ImagePlus className="w-4 h-4" />Add photos</Button>}
       </div>
+      <input ref={input} type="file" accept="image/*" multiple className="sr-only" onChange={(e) => add(e.target.files)} />
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-        {photos.map((p, i) => (
-          <div key={p} className="relative aspect-[3/4] rounded-xl overflow-hidden group">
+        {list.map((p, i) => (
+          <div key={p} className="relative aspect-[3/4] rounded-xl overflow-hidden">
             <Photo path={p} alt={name} className="w-full h-full" />
             {i === 0 ? <span className="absolute left-1 top-1"><Badge>Main</Badge></span>
-              : <button disabled={busy} onClick={() => save([p, ...photos.filter((x) => x !== p)])} className="absolute left-1 bottom-1 rounded-md bg-black/60 text-white text-[10px] px-1.5 py-0.5 cursor-pointer">Make main</button>}
-            {photos.length > 1 && (
-              <button disabled={busy} onClick={() => save(photos.filter((x) => x !== p))} className="absolute right-1 top-1 p-1 rounded-md bg-black/60 text-white cursor-pointer" aria-label="Remove photo"><Trash2 className="w-3 h-3" /></button>
+              : <button disabled={busy} onClick={() => persist([p, ...list.filter((x) => x !== p)], 'Main photo updated')} className="absolute left-1 bottom-1 rounded-md bg-black/60 text-white text-[10px] px-1.5 py-0.5 cursor-pointer">Make main</button>}
+            {list.length > 1 && (
+              <button disabled={busy} onClick={() => persist(list.filter((x) => x !== p), 'Photo removed')} className="absolute right-1 top-1 p-1 rounded-md bg-black/60 text-white cursor-pointer" aria-label="Remove photo"><Trash2 className="w-3 h-3" /></button>
             )}
           </div>
         ))}
-        {photos.length < 6 && (
-          <label className="aspect-[3/4] rounded-xl border-2 border-dashed border-slate-300 dark:border-white/15 flex flex-col items-center justify-center gap-1 text-[11px] text-slate-500 cursor-pointer hover:border-gold">
-            <ImagePlus className="w-5 h-5" />{busy ? 'Saving…' : 'Add'}
-            <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) add(f); e.target.value = ''; }} />
-          </label>
+        {list.length < 6 && (
+          <button type="button" disabled={busy} onClick={() => input.current?.click()} className="aspect-[3/4] rounded-xl border-2 border-dashed border-slate-300 dark:border-white/15 flex flex-col items-center justify-center gap-1 text-[11px] text-slate-500 cursor-pointer hover:border-gold">
+            <ImagePlus className="w-5 h-5" />{busy ? 'Uploading…' : 'Add'}
+          </button>
         )}
       </div>
-      <p className="text-xs text-slate-500 mt-2">Add up to 6 clear, recent photos. The first one is shown on your card and the radar.</p>
+      <p className="text-xs text-slate-500 mt-2">Add up to 6 clear, recent photos (you can pick several at once). The first one is shown on your card and the radar.</p>
     </Card>
   );
 }
