@@ -183,7 +183,7 @@ function PlanCard({ status }: { status: Status }) {
 
   const [preferred, setPreferred] = useState<string | null>(null);
   useEffect(() => { supabase.from('profile_private').select('preferred_plan').eq('user_id', status.user_id).single().then(({ data }) => setPreferred(data?.preferred_plan ?? null)); }, [status.user_id]);
-  const pending = !paid && (preferred === 'plan1' || preferred === 'plan2') ? preferred : null;
+  const pending = !paid && (preferred === 'plan1' || preferred === 'plan2') && !(status.comp && (status.comp.plan === preferred || status.comp.plan === 'plan2')) ? preferred : null;
   return (
     <Card className="space-y-4">
       {pending && plans?.[pending] && (
@@ -197,7 +197,8 @@ function PlanCard({ status }: { status: Status }) {
           <div className="text-[11px] uppercase tracking-widest text-gold">Your plan</div>
           <h2 className="text-2xl font-display flex items-center gap-2"><Crown className="w-5 h-5 text-gold" />{status.limits.label}</h2>
           <p className="text-sm text-slate-500 mt-1">
-            {status.in_trial && !paid && status.trial_ends_at ? `Full-access trial until ${new Date(status.trial_ends_at).toLocaleDateString()}, then the free plan unless you upgrade.`
+            {status.comp && !paid ? `${status.comp.label ?? 'Complimentary'}: ${plans?.[status.comp.plan]?.label ?? 'Regular'} free until ${new Date(status.comp.until).toLocaleDateString()}. Thank you for helping us test.`
+              : status.in_trial && !paid && status.trial_ends_at ? `Full-access trial until ${new Date(status.trial_ends_at).toLocaleDateString()}, then the free plan unless you upgrade.`
               : paid && sub?.current_period_end ? `${sub.cancel_at_period_end ? 'Ends' : 'Renews'} on ${new Date(sub.current_period_end).toLocaleDateString()}.`
               : 'Free plan. Upgrade anytime.'}
           </p>
@@ -214,7 +215,7 @@ function PlanCard({ status }: { status: Status }) {
           {(['free', 'plan1', 'plan2'] as const).map((k) => {
             const p = plans[k];
             if (!p) return null;
-            const current = k === 'free' ? !paid && !status.in_trial : paid && sub?.plan === k;
+            const current = k === 'free' ? status.plan === 'free' : paid ? sub?.plan === k : status.comp?.plan === k;
             if (k === 'free') {
               return (
                 <div key={k} className={cx('rounded-xl border p-4', current ? 'border-gold' : 'border-slate-200 dark:border-white/10')}>
@@ -224,7 +225,7 @@ function PlanCard({ status }: { status: Status }) {
                     <li>{p.drops_per_week} curated 75%+ drops a week</li>
                     <li>Radar: up to {p.radar_cap}</li>
                   </ul>
-                  <div className="text-xs mt-3 text-slate-500">{current ? 'Your current plan' : status.in_trial && !paid ? 'You move to this after your trial unless you upgrade' : 'Always available, no payment'}</div>
+                  <div className="text-xs mt-3 text-slate-500">{current ? 'Your current plan' : (status.in_trial || status.comp) && !paid ? 'You move to this afterwards unless you upgrade' : 'Always available, no payment'}</div>
                 </div>
               );
             }

@@ -73,6 +73,7 @@ export interface Status {
   limits: PlanLimits;
   trial_ends_at: string | null;
   in_trial: boolean;
+  comp: { plan: Plan; until: string; label: string | null } | null;
   subscription: { plan: Plan; status: string; current_period_end: string | null; cancel_at_period_end: boolean } | null;
   swipe_credits: number;
   safe_zones_enabled: boolean;
