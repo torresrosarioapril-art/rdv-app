@@ -281,8 +281,9 @@ export async function signedUrl(bucket: 'photos' | 'voice' | 'verification' | 'c
   return data.signedUrl;
 }
 
-export async function uploadFile(bucket: 'photos' | 'voice' | 'verification', file: Blob, ext: string) {
-  const uid = (await supabase.auth.getUser()).data.user?.id;
+export async function uploadFile(bucket: 'photos' | 'voice' | 'verification', file: Blob, ext: string, knownUid?: string) {
+  // Pass the member id when known: avoids an auth round-trip that can stall on iOS right after the photo picker closes.
+  const uid = knownUid ?? (await supabase.auth.getUser()).data.user?.id;
   if (!uid) throw new Error('Not signed in');
   const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await supabase.storage.from(bucket).upload(path, file, {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import {
   Copy, Crown, ImagePlus, Lock, LogOut, MapPin, Pencil, Plus, RefreshCw, Shield, ShieldCheck, Trash2, UserX,
@@ -41,7 +41,7 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
           <p className="text-xs text-slate-500 mb-4">This is how other members see you.</p>
           {card ? <ProfileView m={card} self /> : <Spinner />}
         </Card>
-        {data && <PhotoManager photos={data.profile.photos ?? []} name={data.profile.display_name} onChange={loadMe} />}
+        {data && <PhotoManager uid={data.profile.id} photos={data.profile.photos ?? []} name={data.profile.display_name} onChange={loadMe} />}
         {data && <LookingFor priv={data.priv} onEdit={onEditProfile} />}
       </div>
 
@@ -116,50 +116,62 @@ function LookingFor({ priv, onEdit }: { priv: Record<string, any>; onEdit: () =>
   );
 }
 
-function PhotoManager({ photos, name, onChange }: { photos: string[]; name: string; onChange: () => void }) {
+function PhotoManager({ uid, photos, name, onChange }: { uid: string; photos: string[]; name: string; onChange: () => void }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [list, setList] = useState<string[]>(photos);
-  const input = useRef<HTMLInputElement | null>(null);
   useEffect(() => { setList(photos); }, [photos]);
 
   const persist = async (next: string[], ok?: string) => {
     const prev = list;
-    setList(next); // show the change straight away
+    setList(next);
     setBusy(true);
     try { await saveProfile({ photos: next }, {}); if (ok) toast(ok); onChange(); }
     catch (e) { setList(prev); toast(e instanceof Error ? e.message : 'Could not save', 'err'); }
     finally { setBusy(false); }
   };
 
-  const add = async (files: FileList | null) => {
-    const picked = Array.from(files ?? []).slice(0, 6 - list.length);
+  const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const el = e.currentTarget;
+    const picked = Array.from(el.files ?? []).slice(0, 6 - list.length);
+    el.value = '';
     if (!picked.length) return;
+    toast(picked.length > 1 ? `Uploading ${picked.length} photos…` : 'Uploading photo…');
     setBusy(true);
     try {
       const paths: string[] = [];
       for (const file of picked) {
-        if (file.size > 10 * 1024 * 1024) { toast(`${file.name} is over 10 MB`, 'err'); continue; }
-        const ext = (file.name.split('.').pop() || (file.type.split('/')[1] ?? 'jpg')).toLowerCase();
-        paths.push(await uploadFile('photos', file, ext));
+        if (file.size > 10 * 1024 * 1024) { toast('A photo is over 10 MB and was skipped', 'err'); continue; }
+        const ext = ((file.name.includes('.') ? file.name.split('.').pop() : file.type.split('/')[1]) || 'jpg').toLowerCase();
+        paths.push(await uploadFile('photos', file, ext, uid));
       }
       if (paths.length) await persist([...list, ...paths], paths.length > 1 ? `${paths.length} photos added` : 'Photo added');
-    } catch (e) {
-      toast(e instanceof Error ? `Upload failed: ${e.message}` : 'Upload failed', 'err');
+    } catch (err) {
+      toast(err instanceof Error ? `Upload failed: ${err.message}` : 'Upload failed', 'err');
     } finally {
       setBusy(false);
-      if (input.current) input.current.value = '';
     }
   };
+
+  // The file input sits directly on top of the tap target (transparent), which is the most reliable way to
+  // open the picker and receive the chosen photo on iPhone.
+  // A plain element (not an inner component) so it is never re-created while the picker is open.
+  const pickerOverlay = (
+    <input type="file" accept="image/*" multiple disabled={busy} onChange={onPick}
+      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" aria-label="Add photos" />
+  );
 
   return (
     <Card>
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-display text-lg">My photos <span className="text-sm text-slate-500 font-sans">{list.length} / 6</span></h3>
-        {list.length < 6 && <Button variant="outline" className="!py-1.5 text-xs" busy={busy} onClick={() => input.current?.click()}><ImagePlus className="w-4 h-4" />Add photos</Button>}
+        {list.length < 6 && (
+          <div className="relative">
+            <Button variant="outline" className="!py-1.5 text-xs pointer-events-none" busy={busy}><ImagePlus className="w-4 h-4" />Add photos</Button>
+            {pickerOverlay}
+          </div>
+        )}
       </div>
-      <input ref={input} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-hidden="true"
-        onChange={(e) => add(e.currentTarget.files)} />
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
         {list.map((p, i) => (
           <div key={p} className="relative aspect-[3/4] rounded-xl overflow-hidden">
@@ -172,9 +184,10 @@ function PhotoManager({ photos, name, onChange }: { photos: string[]; name: stri
           </div>
         ))}
         {list.length < 6 && (
-          <button type="button" disabled={busy} onClick={() => input.current?.click()} className="aspect-[3/4] rounded-xl border-2 border-dashed border-slate-300 dark:border-white/15 flex flex-col items-center justify-center gap-1 text-[11px] text-slate-500 cursor-pointer hover:border-gold">
+          <div className="relative aspect-[3/4] rounded-xl border-2 border-dashed border-slate-300 dark:border-white/15 flex flex-col items-center justify-center gap-1 text-[11px] text-slate-500 hover:border-gold">
             <ImagePlus className="w-5 h-5" />{busy ? 'Uploading…' : 'Add'}
-          </button>
+            {pickerOverlay}
+          </div>
         )}
       </div>
       <p className="text-xs text-slate-500 mt-2">Add up to 6 clear, recent photos (you can pick several at once). The first one is shown on your card and the radar.</p>

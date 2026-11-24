@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Briefcase, Flag, GraduationCap, Link2, MapPin, Ruler, ShieldCheck, Sparkles, Star } from 'lucide-react';
+import { Briefcase, Flag, GraduationCap, Heart, Link2, MapPin, Ruler, ShieldCheck, Sparkles, Star } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import { signedUrl, type MemberCard } from '@/lib/api';
 import { HABITS, KIDS, POLITICAL, RELOCATION, TIMELINE, labelOf } from '@/config/app';
 import { Badge, Photo, cx } from './ui';
@@ -76,7 +77,7 @@ export function ProfileView({ m, compact, self }: { m: MemberCard; compact?: boo
           {m.political && <Fact k="Outlook" v={labelOf(POLITICAL, m.political)} />}
         </div>
 
-        <BirthChart z={m.zodiac} self={self} />
+        <BirthChart z={m.zodiac} self={self} targetId={m.id} />
 
         {!compact && answered.map((p) => (
           <div key={p.key} className="rounded-xl bg-slate-50 dark:bg-navy-3 p-4">
@@ -102,16 +103,56 @@ const GLYPH: Record<string, string> = {
   Aries: '♈', Taurus: '♉', Gemini: '♊', Cancer: '♋', Leo: '♌', Virgo: '♍', Libra: '♎', Scorpio: '♏',
   Sagittarius: '♐', Capricorn: '♑', Aquarius: '♒', Pisces: '♓',
 };
-const ord = (n: number) => `${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}`;
 
-/** Birth chart: sun/moon/rising and planet placements, plus the chart wheel when available. */
-function BirthChart({ z, self }: { z: MemberCard['zodiac']; self?: boolean }) {
-  const [wheel, setWheel] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
-  useEffect(() => { signedUrl('charts', z?.chart_path).then(setWheel); }, [z?.chart_path]);
+/** How someone loves (Venus sign). */
+const VENUS: Record<string, string> = {
+  Aries: 'Loves boldly and makes the first move; wants passion and honesty.',
+  Taurus: 'Loyal and sensual; shows love through time, touch and steady care.',
+  Gemini: 'Falls for the mind first; needs conversation, wit and variety.',
+  Cancer: 'Nurturing and devoted; love means home, family and emotional safety.',
+  Leo: 'Warm and generous; loves big and wants to feel adored in return.',
+  Virgo: 'Shows love through thoughtful acts; values reliability and care in the details.',
+  Libra: 'Romantic and fair-minded; seeks harmony, beauty and true partnership.',
+  Scorpio: 'Intense and all-in; craves deep trust and emotional closeness.',
+  Sagittarius: 'Free-spirited and honest; wants a partner who is also a best friend and adventure-mate.',
+  Capricorn: 'Committed for the long run; love is built patiently and proven over time.',
+  Aquarius: 'Loves through friendship and freedom; needs space, ideas and authenticity.',
+  Pisces: 'Tender and romantic; loves with empathy, devotion and imagination.',
+};
+
+/** What attracts someone and how they pursue (Mars sign). */
+const MARS: Record<string, string> = {
+  Aries: 'Drawn to confidence; pursues directly.',
+  Taurus: 'Drawn to calm, grounded people; pursues slowly and surely.',
+  Gemini: 'Drawn to a quick mind; flirts with words.',
+  Cancer: 'Drawn to kindness and warmth; protects the people they love.',
+  Leo: 'Drawn to self-assured charisma; pursues with grand gestures.',
+  Virgo: 'Drawn to competence and integrity; shows interest through helpfulness.',
+  Libra: 'Drawn to elegance and good manners; pursues with charm.',
+  Scorpio: 'Drawn to depth and mystery; pursues with focus and intensity.',
+  Sagittarius: 'Drawn to optimism and curiosity; pursues through shared adventures.',
+  Capricorn: 'Drawn to ambition and maturity; pursues with clear intentions.',
+  Aquarius: 'Drawn to originality; pursues through friendship first.',
+  Pisces: 'Drawn to gentleness and creativity; pursues through romance and intuition.',
+};
+
+const ELEMENT_MATCH: Record<string, string> = {
+  same: 'Same element: you tend to understand each other naturally.',
+  complementary: 'Complementary elements: you balance and energise each other.',
+  contrasting: 'Contrasting elements: different rhythms that can teach each other a lot.',
+};
+
+/** Birth chart: sun, moon, rising, and love compatibility (instead of houses and the wheel). */
+function BirthChart({ z, self, targetId }: { z: MemberCard['zodiac']; self?: boolean; targetId: string }) {
+  const [match, setMatch] = useState<any>(null);
+  useEffect(() => {
+    if (self) return;
+    supabase.rpc('zodiac_match', { p_target: targetId }).then(({ data }) => setMatch(data ?? null));
+  }, [self, targetId]);
   if (!z?.sun) return null;
   const big3: [string, string | null][] = [['Sun', z.sun], ['Moon', z.moon], ['Rising', z.rising]];
-  const others = (z.placements ?? []).filter((p) => !['Sun', 'Moon', 'Rising'].includes(p.point));
+  const venus = z.placements?.find((p) => p.point === 'Venus')?.sign ?? null;
+  const mars = z.placements?.find((p) => p.point === 'Mars')?.sign ?? null;
   const full = !!z.moon;
   return (
     <div className="rounded-xl border border-gold/30 bg-gold/5 p-4 space-y-3">
@@ -128,23 +169,28 @@ function BirthChart({ z, self }: { z: MemberCard['zodiac']; self?: boolean }) {
           </div>
         ))}
       </div>
-      {others.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {others.map((p) => (
-            <span key={p.point} className="text-xs rounded-full border border-gold/30 px-2 py-0.5">
-              {p.point} in {p.sign}{p.house ? ` · ${ord(p.house)} house` : ''}{p.retrograde ? ' · Rx' : ''}
-            </span>
-          ))}
+
+      {!self && match && (
+        <div className="rounded-lg bg-white/60 dark:bg-navy-3 p-3">
+          <div className="text-[10px] uppercase tracking-widest text-gold mb-1 flex items-center gap-1"><Heart className="w-3 h-3" />Your zodiac match</div>
+          {match.source === 'synastry' && match.band ? (
+            <p className="text-sm"><b>{match.band}</b> chart-to-chart compatibility{match.score != null ? ` (${Math.round(match.score)}/100)` : ''}, based on both full birth charts.</p>
+          ) : match.element_match ? (
+            <p className="text-sm">{match.my_sun} × {match.their_sun}: {ELEMENT_MATCH[match.element_match]}</p>
+          ) : <p className="text-sm text-slate-500">Not enough birth details yet.</p>}
         </div>
       )}
-      {wheel && (
-        <>
-          <button onClick={() => setOpen((o) => !o)} className="text-xs text-gold cursor-pointer">{open ? 'Hide chart wheel' : 'Show chart wheel'}</button>
-          {open && <img src={wheel} alt="Birth chart wheel" className="w-full max-w-md mx-auto rounded-xl bg-navy" />}
-        </>
+
+      {(venus || mars) && (
+        <div className="space-y-2">
+          <div className="text-[10px] uppercase tracking-widest text-gold">{self ? 'Your love style' : 'Their love style'}</div>
+          {venus && <p className="text-sm"><span className="text-gold">♀ Venus in {venus}:</span> {VENUS[venus]}</p>}
+          {mars && <p className="text-sm"><span className="text-gold">♂ Mars in {mars}:</span> {MARS[mars]}</p>}
+        </div>
       )}
+
       {!full && self && (
-        <p className="text-xs text-slate-500">Add your time and city of birth (Edit profile → Marriage & lifestyle) for your full chart: moon, rising and planets. It also makes your match compatibility more accurate.</p>
+        <p className="text-xs text-slate-500">Add your time and city of birth (Edit profile → Marriage & lifestyle) for your full chart and love style. It also makes your match compatibility more accurate.</p>
       )}
       {!full && !self && <p className="text-[11px] text-slate-500">Sun sign only. They haven't added birth time and place.</p>}
     </div>
