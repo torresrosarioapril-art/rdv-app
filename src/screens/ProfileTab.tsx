@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import {
-  Copy, Crown, ImagePlus, Lock, LogOut, MapPin, Pencil, Plus, RefreshCw, Shield, ShieldCheck, Trash2, UserX,
+  Bell, Copy, Crown, Eye, ImagePlus, Lock, LogOut, MapPin, Pencil, Plus, RefreshCw, Shield, ShieldCheck, Trash2, UserX,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
   addSafeZone, astroSync, cancelConsultation, manageSubscription, deleteAccount, deleteSafeZone, listSafeZones, myProfile, requestConsultation,
-  saveProfile, startCheckout, uploadFile, type MemberCard, type Status,
+  saveNotifyPrefs, saveProfile, startCheckout, uploadFile, type MemberCard, type NotifyPrefs, type Status,
 } from '@/lib/api';
 import { ANDROID_IOS_RATING, SIGNUP_COPY, SUPPORT } from '@/config/app';
-import { Badge, Button, Card, Field, Input, Modal, Photo, Spinner, cx, useAction, useToast } from '@/components/ui';
+import { Badge, Button, Card, Field, Input, Modal, Photo, Spinner, Toggle, cx, useAction, useToast } from '@/components/ui';
 import { ProfileView } from '@/components/ProfileView';
 import { SafetyStandardsModal } from '@/components/SafetyStandardsModal';
 
@@ -18,6 +18,7 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
 }) {
   const [data, setData] = useState<{ profile: Record<string, any>; priv: Record<string, any> } | null>(null);
   const [safety, setSafety] = useState(false);
+  const [preview, setPreview] = useState(false);
   const loadMe = () => myProfile().then(setData).catch(() => {});
   useEffect(() => {
     loadMe();
@@ -36,7 +37,10 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
               <h1 className="text-2xl font-display">My profile</h1>
               <Badge tone="green"><ShieldCheck className="w-3 h-3" />Verified</Badge>
             </div>
-            <Button variant="outline" onClick={onEditProfile}><Pencil className="w-4 h-4" />Edit profile</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setPreview(true)} disabled={!card}><Eye className="w-4 h-4" />Preview</Button>
+              <Button variant="outline" onClick={onEditProfile}><Pencil className="w-4 h-4" />Edit profile</Button>
+            </div>
           </div>
           <p className="text-xs text-slate-500 mb-4">This is how other members see you.</p>
           {card ? <ProfileView m={card} self /> : <Spinner />}
@@ -57,9 +61,15 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
             <a href={`mailto:${status.support?.email ?? SUPPORT.email}`}><Button variant="outline">Contact support</Button></a>
           </div>
         </Card>
+        {data && <NotificationSettings uid={data.profile.id} initial={data.priv.notify_prefs} />}
         <Account />
       </div>
       <SafetyStandardsModal isOpen={safety} onClose={() => setSafety(false)} />
+      <Modal open={preview} onClose={() => setPreview(false)} wide>
+        <div className="text-[11px] uppercase tracking-widest text-gold mb-3">Preview: how members see your profile</div>
+        {card && <ProfileView m={card} preview />}
+        <p className="text-[11px] text-slate-500 mt-3">Members also see your compatibility score with them and your zodiac match.</p>
+      </Modal>
     </div>
   );
 }
@@ -396,6 +406,35 @@ function Referral({ status }: { status: Status }) {
         <Button variant="outline" onClick={() => { navigator.clipboard.writeText(link); toast('Invite link copied'); }}><Copy className="w-4 h-4" />Copy link</Button>
         {'share' in navigator && <Button variant="outline" onClick={() => navigator.share({ title: 'Join me on Rendez-vous', url: link }).catch(() => {})}>Share</Button>}
       </div>
+    </Card>
+  );
+}
+
+const NOTIFY_ROWS: [keyof NotifyPrefs, string, string][] = [
+  ['messages', 'New messages', 'Texts, voice notes and photos from your matches'],
+  ['matches', 'New matches', 'When someone you liked likes you back'],
+  ['invitations', 'Pings & invitations', 'Date invitations, answers and new times'],
+  ['drops', 'Curated drops', 'When your weekly 75%+ matches arrive'],
+  ['radar', 'Radar connections', 'When someone nearby connects with you'],
+];
+
+function NotificationSettings({ uid, initial }: { uid: string; initial?: NotifyPrefs | null }) {
+  const toast = useToast();
+  const [prefs, setPrefs] = useState<NotifyPrefs>(initial ?? { messages: true, matches: true, drops: true, invitations: true, radar: true });
+  const toggle = async (k: keyof NotifyPrefs, v: boolean) => {
+    const next = { ...prefs, [k]: v };
+    setPrefs(next);
+    try { await saveNotifyPrefs(uid, next); } catch (e) { setPrefs(prefs); toast(e instanceof Error ? e.message : 'Could not save', 'err'); }
+  };
+  return (
+    <Card className="space-y-3">
+      <h3 className="font-display text-lg flex items-center gap-2"><Bell className="w-5 h-5 text-gold" />Notifications</h3>
+      {NOTIFY_ROWS.map(([k, label, hint]) => (
+        <div key={k} className="flex items-center justify-between gap-3">
+          <div><div className="text-sm">{label}</div><div className="text-[11px] text-slate-500">{hint}</div></div>
+          <Toggle checked={!!prefs[k]} onChange={(v) => toggle(k, v)} label="" />
+        </div>
+      ))}
     </Card>
   );
 }

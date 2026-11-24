@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowLeft, CalendarCheck, CalendarPlus, Check, Clock, Hand, MapPin, MessageCircle, Mic, Send, X,
+  ArrowLeft, CalendarCheck, CalendarPlus, Check, Clock, Hand, ImagePlus, MapPin, MessageCircle, Mic, Send, X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
-  getMyMatches, loadThread, markRead, respondInvitation, sendInvitation, sendMessage, sendPing, sendVoice, signedUrl, uploadFile,
+  getMyMatches, loadThread, markRead, respondInvitation, sendImage, sendInvitation, sendMessage, sendPing, sendVoice, signedUrl, uploadFile,
   type CalendarEvent, type Invitation, type MatchSummary, type Message, type Status,
 } from '@/lib/api';
 import { DatesList } from '@/components/UpcomingDates';
@@ -90,6 +90,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
 function preview(l: NonNullable<MatchSummary['last_message']>) {
   const who = l.mine ? 'You: ' : '';
   if (l.kind === 'voice') return who + 'Voice note';
+  if (l.kind === 'image') return who + 'Photo';
   if (l.kind === 'ping') return who + 'Sent a Ping';
   if (l.kind === 'invitation') return who + 'Sent an invitation';
   return who + (l.body ?? '');
@@ -192,6 +193,7 @@ function Thread({ m, me, gender, onBack, onChanged }: {
         </div>
         <form onSubmit={send} className="flex items-end gap-2">
           <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a message…" maxLength={4000} className="flex-1" />
+          <PhotoButton matchId={m.match_id} me={me} onSent={async () => { await reload(); onChanged(); }} />
           <VoiceButton matchId={m.match_id} onSent={async () => { await reload(); onChanged(); }} />
           <Button type="submit" busy={sending} className="!px-3"><Send className="w-4 h-4" /></Button>
         </form>
@@ -223,6 +225,50 @@ function VoiceButton({ matchId, onSent }: { matchId: string; onSent: () => void 
   );
 }
 
+function PhotoButton({ matchId, me, onSent }: { matchId: string; me: string; onSent: () => void }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.currentTarget.files ?? []).slice(0, 4);
+    e.currentTarget.value = '';
+    if (!files.length) return;
+    setBusy(true);
+    toast(files.length > 1 ? `Sending ${files.length} photos…` : 'Sending photo…');
+    try {
+      for (const f of files) {
+        if (f.size > 10 * 1024 * 1024) { toast('A photo is over 10 MB and was skipped', 'err'); continue; }
+        await sendImage(matchId, me, f);
+      }
+      onSent();
+    } catch (err) { toast(err instanceof Error ? err.message : 'Photo not sent', 'err'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="relative">
+      <Button type="button" variant="outline" className="!px-3 pointer-events-none" busy={busy} title="Send a photo"><ImagePlus className="w-4 h-4" /></Button>
+      <input type="file" accept="image/*" multiple disabled={busy} onChange={pick} aria-label="Send a photo"
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+    </div>
+  );
+}
+
+function ChatImage({ path }: { path: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  useEffect(() => { signedUrl('chat', path).then(setUrl); }, [path]);
+  if (!url) return <div className="w-48 h-48 rounded-xl bg-black/10 animate-pulse" />;
+  return (
+    <>
+      <button onClick={() => setOpen(true)} className="block cursor-pointer"><img src={url} alt="Photo" className="max-w-[220px] max-h-72 rounded-xl object-cover" /></button>
+      {open && (
+        <div className="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+          <img src={url} alt="Photo" className="max-w-full max-h-full rounded-xl" />
+        </div>
+      )}
+    </>
+  );
+}
+
 function VoiceNote({ path, seconds }: { path: string; seconds: number | null }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => { signedUrl('voice', path).then(setUrl); }, [path]);
@@ -250,12 +296,13 @@ function Bubble({ x, mine, inv, me, partnerName, partnerId, act }: {
     <div className={cx('flex group', mine ? 'justify-end' : 'justify-start')}>
       <div className={cx('max-w-[78%] rounded-2xl px-4 py-2.5 text-sm', mine ? 'bg-gold text-navy rounded-br-md' : 'bg-slate-100 dark:bg-navy-3 rounded-bl-md')}>
         {x.is_hidden ? <i className="opacity-70">Hidden pending review</i>
+          : x.kind === 'image' && x.image_path ? <><ChatImage path={x.image_path} />{x.body && <span className="block mt-1 whitespace-pre-wrap">{x.body}</span>}</>
           : x.kind === 'voice' && x.voice_path ? <VoiceNote path={x.voice_path} seconds={x.voice_seconds} /> : <span className="whitespace-pre-wrap">{x.body}</span>}
         <div className={cx('text-[10px] mt-1', mine ? 'text-navy/60' : 'text-slate-500')}>{new Date(x.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}{mine && x.read_at ? ' · Read' : ''}</div>
       </div>
       {!mine && !x.is_hidden && (
         <div className="self-center ml-0.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition">
-          <SafetyMenu compact memberId={partnerId} name={partnerName} target={x.kind === 'voice' ? 'voice' : 'message'} refId={x.id} />
+          <SafetyMenu compact memberId={partnerId} name={partnerName} target={x.kind === 'voice' ? 'voice' : x.kind === 'image' ? 'image' : 'message'} refId={x.id} />
         </div>
       )}
     </div>

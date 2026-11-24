@@ -7,7 +7,7 @@ import { Button, Field, Modal, Select, Textarea, Toggle, useAction } from './ui'
 /** Report & block (Apple Guideline 1.2). */
 export function SafetyMenu({ memberId, name, onDone, target = 'profile', refId, compact }: {
   memberId: string; name: string; onDone?: () => void;
-  target?: 'profile' | 'photo' | 'message' | 'voice'; refId?: string | null; compact?: boolean;
+  target?: 'profile' | 'photo' | 'message' | 'voice' | 'image'; refId?: string | null; compact?: boolean;
 }) {
   const [open, setOpen] = useState<'report' | 'block' | null>(null);
   const [reason, setReason] = useState('');
@@ -38,7 +38,7 @@ export function SafetyMenu({ memberId, name, onDone, target = 'profile', refId, 
         </div>
       </Modal>
 
-      <Modal open={open === 'report'} onClose={() => setOpen(null)} title={target === 'message' || target === 'voice' ? `Report this ${target === 'voice' ? 'voice note' : 'message'}` : `Report ${name}`}>
+      <Modal open={open === 'report'} onClose={() => setOpen(null)} title={target === 'message' || target === 'voice' || target === 'image' ? `Report this ${target === 'voice' ? 'voice note' : target === 'image' ? 'photo' : 'message'}` : `Report ${name}`}>
         <div className="space-y-4">
           <Field label="Reason"><Select options={REPORT_REASONS} value={reason} onChange={(e) => setReason(e.target.value)} /></Field>
           <Field label="What happened?" optional><Textarea value={details} onChange={(e) => setDetails(e.target.value)} maxLength={2000} /></Field>

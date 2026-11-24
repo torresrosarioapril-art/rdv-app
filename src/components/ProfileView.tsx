@@ -16,7 +16,7 @@ export function ScoreBadge({ score, band }: { score?: number; band?: string }) {
 }
 
 /** Full member profile as other members see it. */
-export function ProfileView({ m, compact, self }: { m: MemberCard; compact?: boolean; self?: boolean }) {
+export function ProfileView({ m, compact, self, preview }: { m: MemberCard; compact?: boolean; self?: boolean; preview?: boolean }) {
   const [photo, setPhoto] = useState(0);
   const [voice, setVoice] = useState<string | null>(null);
   useEffect(() => { setPhoto(0); signedUrl('voice', m.voice_intro_path).then(setVoice); }, [m.id, m.voice_intro_path]);
@@ -77,7 +77,7 @@ export function ProfileView({ m, compact, self }: { m: MemberCard; compact?: boo
           {m.political && <Fact k="Outlook" v={labelOf(POLITICAL, m.political)} />}
         </div>
 
-        <BirthChart z={m.zodiac} self={self} targetId={m.id} />
+        <BirthChart z={m.zodiac} self={self} preview={preview} targetId={m.id} />
 
         {!compact && answered.map((p) => (
           <div key={p.key} className="rounded-xl bg-slate-50 dark:bg-navy-3 p-4">
@@ -143,12 +143,12 @@ const ELEMENT_MATCH: Record<string, string> = {
 };
 
 /** Birth chart: sun, moon, rising, and love compatibility (instead of houses and the wheel). */
-function BirthChart({ z, self, targetId }: { z: MemberCard['zodiac']; self?: boolean; targetId: string }) {
+function BirthChart({ z, self, preview, targetId }: { z: MemberCard['zodiac']; self?: boolean; preview?: boolean; targetId: string }) {
   const [match, setMatch] = useState<any>(null);
   useEffect(() => {
-    if (self) return;
+    if (self || preview) return;
     supabase.rpc('zodiac_match', { p_target: targetId }).then(({ data }) => setMatch(data ?? null));
-  }, [self, targetId]);
+  }, [self, preview, targetId]);
   if (!z?.sun) return null;
   const big3: [string, string | null][] = [['Sun', z.sun], ['Moon', z.moon], ['Rising', z.rising]];
   const venus = z.placements?.find((p) => p.point === 'Venus')?.sign ?? null;
@@ -183,7 +183,7 @@ function BirthChart({ z, self, targetId }: { z: MemberCard['zodiac']; self?: boo
 
       {(venus || mars) && (
         <div className="space-y-2">
-          <div className="text-[10px] uppercase tracking-widest text-gold">{self ? 'Your love style' : 'Their love style'}</div>
+          <div className="text-[10px] uppercase tracking-widest text-gold">{self ? 'Your love style' : preview ? 'Love style' : 'Their love style'}</div>
           {venus && <p className="text-sm"><span className="text-gold">♀ Venus in {venus}:</span> {VENUS[venus]}</p>}
           {mars && <p className="text-sm"><span className="text-gold">♂ Mars in {mars}:</span> {MARS[mars]}</p>}
         </div>

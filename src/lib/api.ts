@@ -104,8 +104,8 @@ export interface MatchSummary {
 
 export interface Message {
   id: string; match_id: string; sender_id: string | null;
-  kind: 'text' | 'voice' | 'ping' | 'invitation' | 'system';
-  body: string | null; voice_path: string | null; voice_seconds: number | null;
+  kind: 'text' | 'voice' | 'ping' | 'invitation' | 'system' | 'image';
+  body: string | null; voice_path: string | null; voice_seconds: number | null; image_path?: string | null;
   invitation_id: string | null; is_hidden: boolean; created_at: string; read_at: string | null;
 }
 
@@ -151,6 +151,11 @@ export async function myProfile() {
   ]);
   friendly(p.error); friendly(x.error);
   return { profile: p.data as Record<string, any>, priv: x.data as Record<string, any> };
+}
+
+export type NotifyPrefs = { messages: boolean; matches: boolean; drops: boolean; invitations: boolean; radar: boolean };
+export async function saveNotifyPrefs(uid: string, prefs: NotifyPrefs) {
+  friendly((await supabase.from('profile_private').update({ notify_prefs: prefs }).eq('user_id', uid)).error);
 }
 
 export async function saveProfile(profile: Record<string, unknown>, priv: Record<string, unknown>) {
@@ -206,6 +211,13 @@ export const getMyMatches = () => rpc<MatchSummary[]>('get_my_matches');
 export const sendMessage = (match: string, body: string) => rpc<string>('send_message', { p_match: match, p_body: body });
 export const sendVoice = (match: string, path: string, seconds: number) =>
   rpc<string>('send_message', { p_match: match, p_body: null, p_voice_path: path, p_voice_seconds: seconds });
+export async function sendImage(match: string, uid: string, file: File, caption?: string) {
+  const ext = ((file.name.includes('.') ? file.name.split('.').pop() : file.type.split('/')[1]) || 'jpg').toLowerCase();
+  const path = `${match}/${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from('chat').upload(path, file, { contentType: file.type || undefined, upsert: false });
+  friendly(error);
+  return rpc<string>('send_message', { p_match: match, p_body: caption ?? null, p_image_path: path });
+}
 export const markRead = (match: string) => rpc<void>('mark_read', { p_match: match });
 export const sendPing = (match: string) => rpc<string>('send_ping', { p_match: match });
 export const sendInvitation = (match: string, at: Date, venue: string, lat?: number | null, lng?: number | null) =>
@@ -230,7 +242,7 @@ export async function myCalendar() {
 
 // ---------- Safety ----------
 export const blockMember = (target: string) => rpc<void>('block_member', { p_target: target });
-export async function reportMember(target: string, type: 'profile' | 'photo' | 'message' | 'voice', reason: string,
+export async function reportMember(target: string, type: 'profile' | 'photo' | 'message' | 'voice' | 'image', reason: string,
   ref?: string | null, details?: string, block = true) {
   const id = await rpc<string>('report_member', { p_target: target, p_type: type, p_reason: reason, p_ref: ref ?? null,
     p_details: details ?? null, p_block: block });
@@ -281,7 +293,7 @@ export function astroSync() {
 // ---------- Storage ----------
 const urlCache = new Map<string, { url: string; exp: number }>();
 
-export async function signedUrl(bucket: 'photos' | 'voice' | 'verification' | 'charts', path: string | null | undefined) {
+export async function signedUrl(bucket: 'photos' | 'voice' | 'verification' | 'charts' | 'chat', path: string | null | undefined) {
   if (!path) return null;
   const key = `${bucket}/${path}`;
   const hit = urlCache.get(key);
