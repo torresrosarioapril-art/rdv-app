@@ -1,0 +1,79 @@
+import { useEffect, useState } from 'react';
+import { CheckCircle2, ShieldCheck, XCircle } from 'lucide-react';
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, BRAND } from '@/config/app';
+import { Button, Card, Field, Spinner, Textarea } from '@/components/ui';
+
+/** One-tap review links from the shared inbox open here (no sign-in needed; the link itself is the key). */
+export default function ReviewPage() {
+  const token = new URLSearchParams(window.location.search).get('token') ?? '';
+  const endpoint = `${SUPABASE_URL}/functions/v1/review`;
+  const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' };
+  const [info, setInfo] = useState<any>(null);
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<{ ok: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    fetch(`${endpoint}?token=${encodeURIComponent(token)}`, { headers }).then((r) => r.json()).then(setInfo).catch(() => setInfo({ valid: false }));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const confirm = async () => {
+    setBusy(true);
+    try {
+      const r = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify({ token, reason }) });
+      setDone(await r.json());
+    } catch { setDone({ ok: false, message: 'Network error. Please try again.' }); }
+    finally { setBusy(false); }
+  };
+
+  const labels: Record<string, string> = { approve: 'Approve member', reject: 'Reject application', action: 'Suspend reported member', dismiss: 'Dismiss report' };
+  const danger = info?.action === 'reject' || info?.action === 'action';
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="max-w-lg w-full space-y-4">
+        <div className="flex items-center gap-2"><img src={BRAND.logo} alt="" className="w-8 h-8 rounded-full" /><span className="text-xs uppercase tracking-widest text-gold">Review team</span></div>
+        {!info ? <Spinner /> : done ? (
+          <div className="text-center py-6">
+            {done.ok ? <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" /> : <XCircle className="w-10 h-10 text-rose-500 mx-auto" />}
+            <p className="mt-3">{done.message}</p>
+          </div>
+        ) : !info.valid ? (
+          <p className="py-6 text-center">This link has already been used, or it expired.</p>
+        ) : (
+          <>
+            <h1 className="text-2xl font-display">{labels[info.action] ?? info.action}</h1>
+            {info.type === 'verification' ? (
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  {info.photo && <img src={info.photo} alt="" className="w-20 h-24 object-cover rounded-xl" />}
+                  <dl className="text-sm space-y-0.5">
+                    <div><b>{info.member.name}</b> ({info.member.legal_name})</div>
+                    <div>{info.member.gender}, {info.member.age} · born {info.member.birth_date}</div>
+                    <div>{info.member.nationality} · {info.member.city} · {info.member.occupation}</div>
+                    <div className="text-slate-500">Joined via {info.member.signup_method}{info.member.invited_by_code ? ` (${info.member.invited_by_code})` : ''} · status {info.status}</div>
+                    {info.member.linkedin_url && <a className="text-gold" href={info.member.linkedin_url} target="_blank" rel="noreferrer">LinkedIn</a>}
+                  </dl>
+                </div>
+                {info.video ? <video src={info.video} controls playsInline className="w-full rounded-xl bg-black max-h-80" /> : <p className="text-rose-500 text-sm">No ID video found.</p>}
+                <p className="text-xs text-slate-500 flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" />Check the face matches the ID, the name and the 18+ birth date.</p>
+              </div>
+            ) : (
+              <div className="text-sm space-y-1">
+                <div><b>Reason:</b> {info.report?.reason} ({info.report?.priority})</div>
+                <div><b>About:</b> a {info.report?.target_type}</div>
+                {info.report?.details && <p className="rounded-xl bg-slate-50 dark:bg-navy-3 p-3">{info.report.details}</p>}
+              </div>
+            )}
+            {info.action !== 'approve' && (
+              <Field label={info.action === 'reject' ? 'Reason shown to the member' : 'Note'} optional>
+                <Textarea value={reason} onChange={(e) => setReason(e.target.value)} />
+              </Field>
+            )}
+            <Button className="w-full" variant={danger ? 'danger' : 'gold'} busy={busy} onClick={confirm}>Confirm: {labels[info.action]}</Button>
+          </>
+        )}
+      </Card>
+    </div>
+  );
+}

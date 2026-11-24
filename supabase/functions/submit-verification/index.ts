@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   const { data: s } = await db.rpc('_review_summary', { p_user: uid });
   const { data: cfg } = await db.from('app_config').select('value').eq('key', 'support').single();
   const inbox = Deno.env.get('REVIEW_INBOX') ?? cfg?.value?.verify_inbox;
-  const base = `${Deno.env.get('SUPABASE_URL')}/functions/v1/review`;
+  const base = `${Deno.env.get('APP_URL') ?? 'https://rdv-app-lac.vercel.app'}/review`;
   let video = '';
   if (s?.video_path) {
     const v = await db.storage.from('verification').createSignedUrl(s.video_path, 60 * 60 * 24 * 7);
@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
         &nbsp;&nbsp;
         <a href="${base}?token=${data.reject_token}" style="border:1px solid #c33;color:#c33;padding:10px 18px;border-radius:8px;text-decoration:none">Reject</a>
       </p>
-      <p style="color:#888;font-size:12px">Each link opens a confirmation page. The first reviewer to act decides; the other link then stops working.</p>
+      <p style="color:#888;font-size:12px">Each link opens a confirmation page in the RDV app (with the ID video). The first reviewer to act decides; the other link then stops working.</p>
     </div>`;
 
   if (inbox) await sendEmail(inbox, `RDV verification: ${s?.name ?? 'new member'}`, html);

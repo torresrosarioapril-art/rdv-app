@@ -12,6 +12,7 @@ import MatchesTab from '@/screens/MatchesTab';
 import RadarTab from '@/screens/RadarTab';
 import ChatTab from '@/screens/ChatTab';
 import ProfileTab from '@/screens/ProfileTab';
+import ReviewPage from '@/screens/ReviewPage';
 
 export type Tab = 'radar' | 'matches' | 'chat' | 'profile';
 
@@ -35,6 +36,11 @@ export default function App() {
 }
 
 function Root() {
+  if (window.location.pathname.startsWith('/review')) return <ReviewPage />;
+  return <Member />;
+}
+
+function Member() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [status, setStatus] = useState<Status | null>(null);
   const [editing, setEditing] = useState(false);
