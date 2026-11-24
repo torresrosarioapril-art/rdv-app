@@ -258,8 +258,13 @@ export async function startCheckout(item: 'plan1' | 'plan2' | 'safe_zones' | 'sw
 }
 
 /** Builds the natal chart and zodiac synastry scores in the background (no-op if nothing to do). */
+let astroInFlight: Promise<unknown> | null = null;
+let astroLast = 0;
 export function astroSync() {
-  supabase.functions.invoke('astro-sync', { body: {} }).catch(() => {});
+  // One call at a time, at most once a minute (RapidAPI rate limits)
+  if (astroInFlight || Date.now() - astroLast < 60_000) return;
+  astroLast = Date.now();
+  astroInFlight = supabase.functions.invoke('astro-sync', { body: {} }).catch(() => {}).finally(() => { astroInFlight = null; });
 }
 
 // ---------- Storage ----------
