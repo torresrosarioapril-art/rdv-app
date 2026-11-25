@@ -16,15 +16,15 @@ export function ScoreBadge({ score, band }: { score?: number; band?: string }) {
 }
 
 /** Full member profile as other members see it. */
-export function ProfileView({ m, compact, self, preview }: { m: MemberCard; compact?: boolean; self?: boolean; preview?: boolean }) {
+export function ProfileView({ m, compact, self, preview, noPhotos }: { m: MemberCard; compact?: boolean; self?: boolean; preview?: boolean; noPhotos?: boolean }) {
   const [photo, setPhoto] = useState(0);
   const [voice, setVoice] = useState<string | null>(null);
   useEffect(() => { setPhoto(0); signedUrl('voice', m.voice_intro_path).then(setVoice); }, [m.id, m.voice_intro_path]);
   const answered = (m.prompts ?? []).filter((p) => p.answer?.trim());
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
-      <div className="md:col-span-2 space-y-2">
+    <div className={cx('grid grid-cols-1 gap-5', !noPhotos && 'md:grid-cols-5')}>
+      {!noPhotos && <div className="md:col-span-2 space-y-2">
         <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-navy-3">
           <Photo path={m.photos?.[photo]} alt={m.name} className="w-full h-full" />
           <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/85 to-transparent text-white">
@@ -54,9 +54,9 @@ export function ProfileView({ m, compact, self, preview }: { m: MemberCard; comp
             <audio src={voice} controls className="w-full h-9" />
           </div>
         )}
-      </div>
+      </div>}
 
-      <div className="md:col-span-3 space-y-4">
+      <div className={cx('space-y-4', !noPhotos && 'md:col-span-3')}>
         {m.headline && <p className="font-display text-lg">{m.headline}</p>}
         <div className="flex flex-wrap gap-1.5 text-xs">
           {m.occupation && <Badge tone="slate"><Briefcase className="w-3 h-3" />{m.occupation}{m.company ? ` · ${m.company}` : ''}</Badge>}

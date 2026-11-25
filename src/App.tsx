@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { Compass, Heart, MessageCircle, Moon, Sun, UserRound, Crown, EyeOff, Waves } from 'lucide-react';
+import { Compass, Heart, MessageCircle, UserRound, Crown, EyeOff, Settings, Waves } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { myCalendar, myStatus, setPrivacy, updateMyLocation, type CalendarEvent, type Privacy, type Status } from '@/lib/api';
 import { BRAND, VISIBILITY } from '@/config/app';
@@ -14,8 +14,9 @@ import ChatTab from '@/screens/ChatTab';
 import ProfileTab from '@/screens/ProfileTab';
 import ReviewPage from '@/screens/ReviewPage';
 import { NextDateBanner } from '@/components/UpcomingDates';
+import { NotificationBell } from '@/components/NotificationBell';
 
-export type Tab = 'radar' | 'matches' | 'chat' | 'profile';
+export type Tab = 'radar' | 'matches' | 'chat' | 'profile' | 'settings';
 
 function useTheme() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -138,8 +139,10 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
   useBackgroundLocation(status, refresh);
 
   const openChat = (matchId: string) => { setOpenMatch(matchId); setTab('chat'); };
-  const openPlan = () => { setTab('profile'); setTimeout(() => document.getElementById('plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); };
+  const openPlan = () => { setTab('settings'); setTimeout(() => document.getElementById('plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); };
 
+  // Free and trial members get a small Upgrade pill; paying members and founders don't
+  const showUpgrade = !status.comp && (status.plan === 'free' || status.in_trial);
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'radar', label: 'Radar', icon: <Compass className="w-5 h-5" /> },
     { id: 'matches', label: 'Matches', icon: <Heart className="w-5 h-5" /> },
@@ -161,7 +164,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
           <nav className="hidden sm:flex items-center gap-1">
             {tabs.map((t) => (
               <button key={t.id} onClick={() => setTab(t.id)} className={cx('relative flex items-center gap-2 px-3 py-2 rounded-xl text-sm cursor-pointer',
-                tab === t.id ? 'bg-gold/15 text-gold' : 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5')}>
+                (tab === t.id || (t.id === 'profile' && tab === 'settings')) ? 'bg-gold/15 text-gold' : 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5')}>
                 {t.icon}{t.label}
                 {t.id === 'chat' && unread > 0 && <span className="ml-1 rounded-full bg-gold text-navy text-[10px] px-1.5">{unread}</span>}
               </button>
@@ -169,11 +172,15 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
           </nav>
           <div className="flex items-center gap-1 shrink-0">
             <VisibilityShortcut status={status} refresh={refresh} />
-            <button title="Theme" onClick={toggleTheme} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer">
-              {theme === 'dark' ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
-            </button>
-            <button title="Your plan" onClick={openPlan} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gold/40 text-gold text-xs cursor-pointer">
-              <Crown className="w-3.5 h-3.5" /><span className="hidden sm:inline">{status.limits.label}{status.comp ? ' · founder' : status.in_trial ? ' · trial' : ''}</span>
+            {showUpgrade && (
+              <button title="See plans" onClick={openPlan} className="flex items-center gap-1 px-2 py-1 rounded-full bg-gold text-navy text-[11px] font-semibold cursor-pointer">
+                <Crown className="w-3.5 h-3.5" />Upgrade
+              </button>
+            )}
+            <NotificationBell uid={status.user_id} onOpenChat={openChat} onOpenRadar={() => setTab('radar')} />
+            <button title="Settings" aria-label="Settings" onClick={() => setTab('settings')}
+              className={cx('p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer', tab === 'settings' && 'text-gold')}>
+              <Settings className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -184,12 +191,13 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
         {tab === 'matches' && <MatchesTab status={status} onOpenChat={openChat} />}
         {tab === 'radar' && <RadarTab status={status} refreshStatus={refresh} onOpenChat={openChat} onOpenPlan={openPlan} />}
         {tab === 'chat' && <ChatTab status={status} openMatch={openMatch} setOpenMatch={setOpenMatch} onRead={() => setUnread(0)} events={events} onDatesChanged={loadEvents} />}
-        {tab === 'profile' && <ProfileTab status={status} refresh={refresh} onEditProfile={onEditProfile} />}
+        {(tab === 'profile' || tab === 'settings') && <ProfileTab view={tab} status={status} refresh={refresh} onEditProfile={onEditProfile}
+          theme={theme} onToggleTheme={toggleTheme} onOpenSettings={() => setTab('settings')} onBack={() => setTab('profile')} />}
       </main>
 
       <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-navy-2/95 backdrop-blur border-t border-slate-200 dark:border-white/10 grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
         {tabs.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={cx('relative flex flex-col items-center gap-0.5 py-2.5 text-[11px] cursor-pointer', tab === t.id ? 'text-gold' : 'text-slate-500')}>
+          <button key={t.id} onClick={() => setTab(t.id)} className={cx('relative flex flex-col items-center gap-0.5 py-2.5 text-[11px] cursor-pointer', (tab === t.id || (t.id === 'profile' && tab === 'settings')) ? 'text-gold' : 'text-slate-500')}>
             {t.icon}{t.label}
             {t.id === 'chat' && unread > 0 && <span className="absolute top-1.5 right-[30%] w-2 h-2 rounded-full bg-gold" />}
           </button>

@@ -269,7 +269,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
 }
 
 /** Nearby match alerts: get told when a visible match comes within your chosen distance. */
-function NearbyAlerts({ uid }: { uid: string }) {
+export function NearbyAlerts({ uid }: { uid: string }) {
   const toast = useToast();
   const [pref, setPref] = useState<NearbyAlert | null>(null);
   useEffect(() => { getNearbyAlert(uid).then(setPref).catch(() => setPref({ enabled: false, radius_m: 500, min_score: 75 })); }, [uid]);
@@ -310,7 +310,7 @@ function NearbyAlerts({ uid }: { uid: string }) {
 }
 
 /** One collapsible row of the Radar settings list: same look for every setting. */
-function SettingRow({ icon, title, summary, children }: { icon: React.ReactNode; title: string; summary: string; children: React.ReactNode }) {
+export function SettingRow({ icon, title, summary, children }: { icon: React.ReactNode; title: string; summary: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div>

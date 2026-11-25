@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import {
-  Bell, Copy, Crown, Eye, ImagePlus, Lock, LogOut, MapPin, Pencil, Plus, Shield, ShieldCheck, Trash2, UserX,
+  ArrowLeft, Bell, Copy, Crown, Eye, ImagePlus, Lock, LogOut, MapPin, Moon, Pencil, Plus, Shield, ShieldCheck, Sun, Trash2, UserX,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
@@ -13,9 +13,11 @@ import { Badge, Button, Card, Field, Input, Modal, Photo, Spinner, Toggle, cx, u
 import { ProfileView } from '@/components/ProfileView';
 import { Recorder } from '@/components/Recorder';
 import { SafetyStandardsModal } from '@/components/SafetyStandardsModal';
+import { NearbyAlerts, SettingRow } from '@/screens/RadarTab';
 
-export default function ProfileTab({ status, refresh, onEditProfile }: {
-  status: Status; refresh: () => Promise<void>; onEditProfile: (step?: number) => void;
+export default function ProfileTab({ view = 'profile', status, refresh, onEditProfile, theme, onToggleTheme, onOpenSettings, onBack }: {
+  view?: 'profile' | 'settings'; status: Status; refresh: () => Promise<void>; onEditProfile: (step?: number) => void;
+  theme: 'dark' | 'light'; onToggleTheme: () => void; onOpenSettings: () => void; onBack: () => void;
 }) {
   const [data, setData] = useState<{ profile: Record<string, any>; priv: Record<string, any> } | null>(null);
   const [safety, setSafety] = useState(false);
@@ -29,44 +31,98 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
   }, [status.user_id]);
   const card = data ? toCard(data.profile, data.priv) : null;
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <div className="lg:col-span-2 space-y-5">
-        <Card>
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-display">My profile</h1>
-              <Badge tone="green"><ShieldCheck className="w-3 h-3" />Verified</Badge>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setPreview(true)} disabled={!card}><Eye className="w-4 h-4" />Preview</Button>
-              <Button variant="outline" onClick={() => onEditProfile(1)}><Pencil className="w-4 h-4" />Edit profile</Button>
-            </div>
-          </div>
-          <p className="text-xs text-slate-500 mb-4">This is how other members see you.</p>
-          {card ? <ProfileView m={card} self /> : <Spinner />}
-        </Card>
-        {data && <PhotoManager uid={data.profile.id} photos={data.profile.photos ?? []} name={data.profile.display_name} onChange={loadMe} />}
-        {data && <VoiceIntro uid={data.profile.id} path={data.profile.voice_intro_path ?? null} onChange={loadMe} />}
-        {data && <LookingFor priv={data.priv} onEdit={() => onEditProfile(3)} />}
-      </div>
-
-      <div className="space-y-5">
+  if (view === 'settings') {
+    return (
+      <div className="max-w-2xl mx-auto space-y-4">
+        <div className="flex items-center gap-2">
+          <button onClick={onBack} className="p-1.5 -ml-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer" aria-label="Back to profile"><ArrowLeft className="w-5 h-5" /></button>
+          <h1 className="text-2xl font-display">Settings</h1>
+        </div>
         <div id="plan" className="scroll-mt-20"><PlanCard status={status} refresh={refresh} /></div>
         {status.plan === 'plan2' && <Consultations status={status} refresh={refresh} />}
+        <SectionTitle>Visibility & safety on the radar</SectionTitle>
+        <Card className="!p-0 divide-y divide-slate-200 dark:divide-white/10 overflow-hidden">
+          <SettingRow icon={<Shield className="w-4 h-4" />} title="Safe Zones" summary={status.safe_zones_enabled ? 'Automatic Ghost at your saved places' : 'Locked · one-time add-on'}>
+            <SafeZones status={status} bare />
+          </SettingRow>
+          <NearbyAlerts uid={status.user_id} />
+        </Card>
+        <p className="text-[11px] text-slate-500 -mt-2">To switch between Visible and Ghost, use the eye button at the top of every screen.</p>
+        <SectionTitle>Notifications</SectionTitle>
+        {data && <NotificationSettings uid={data.profile.id} initial={data.priv.notify_prefs} />}
+        <SectionTitle>Invite friends</SectionTitle>
         <Referral status={status} />
+        <SectionTitle>Appearance</SectionTitle>
+        <Card className="!p-3.5 flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2 text-sm">{theme === 'dark' ? <Moon className="w-4 h-4 text-gold" /> : <Sun className="w-4 h-4 text-gold" />}Dark mode</span>
+          <Toggle checked={theme === 'dark'} onChange={onToggleTheme} label="" />
+        </Card>
+        <SectionTitle>Safety & support</SectionTitle>
         <Card className="space-y-3">
-          <h3 className="font-display text-lg">Safety & support</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">Report or block anyone from their profile or chat. Reports go to our review team, and intimate images shared without consent are hidden immediately. Rated {ANDROID_IOS_RATING}.</p>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setSafety(true)}><Shield className="w-4 h-4" />Community standards</Button>
             <a href={`mailto:${status.support?.email ?? SUPPORT.email}`}><Button variant="outline">Contact support</Button></a>
           </div>
         </Card>
-        {data && <NotificationSettings uid={data.profile.id} initial={data.priv.notify_prefs} />}
+        <SectionTitle>Account</SectionTitle>
         <Account />
+        <SafetyStandardsModal isOpen={safety} onClose={() => setSafety(false)} />
       </div>
-      <SafetyStandardsModal isOpen={safety} onClose={() => setSafety(false)} />
+    );
+  }
+
+  const p = data?.profile;
+  const checks: [boolean, string, number | string][] = p ? [
+    [(p.photos ?? []).length >= 3, 'Add at least 3 photos', 'photos'],
+    [!!p.voice_intro_path, 'Record a voice intro', 'voice'],
+    [!!p.headline, 'Write a headline', 4],
+    [(p.bio ?? '').length >= 40, 'Tell your story', 4],
+    [(p.prompts ?? []).filter((x: any) => x.answer?.trim()).length >= 3, 'Answer 3 prompts', 4],
+    [(p.interests ?? []).length >= 3, 'Pick a few interests', 4],
+  ] : [];
+  const done = checks.filter((c) => c[0]).length;
+  const pct = checks.length ? Math.round((done / checks.length) * 100) : 0;
+  const next = checks.find((c) => !c[0]);
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-4">
+      {/* Summary: who you are, how complete, preview + edit */}
+      <Card className="!p-4 space-y-3">
+        <div className="flex items-center gap-3">
+          <Photo path={p?.photos?.[0]} alt={p?.display_name ?? '?'} className="w-16 h-16 rounded-full shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-xl font-display truncate">{p?.display_name ?? 'My profile'}{card?.age ? `, ${card.age}` : ''}</h1>
+              <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" aria-label="Verified" />
+            </div>
+            <div className="text-xs text-slate-500 truncate">{[p?.occupation, p?.district ?? p?.city].filter(Boolean).join(' · ')}</div>
+          </div>
+        </div>
+        {checks.length > 0 && (
+          <div className="space-y-1">
+            <div className="flex justify-between text-[11px]"><span className="text-slate-500">Profile {pct}% complete</span>
+              {next && <button className="text-gold cursor-pointer" onClick={() => typeof next[2] === 'string' ? document.getElementById(next[2])?.scrollIntoView({ behavior: 'smooth', block: 'center' }) : onEditProfile(next[2])}>{next[1]} →</button>}</div>
+            <div className="h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden"><div className="h-full bg-gold rounded-full" style={{ width: `${pct}%` }} /></div>
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" onClick={() => setPreview(true)} disabled={!card}><Eye className="w-4 h-4" />Preview</Button>
+          <Button onClick={() => onEditProfile(1)}><Pencil className="w-4 h-4" />Edit profile</Button>
+        </div>
+      </Card>
+
+      {data && <div id="photos"><PhotoManager uid={data.profile.id} photos={data.profile.photos ?? []} name={data.profile.display_name} onChange={loadMe} /></div>}
+      {data && <div id="voice"><VoiceIntro uid={data.profile.id} path={data.profile.voice_intro_path ?? null} onChange={loadMe} /></div>}
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display text-lg">About me</h3>
+          <button onClick={() => onEditProfile(4)} className="text-xs text-gold flex items-center gap-1 cursor-pointer"><Pencil className="w-3.5 h-3.5" />Edit</button>
+        </div>
+        {card ? <ProfileView m={card} self noPhotos /> : <Spinner />}
+      </Card>
+      {data && <LookingFor priv={data.priv} onEdit={() => onEditProfile(3)} />}
+
       <Modal open={preview} onClose={() => setPreview(false)} wide>
         <div className="text-[11px] uppercase tracking-widest text-gold mb-3">Preview: how members see your profile</div>
         {card && <ProfileView m={card} preview />}
@@ -74,6 +130,10 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
       </Modal>
     </div>
   );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="text-[11px] uppercase tracking-widest text-gold pt-2">{children}</h2>;
 }
 
 function ageOf(d?: string | null) {
