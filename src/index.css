@@ -16,6 +16,8 @@
 @layer base {
   html { background: var(--color-ivory); color: #0f172a; overflow-x: clip; }
   body { overflow-x: clip; }
+  /* Grid/flex children may shrink below their content on phones (stops sideways-scrolling rows from widening the page) */
+  .grid > *, main { min-width: 0; }
   html.dark { background: var(--color-navy); color: #e8ecf3; }
   body { font-family: var(--font-sans); overflow-x: hidden; }
   h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }

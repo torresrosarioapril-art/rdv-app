@@ -150,12 +150,12 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
   return (
     <div className="min-h-screen pb-20 sm:pb-0">
       <header className="sticky top-0 z-40 backdrop-blur bg-ivory/85 dark:bg-navy/85 border-b border-slate-200 dark:border-white/10">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-3">
           <button onClick={() => setTab('matches')} className="flex items-center gap-2 cursor-pointer min-w-0 text-left">
             <img src={BRAND.logo} alt="" className="w-8 h-8 rounded-full shrink-0" />
-            <span className="min-w-0 leading-tight">
+            <span className="min-w-0 overflow-hidden leading-tight">
               <span className="block font-display text-[15px] sm:text-base whitespace-nowrap">{BRAND.name}</span>
-              <span className="block text-[9px] sm:text-[10px] text-gold italic whitespace-nowrap">{BRAND.tagline}</span>
+              <span className="block text-[9px] sm:text-[10px] text-gold italic truncate">{BRAND.tagline}</span>
             </span>
           </button>
           <nav className="hidden sm:flex items-center gap-1">
@@ -167,7 +167,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
               </button>
             ))}
           </nav>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <VisibilityShortcut status={status} refresh={refresh} />
             <button title="Theme" onClick={toggleTheme} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer">
               {theme === 'dark' ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
@@ -180,7 +180,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
       </header>
       <NextDateBanner events={events} onOpen={() => setTab('chat')} />
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {tab === 'matches' && <MatchesTab status={status} onOpenChat={openChat} />}
         {tab === 'radar' && <RadarTab status={status} refreshStatus={refresh} onOpenChat={openChat} onOpenPlan={openPlan} />}
         {tab === 'chat' && <ChatTab status={status} openMatch={openMatch} setOpenMatch={setOpenMatch} onRead={() => setUnread(0)} events={events} onDatesChanged={loadEvents} />}
