@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, MapPin, Search, Sparkles } from 'lucide-react';
 import { GEOCODER_URL } from '@/config/app';
+
+const UAE_BBOX = '51.4,22.5,56.5,26.3'; // minLon,minLat,maxLon,maxLat
 import { listVenues, type Venue } from '@/lib/api';
 import { Field, Input, cx } from './ui';
 
@@ -35,9 +37,15 @@ export function VenueSearch({ value, onChange }: { value: PickedPlace | null; on
     timer.current = window.setTimeout(async () => {
       setLoading(true);
       try {
-        const r = await fetch(`${GEOCODER_URL}?q=${encodeURIComponent(q)}&limit=8&lang=en&lat=${bias.lat}&lon=${bias.lng}`);
-        const j = await r.json();
-        setFound((j.features ?? []).map((f: any) => {
+        // UAE first: search inside the UAE, and only look further if nothing turns up there
+        const base = `${GEOCODER_URL}?q=${encodeURIComponent(q)}&limit=8&lang=en&lat=${bias.lat}&lon=${bias.lng}`;
+        let feats: any[] = (await (await fetch(`${base}&bbox=${UAE_BBOX}`)).json()).features ?? [];
+        if (feats.length < 3) {
+          const more: any[] = (await (await fetch(base)).json()).features ?? [];
+          feats = [...feats, ...more.filter((m) => !feats.some((x) => x.properties?.osm_id === m.properties?.osm_id))];
+        }
+        feats.sort((a, b) => Number(b.properties?.countrycode === 'AE') - Number(a.properties?.countrycode === 'AE'));
+        setFound(feats.slice(0, 8).map((f: any) => {
           const p = f.properties ?? {};
           const detail = [p.street, p.district ?? p.locality, p.city].filter(Boolean).join(', ');
           return { name: p.name ?? detail, detail, lat: +f.geometry.coordinates[1].toFixed(6), lng: +f.geometry.coordinates[0].toFixed(6), venueId: null };

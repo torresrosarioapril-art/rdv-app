@@ -17,7 +17,21 @@ import { VenueSearch, type PickedPlace } from '@/components/VenueSearch';
 
 const fmt = (d: string) => new Date(d).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const toLocalInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-const mapUrl = (i: Invitation) => `https://www.google.com/maps/search/?api=1&query=${i.venue_lat != null && i.venue_lng != null ? `${i.venue_lat},${i.venue_lng}` : encodeURIComponent(i.venue_name)}`;
+// Opens Google Maps on the place by name (e.g. "Eden House DIFC"), kept to the UAE
+const mapUrl = (i: Invitation) => {
+  const name = (i.venue_name ?? '').trim();
+  const q = name ? (/(dubai|abu dhabi|sharjah|ajman|ras al|fujairah|umm al|uae|emirates)/i.test(name) ? name : `${name}, UAE`)
+    : i.venue_lat != null && i.venue_lng != null ? `${i.venue_lat},${i.venue_lng}` : 'Dubai';
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+};
+
+/** Opens the .ics in a new tab, so after "Add to Calendar" the member just closes that tab and is back in the chat. */
+function openIcs(ics: string) {
+  const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+  const w = window.open(url, '_blank');
+  if (!w) { const a = document.createElement('a'); a.href = url; a.download = 'rendez-vous.ics'; a.target = '_blank'; document.body.appendChild(a); a.click(); a.remove(); }
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
 
 function calendarLinks(i: Invitation, partner: string) {
   const start = new Date(i.proposed_at);
@@ -27,7 +41,7 @@ function calendarLinks(i: Invitation, partner: string) {
   const google = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${z(start)}/${z(end)}&location=${encodeURIComponent(i.venue_name)}&details=${encodeURIComponent(mapUrl(i))}`;
   const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Rendez-vous//EN', 'BEGIN:VEVENT', `UID:${i.id}@rendezvous`, `DTSTAMP:${z(new Date())}`,
     `DTSTART:${z(start)}`, `DTEND:${z(end)}`, `SUMMARY:${title}`, `LOCATION:${i.venue_name}`, `DESCRIPTION:${mapUrl(i)}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
-  return { google, ics: 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics) };
+  return { google, ics };
 }
 
 export default function ChatTab({ status, openMatch, setOpenMatch, onRead, events, onDatesChanged }: {
@@ -259,11 +273,13 @@ function PhotoButton({ matchId, me, onSent }: { matchId: string; me: string; onS
     finally { setBusy(false); }
   };
   return (
-    <div className="relative">
-      <Button type="button" variant="outline" className="!px-2.5 sm:!px-3 pointer-events-none" busy={busy} title="Send a photo"><ImagePlus className="w-4 h-4" /></Button>
-      <input type="file" accept="image/*" multiple disabled={busy} onChange={pick} aria-label="Send a photo"
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-    </div>
+    // A label wraps the hidden file input, so only this button opens the photo picker (on iPhone the
+    // invisible input used to spill over the voice button next to it)
+    <label title="Send a photo" aria-label="Send a photo"
+      className={cx('shrink-0 inline-flex items-center justify-center rounded-xl border border-slate-300 dark:border-white/15 px-2.5 sm:px-3 py-2.5 cursor-pointer hover:border-gold', busy && 'opacity-50 pointer-events-none')}>
+      <ImagePlus className="w-4 h-4" />
+      <input type="file" accept="image/*" multiple disabled={busy} onChange={pick} className="sr-only" />
+    </label>
   );
 }
 
@@ -356,7 +372,7 @@ function InvitationCard({ inv, me, partnerName, act }: {
         {inv.status === 'accepted' && (
           <div className="flex flex-wrap gap-2 pt-1">
             <a href={cal.google} target="_blank" rel="noreferrer"><Button variant="outline" className="!py-1.5 text-xs"><CalendarCheck className="w-3.5 h-3.5" />Google Calendar</Button></a>
-            <a href={cal.ics} download="rendez-vous.ics"><Button variant="outline" className="!py-1.5 text-xs"><CalendarPlus className="w-3.5 h-3.5" />Apple / Outlook</Button></a>
+            <Button variant="outline" className="!py-1.5 text-xs" onClick={() => openIcs(cal.ics)}><CalendarPlus className="w-3.5 h-3.5" />Apple / Outlook</Button>
           </div>
         )}
 
