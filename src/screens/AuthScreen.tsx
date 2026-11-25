@@ -1,19 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, KeyRound, Mail, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, Mail, Moon, ShieldCheck, Sun } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { checkInviteCode, signupOptions } from '@/lib/api';
 import { BRAND, SIGNUP_COPY, SUPPORT } from '@/config/app';
 import { Button, Card, Field, Input as BaseInput, cx, useToast } from '@/components/ui';
 
-const Input = (p: React.InputHTMLAttributes<HTMLInputElement>) => (
-  <BaseInput {...p} className={cx('!bg-navy-3 !border-white/15 !text-slate-100 placeholder:!text-slate-500', p.className)} />
-);
+const Input = BaseInput;
 import { CHARTER_VERSION, SafetyStandardsModal } from '@/components/SafetyStandardsModal';
 
 type Mode = 'signin' | 'signup' | 'reset';
 type Route = 'manual' | 'code';
 
-export default function AuthScreen() {
+export default function AuthScreen({ theme, onToggleTheme }: { theme?: 'dark' | 'light'; onToggleTheme?: () => void } = {}) {
   const toast = useToast();
   const params = new URLSearchParams(window.location.search);
   const codeFromLink = params.get(SIGNUP_COPY.codeParam) ?? '';
@@ -79,15 +77,20 @@ export default function AuthScreen() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-navy via-navy to-navy-2">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-ivory via-ivory to-white dark:from-navy dark:via-navy dark:to-navy-2 relative">
+      {onToggleTheme && (
+        <button type="button" onClick={onToggleTheme} title="Light or dark" className="absolute top-4 right-4 p-2 rounded-lg text-slate-500 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer">
+          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
+      )}
       <div className="w-full max-w-md">
-        <div className="text-center mb-8 text-slate-100">
+        <div className="text-center mb-8 text-navy dark:text-slate-100">
           <img src={BRAND.logo} alt="" className="w-20 h-20 mx-auto rounded-full mb-4 shadow-lg shadow-gold/10" />
           <h1 className="text-3xl font-display">{BRAND.name}</h1>
           <p className="text-gold text-sm mt-1 italic">{BRAND.tagline}</p>
         </div>
 
-        <Card className="!bg-navy-2 !border-white/10 text-slate-100">
+        <Card className="text-slate-800 dark:!bg-navy-2 dark:!border-white/10 dark:text-slate-100">
           {sent ? (
             <div className="text-center py-4">
               <Mail className="w-8 h-8 text-gold mx-auto mb-3" />
@@ -96,10 +99,10 @@ export default function AuthScreen() {
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-navy-3">
+              <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-navy-3">
                 {(['signin', 'signup'] as const).map((m) => (
                   <button type="button" key={m} onClick={() => setMode(m)}
-                    className={cx('py-2 rounded-lg text-sm cursor-pointer', mode === m ? 'bg-gold text-navy font-semibold' : 'text-slate-300')}>
+                    className={cx('py-2 rounded-lg text-sm cursor-pointer', mode === m ? 'bg-gold text-navy font-semibold' : 'text-slate-600 dark:text-slate-300')}>
                     {m === 'signin' ? 'Sign in' : 'Join'}
                   </button>
                 ))}
@@ -116,7 +119,7 @@ export default function AuthScreen() {
                     </div>
                   )}
                   {!opts.manual && !codesOpen && (
-                    <p className="text-sm text-slate-300">New memberships are paused right now. Please check back soon.</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">New memberships are paused right now. Please check back soon.</p>
                   )}
                   <Field label="First name"><Input required value={name} onChange={(e) => setName(e.target.value)} autoComplete="given-name" /></Field>
                   {route === 'code' && codesOpen && (
@@ -140,17 +143,17 @@ export default function AuthScreen() {
               )}
 
               {mode === 'signup' && (
-                <div className="rounded-xl border border-gold/30 bg-gold/5 p-3 text-xs text-slate-200 space-y-2">
+                <div className="rounded-xl border border-gold/30 bg-gold/5 p-3 text-xs text-slate-700 dark:text-slate-200 space-y-2">
                   <p>Before you join, please read our Community Charter: real people only, video ID check, zero tolerance for harassment.</p>
                   <div className="flex items-center justify-between gap-2">
                     <button type="button" onClick={() => setCharterOpen(true)} className="text-gold underline cursor-pointer">Read the Community Charter</button>
-                    {charter ? <span className="text-emerald-300">✓ Agreed</span> : <span className="text-slate-400">Not yet agreed</span>}
+                    {charter ? <span className="text-emerald-600 dark:text-emerald-300">✓ Agreed</span> : <span className="text-slate-500 dark:text-slate-400">Not yet agreed</span>}
                   </div>
                 </div>
               )}
 
               {mode === 'signup' && (
-                <label className="flex items-start gap-2 text-xs text-slate-300">
+                <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
                   <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} className="mt-0.5 accent-[#c9a24a]" />
                   I am 18 or older. I understand every member is verified by video ID before appearing to anyone, and that my age is checked during verification.
                 </label>
@@ -160,7 +163,7 @@ export default function AuthScreen() {
                 {mode === 'signin' ? <><KeyRound className="w-4 h-4" /> Sign in</> : mode === 'reset' ? 'Send reset link' : <><ShieldCheck className="w-4 h-4" /> Create my application</>}
               </Button>
 
-              <div className="flex justify-between text-xs text-slate-400">
+              <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                 {mode === 'signin' ? <button type="button" onClick={() => setMode('reset')} className="hover:text-gold cursor-pointer">Forgot password?</button>
                   : <button type="button" onClick={() => setMode('signin')} className="hover:text-gold cursor-pointer">Back to sign in</button>}
                 <a href={`mailto:${SUPPORT.email}`} className="hover:text-gold">Support</a>
@@ -178,9 +181,9 @@ export default function AuthScreen() {
 function RouteOption({ active, onClick, title, hint }: { active: boolean; onClick: () => void; title: string; hint: string }) {
   return (
     <button type="button" onClick={onClick} className={cx('w-full text-left rounded-xl border p-3 cursor-pointer transition',
-      active ? 'border-gold bg-gold/10' : 'border-white/10 hover:border-white/25')}>
+      active ? 'border-gold bg-gold/10' : 'border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/25')}>
       <div className="text-sm font-medium">{title}</div>
-      <div className="text-[11px] text-slate-400 mt-0.5">{hint}</div>
+      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{hint}</div>
     </button>
   );
 }

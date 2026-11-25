@@ -79,7 +79,7 @@ function Member() {
   }, [refresh]);
 
   if (session === undefined) return <Spinner label="Opening Rendez-vous…" />;
-  if (!session) return <AuthScreen />;
+  if (!session) return <AuthScreen theme={theme} onToggleTheme={toggle} />;
   if (!status) return <Spinner label="Loading your membership…" />;
 
   if (status.is_suspended) {
