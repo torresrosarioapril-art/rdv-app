@@ -269,7 +269,7 @@ function StepBasics({ f, set, approved }: StepProps & { approved: boolean }) {
     <Card>
       <Grid>
         <Field label="First name (shown on your profile)"><Input value={f.display_name ?? ''} onChange={(e) => set('display_name', e.target.value)} /></Field>
-        <Field label="Birth date" hint={age != null ? `Age ${age}${f.zodiac_sun ? ` · ${f.zodiac_sun}` : ''}. Locked after verification.` : 'Used for your age and zodiac.'}>
+        <Field label="Birth date" hint={age != null ? `Age ${age}${f.zodiac_sun ? ` · ${f.zodiac_sun}` : ''}. Locked after verification (it was checked against your ID). Time and place of birth can be added anytime under Marriage & lifestyle.` : 'Used for your age and zodiac.'}>
           <Input type="date" value={f.birth_date ?? ''} max={new Date().toISOString().slice(0, 10)} onChange={(e) => set('birth_date', e.target.value)} disabled={approved} />
         </Field>
         <Field label="Gender"><Select options={GENDERS} value={f.gender ?? ''} onChange={(e) => set('gender', e.target.value)} /></Field>
