@@ -135,7 +135,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
             </button>
           </div>
           {/* Distance filter; the match % filter sits under the map next to the count */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
             {RADAR.radiusOptionsKm.map((k) => (
               <button key={k} onClick={() => setRadius(k)} className={cx('px-2.5 py-1 rounded-full text-xs border cursor-pointer', radius === k ? 'bg-gold text-navy border-gold font-semibold' : 'border-slate-300 dark:border-white/15')}>{k} km</button>
             ))}
@@ -172,7 +172,6 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
             })}
           </div>
           <div className="flex flex-wrap justify-center items-center gap-2 text-xs">
-            <Badge tone="slate">{items.length}{cap ? ` of ${cap}` : ''} nearby</Badge>
             {/* Small pill; the real dropdown sits invisibly on top at 16px so phones don't zoom */}
             <label className="relative inline-flex items-center gap-1 rounded-full border border-gold/50 bg-gold/10 text-gold font-medium px-2.5 py-0.5 text-xs cursor-pointer">
               {minScore ? `${minScore}%+ match` : 'All compatible'}<ChevronDown className="w-3 h-3" />
@@ -182,6 +181,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
                 {RADAR.minScoreOptions.filter((x) => x > 0).map((x) => <option key={x} value={String(x)}>{x}%+ match</option>)}
               </select>
             </label>
+            <Badge tone="slate">{items.length}{cap ? ` of ${cap}` : ''} nearby</Badge>
             {unlockUntil && <Badge>Everyone nearby until {new Date(unlockUntil).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</Badge>}
           </div>
           {geoErr && <p className="text-sm text-rose-500 text-center">{geoErr}</p>}
