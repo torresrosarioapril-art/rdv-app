@@ -33,13 +33,11 @@ Deno.serve(async (req) => {
       ${(s?.possible_duplicates ?? []).length ? `<p style="background:#fde8e8;color:#8a1c1c;padding:10px;border-radius:8px"><b>Possible duplicate account:</b> ${(s.possible_duplicates as { name: string; status: string; why: string }[]).map((d) => `${esc(d.name)} (${esc(d.status)}, ${esc(d.why)})`).join('; ')}. Check before approving.</p>` : ''}
       <table>${rows}</table>
       ${video ? `<p><a href="${video}">▶ Watch the ID video</a> (link valid 7 days)</p>` : '<p><b>No video found.</b></p>'}
-      <p style="margin-top:24px">
-        <a href="${base}?token=${data.approve_token}" style="background:#c9a24a;color:#0a1322;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:bold">Approve</a>
-        &nbsp;&nbsp;
-        <a href="${base}?token=${data.changes_token}" style="border:1px solid #c9a24a;color:#8a6d1f;padding:10px 18px;border-radius:8px;text-decoration:none">Request changes</a>
-        &nbsp;&nbsp;
-        <a href="${base}?token=${data.reject_token}" style="border:1px solid #c33;color:#c33;padding:10px 18px;border-radius:8px;text-decoration:none">Reject</a>
-      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:24px"><tr>
+        <td style="padding:0 0 10px 0"><a href="${base}?token=${data.approve_token}" style="display:inline-block;background:#c9a24a;color:#0a1322;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:bold">Approve</a></td></tr><tr>
+        <td style="padding:0 0 10px 0"><a href="${base}?token=${data.changes_token}" style="display:inline-block;border:1px solid #c9a24a;color:#8a6d1f;padding:10px 18px;border-radius:8px;text-decoration:none">Request changes</a></td></tr><tr>
+        <td style="padding:0 0 10px 0"><a href="${base}?token=${data.reject_token}" style="display:inline-block;border:1px solid #c33;color:#c33;padding:10px 18px;border-radius:8px;text-decoration:none">Reject</a></td>
+      </tr></table>
       <p style="color:#888;font-size:12px">Each link opens a confirmation page in the RDV app (with the ID video). Request changes sends the application back with your note; Reject is final. The first reviewer to act decides.</p>
     </div>`;
 
