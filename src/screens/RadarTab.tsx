@@ -122,7 +122,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
   const zoneHidden = inZone && privacy !== 'ghost';
   const visibilitySummary = privacy === 'ghost' ? 'Hidden (Ghost)' : zoneHidden ? 'Hidden by a Safe Zone' : 'Visible, to the nearest 500 m';
   return (
-    <div className="grid lg:grid-cols-5 gap-5">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
       <div className="lg:col-span-3 space-y-3">
         <Card className="!p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
@@ -134,13 +134,8 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
               {privacy === 'ghost' ? 'Ghost' : zoneHidden ? 'Safe Zone' : 'Visible'}
             </button>
           </div>
-          {/* Filters sit with the map they change: match % first, then distance. Wraps, never scrolls sideways. */}
+          {/* Distance filter; the match % filter sits under the map next to the count */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <select value={String(minScore)} onChange={(e) => setMinScore(Number(e.target.value))} aria-label="Minimum match"
-              className="rounded-full border border-gold/50 bg-gold/10 text-gold font-semibold px-2.5 py-1 text-[16px] sm:text-xs cursor-pointer">
-              <option value="0">All compatible</option>
-              {RADAR.minScoreOptions.filter((x) => x > 0).map((x) => <option key={x} value={String(x)}>{x}%+ match</option>)}
-            </select>
             {RADAR.radiusOptionsKm.map((k) => (
               <button key={k} onClick={() => setRadius(k)} className={cx('px-2.5 py-1 rounded-full text-xs border cursor-pointer', radius === k ? 'bg-gold text-navy border-gold font-semibold' : 'border-slate-300 dark:border-white/15')}>{k} km</button>
             ))}
@@ -176,8 +171,17 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
               );
             })}
           </div>
-          <div className="flex justify-center gap-2 text-xs">
+          <div className="flex flex-wrap justify-center items-center gap-2 text-xs">
             <Badge tone="slate">{items.length}{cap ? ` of ${cap}` : ''} nearby</Badge>
+            {/* Small pill; the real dropdown sits invisibly on top at 16px so phones don't zoom */}
+            <label className="relative inline-flex items-center gap-1 rounded-full border border-gold/50 bg-gold/10 text-gold font-medium px-2.5 py-0.5 text-xs cursor-pointer">
+              {minScore ? `${minScore}%+ match` : 'All compatible'}<ChevronDown className="w-3 h-3" />
+              <select value={String(minScore)} onChange={(e) => setMinScore(Number(e.target.value))} aria-label="Minimum match"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-[16px]">
+                <option value="0">All compatible</option>
+                {RADAR.minScoreOptions.filter((x) => x > 0).map((x) => <option key={x} value={String(x)}>{x}%+ match</option>)}
+              </select>
+            </label>
             {unlockUntil && <Badge>Everyone nearby until {new Date(unlockUntil).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</Badge>}
           </div>
           {geoErr && <p className="text-sm text-rose-500 text-center">{geoErr}</p>}

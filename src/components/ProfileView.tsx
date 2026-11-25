@@ -23,7 +23,7 @@ export function ProfileView({ m, compact, self, preview }: { m: MemberCard; comp
   const answered = (m.prompts ?? []).filter((p) => p.answer?.trim());
 
   return (
-    <div className="grid md:grid-cols-5 gap-5">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
       <div className="md:col-span-2 space-y-2">
         <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-navy-3">
           <Photo path={m.photos?.[photo]} alt={m.name} className="w-full h-full" />

@@ -56,7 +56,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
   const active = matches.find((m) => m.match_id === openMatch) ?? null;
 
   return (
-    <div className="grid md:grid-cols-3 gap-4 md:h-[calc(100vh-8rem)]">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:h-[calc(100vh-8rem)]">
       <div className={cx('md:col-span-1 space-y-2 overflow-y-auto', active && 'hidden md:block')}>
         <h1 className="text-2xl font-display mb-2">Chat</h1>
         <DatesList events={events} />

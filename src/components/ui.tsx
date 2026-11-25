@@ -96,18 +96,20 @@ export function Modal({ open, onClose, title, children, wide, actions }: {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className={cx('relative w-full max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-white dark:bg-navy-2 border border-slate-200 dark:border-white/10 p-5 sm:p-6', wide ? 'sm:max-w-3xl' : 'sm:max-w-lg')}
+        className={cx('relative w-full max-h-[92dvh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl bg-white dark:bg-navy-2 border border-slate-200 dark:border-white/10', wide ? 'sm:max-w-3xl' : 'sm:max-w-lg')}
       >
-        {/* Top bar stays visible while scrolling: big Close on the left, actions on the right */}
-        <div className="sticky -top-5 sm:-top-6 z-20 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-3 px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 bg-white/95 dark:bg-navy-2/95 backdrop-blur border-b border-slate-200/70 dark:border-white/10 rounded-t-3xl">
+        {/* Fixed top bar (does not scroll): big Close on the left, actions on the right */}
+        <div className="shrink-0 px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 border-b border-slate-200/70 dark:border-white/10">
           <button onClick={onClose} aria-label="Close"
             className="flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 pl-2 pr-3 py-1.5 text-sm font-medium cursor-pointer">
             <X className="w-5 h-5" />Close
           </button>
           {actions && <div className="flex items-center gap-1">{actions}</div>}
         </div>
-        {title && <h2 className="text-xl font-display mb-4">{title}</h2>}
-        {children}
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {title && <h2 className="text-xl font-display mb-4">{title}</h2>}
+          {children}
+        </div>
       </div>
     </div>
   );

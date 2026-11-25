@@ -30,7 +30,7 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
   const card = data ? toCard(data.profile, data.priv) : null;
 
   return (
-    <div className="grid lg:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <div className="lg:col-span-2 space-y-5">
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
