@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
     <div style="font-family:Arial,sans-serif;max-width:560px">
       <h2 style="color:#0a1322">${data.resubmission ? 'Resubmitted application' : 'New member to verify'}</h2>
       ${data.resubmission && data.previous_note ? `<p style="background:#fff7e0;padding:10px;border-radius:8px"><b>You asked for:</b> ${esc(data.previous_note)}</p>` : ''}
+      ${(s?.possible_duplicates ?? []).length ? `<p style="background:#fde8e8;color:#8a1c1c;padding:10px;border-radius:8px"><b>Possible duplicate account:</b> ${(s.possible_duplicates as { name: string; status: string; why: string }[]).map((d) => `${esc(d.name)} (${esc(d.status)}, ${esc(d.why)})`).join('; ')}. Check before approving.</p>` : ''}
       <table>${rows}</table>
       ${video ? `<p><a href="${video}">▶ Watch the ID video</a> (link valid 7 days)</p>` : '<p><b>No video found.</b></p>'}
       <p style="margin-top:24px">

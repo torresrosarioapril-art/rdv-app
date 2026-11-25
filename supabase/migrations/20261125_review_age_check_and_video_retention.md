@@ -1,3 +1,5 @@
 Applied 25 Nov 2026: review_age_check_and_video_retention + schedule_video_purge_daily.
 - Approve needs p_age_confirmed (reviewer confirms ID birth date, 18+); logged in compliance_events.
 - app_config.retention.verification_video_days (30). Daily 00:15 UTC pg_cron → purge-verification-videos.
+- duplicate_account_guards: _normalize_email; trigger aa_block_email_aliases on auth.users (switch app_config.signup.block_email_aliases, false while testing);
+  _review_summary.possible_duplicates (same inbox, or same legal name + birth date) shown in review email and page.

@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     return json({ valid: true, type: 'verification', action: t.action, status: p?.verification_status, video, photo,
       member: { name: s?.name, legal_name: s?.legal_name, birth_date: s?.birth_date, age: s?.age, gender: s?.gender,
         nationality: s?.nationality, city: s?.city, occupation: s?.occupation, linkedin_url: s?.linkedin_url,
-        signup_method: s?.signup_method, invited_by_code: s?.invited_by_code } });
+        signup_method: s?.signup_method, invited_by_code: s?.invited_by_code, possible_duplicates: s?.possible_duplicates ?? [] } });
   }
   const { data: r } = await db.from('reports').select('reason,details,target_type,status,priority,created_at').eq('id', t.subject_id).single();
   return json({ valid: true, type: 'report', action: t.action, report: r });

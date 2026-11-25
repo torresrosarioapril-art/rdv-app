@@ -57,6 +57,11 @@ export default function ReviewPage() {
                     {info.member.linkedin_url && <a className="text-gold" href={info.member.linkedin_url} target="_blank" rel="noreferrer">LinkedIn</a>}
                   </dl>
                 </div>
+                {info.member.possible_duplicates?.length > 0 && (
+                  <p className="text-sm rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 p-3">
+                    <b>Possible duplicate account:</b> {info.member.possible_duplicates.map((d: any) => `${d.name} (${d.status}, ${d.why})`).join('; ')}. Check before approving.
+                  </p>
+                )}
                 {info.video ? <video src={info.video} controls playsInline className="w-full rounded-xl bg-black max-h-80" /> : <p className="text-rose-500 text-sm">No ID video found.</p>}
                 <p className="text-xs text-slate-500 flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" />Check the face matches the ID, the name and the 18+ birth date.</p>
               </div>

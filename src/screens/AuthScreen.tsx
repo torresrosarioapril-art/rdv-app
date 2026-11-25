@@ -64,7 +64,7 @@ export default function AuthScreen() {
             data: { display_name: name.trim(), invite_code: useCode ? code.trim().toUpperCase() : '', charter_version: CHARTER_VERSION, charter_accepted_at: new Date().toISOString() },
           },
         });
-        if (error) throw new Error(error.message.includes('Database error') ? 'Sign-up is not open for this route right now.' : error.message);
+        if (error) throw new Error(error.message.includes('Database error') ? "We couldn't create this account. If you already have one with this email, sign in instead; otherwise check your invite code." : error.message);
         if (!data.session) setSent('Check ' + email + ' to confirm your address, then sign in.');
       }
     } catch (err) {
