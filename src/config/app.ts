@@ -157,3 +157,28 @@ export const COUNTRIES: [string, string][] = [
   ['TW','Taiwan'],['TJ','Tajikistan'],['TZ','Tanzania'],['TH','Thailand'],['TL','Timor-Leste'],['TG','Togo'],['TO','Tonga'],['TT','Trinidad and Tobago'],['TN','Tunisia'],['TR','Türkiye'],['TM','Turkmenistan'],['TV','Tuvalu'],
   ['UG','Uganda'],['UA','Ukraine'],['AE','United Arab Emirates'],['GB','United Kingdom'],['US','United States'],['UY','Uruguay'],['UZ','Uzbekistan'],['VU','Vanuatu'],['VA','Vatican City'],['VE','Venezuela'],['VN','Vietnam'],['YE','Yemen'],['ZM','Zambia'],['ZW','Zimbabwe'],
 ];
+
+/** Dubai areas shown on the radar and used to say roughly where someone is ("near DIFC"). Approximate centres. */
+export const DUBAI_AREAS: { name: string; lat: number; lng: number }[] = [
+  { name: 'DIFC', lat: 25.2124, lng: 55.2809 },
+  { name: 'Downtown Dubai', lat: 25.1972, lng: 55.2744 },
+  { name: 'Business Bay', lat: 25.1857, lng: 55.2650 },
+  { name: 'City Walk', lat: 25.2070, lng: 55.2620 },
+  { name: 'Jumeirah', lat: 25.2100, lng: 55.2500 },
+  { name: 'Al Safa', lat: 25.1800, lng: 55.2400 },
+  { name: 'Umm Suqeim', lat: 25.1530, lng: 55.2110 },
+  { name: 'Al Quoz', lat: 25.1460, lng: 55.2300 },
+  { name: 'Al Barsha', lat: 25.1110, lng: 55.1960 },
+  { name: 'Dubai Hills', lat: 25.1047, lng: 55.2440 },
+  { name: 'Palm Jumeirah', lat: 25.1124, lng: 55.1390 },
+  { name: 'Dubai Media City', lat: 25.0930, lng: 55.1550 },
+  { name: 'Dubai Marina', lat: 25.0805, lng: 55.1403 },
+  { name: 'JBR', lat: 25.0780, lng: 55.1330 },
+  { name: 'JLT', lat: 25.0693, lng: 55.1418 },
+  { name: 'Bur Dubai', lat: 25.2532, lng: 55.2970 },
+  { name: 'Deira', lat: 25.2711, lng: 55.3075 },
+  { name: 'Dubai Creek Harbour', lat: 25.2010, lng: 55.3460 },
+  { name: 'Al Jaddaf', lat: 25.2180, lng: 55.3330 },
+  { name: 'Mirdif', lat: 25.2200, lng: 55.4200 },
+  { name: 'Dubai Silicon Oasis', lat: 25.1200, lng: 55.3800 },
+];

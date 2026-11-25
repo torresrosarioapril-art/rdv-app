@@ -3,7 +3,7 @@ import { Eye, EyeOff, MapPin, MessageCircle, Radar as RadarIcon, ShieldCheck, Wa
 import {
   giveConsent, radar, radarConnect, setPrivacy, updateMyLocation, type MemberCard, type Privacy, type Status,
 } from '@/lib/api';
-import { RADAR, VISIBILITY } from '@/config/app';
+import { DUBAI_AREAS, RADAR, VISIBILITY } from '@/config/app';
 import { Badge, Button, Card, Empty, Modal, Photo, Select, Toggle, cx, useToast } from '@/components/ui';
 import { getNearbyAlert, saveNearbyAlert, type NearbyAlert } from '@/lib/api';
 import { BellRing } from 'lucide-react';
@@ -22,6 +22,22 @@ function bearingKm(from: Pos, to: Pos) {
   return { bearing: Math.atan2(y, x), km: 2 * R * Math.asin(Math.sqrt(a)) };
 }
 
+/** The nearest named area to an (already approximate) position, if one is within 3 km. */
+function nearestArea(p: Pos): string | null {
+  let best: { name: string; km: number } | null = null;
+  for (const a of DUBAI_AREAS) {
+    const { km } = bearingKm(p, a);
+    if (!best || km < best.km) best = { name: a.name, km };
+  }
+  return best && best.km <= 3 ? best.name : null;
+}
+
+function activeAgo(min?: number) {
+  if (min == null) return null;
+  if (min < 2) return 'active now';
+  if (min < 60) return `active ${min} min ago`;
+  return `active ${Math.floor(min / 60)} h ago`;
+}
 
 export default function RadarTab({ status, refreshStatus, onOpenChat }: {
   status: Status; refreshStatus: () => Promise<void>; onOpenChat: (id: string) => void;
@@ -117,7 +133,17 @@ export default function RadarTab({ status, refreshStatus, onOpenChat }: {
               <line x1={-R} x2={R} y1={0} y2={0} stroke="#c9a24a" strokeOpacity={0.12} />
               <line y1={-R} y2={R} x1={0} x2={0} stroke="#c9a24a" strokeOpacity={0.12} />
               <g className="radar-sweep"><path d={`M0 0 L${R} 0 A${R} ${R} 0 0 0 ${R * Math.cos(-0.6)} ${R * Math.sin(-0.6)} Z`} fill="#c9a24a" fillOpacity={0.12} /></g>
+              {pos && DUBAI_AREAS.map((a) => {
+                const { bearing, km } = bearingKm(pos, a);
+                if (km > radius || km < 0.4) return null;
+                const rr = (km / radius) * R * 0.92;
+                return (
+                  <text key={a.name} x={Math.sin(bearing) * rr} y={-Math.cos(bearing) * rr} textAnchor="middle"
+                    className="fill-slate-500 dark:fill-slate-400" style={{ fontSize: 7, letterSpacing: 0.3 }} opacity={0.85}>{a.name}</text>
+                );
+              })}
               <circle r={6} fill="#c9a24a" />
+              {pos && <text y={16} textAnchor="middle" className="fill-gold" style={{ fontSize: 7 }}>{nearestArea(pos) ? `You · ${nearestArea(pos)}` : 'You'}</text>}
             </svg>
             {pos && items.map((m) => {
               if (m.lat == null || m.lng == null) return null;
@@ -178,7 +204,11 @@ export default function RadarTab({ status, refreshStatus, onOpenChat }: {
               <Photo path={m.photos?.[0]} alt={m.name} className="w-14 h-14 rounded-xl" />
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{m.name}{m.age ? `, ${m.age}` : ''}</div>
-                <div className="text-xs text-slate-500 truncate">{m.occupation} · {m.distance_km} km (approx.)</div>
+                <div className="text-xs text-slate-500 truncate">{m.occupation}</div>
+                <div className="text-[11px] text-slate-500 truncate">
+                  {[m.lat != null && m.lng != null ? nearestArea({ lat: m.lat, lng: m.lng }) && `Near ${nearestArea({ lat: m.lat, lng: m.lng })}` : null,
+                    `~${m.distance_km} km`, activeAgo(m.last_active_min)].filter(Boolean).join(' · ')}
+                </div>
               </div>
               <ScoreBadge score={m.score} band={undefined} />
             </Card>
