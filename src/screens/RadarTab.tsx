@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Eye, EyeOff, MapPin, MessageCircle, Radar as RadarIcon, ShieldCheck, Waves } from 'lucide-react';
 import {
-  giveConsent, radar, radarConnect, setPrivacy, updateMyLocation, type MemberCard, type Privacy, type Status,
+  giveConsent, radar, startCheckout, radarConnect, setPrivacy, updateMyLocation, type MemberCard, type Privacy, type Status,
 } from '@/lib/api';
 import { DUBAI_AREAS, RADAR, VISIBILITY } from '@/config/app';
 import { Badge, Button, Card, Empty, Modal, Photo, Select, Toggle, cx, useToast } from '@/components/ui';
 import { getNearbyAlert, saveNearbyAlert, type NearbyAlert } from '@/lib/api';
-import { BellRing } from 'lucide-react';
+import { BellRing, ChevronDown } from 'lucide-react';
 import { SafeZones } from '@/screens/ProfileTab';
 import { ProfileView, ScoreBadge } from '@/components/ProfileView';
 import { SafetyMenu } from '@/components/SafetyMenu';
@@ -54,6 +54,9 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
   const [items, setItems] = useState<MemberCard[]>([]);
   const [cap, setCap] = useState<number | null>(null);
   const [hidden, setHidden] = useState({ total: 0, strong: 0, min: 75 });
+  const [unlockUntil, setUnlockUntil] = useState<string | null>(null);
+  const [unlockPrice, setUnlockPrice] = useState<number | null>(null);
+  const [unlockHours, setUnlockHours] = useState(24);
   const [selected, setSelected] = useState<MemberCard | null>(null);
   const [busy, setBusy] = useState(false);
   const lastSent = useRef(0);
@@ -78,7 +81,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
 
   const scan = useCallback(async () => {
     if (!pos) return;
-    try { const r = await radar(radius, minScore); setItems(r.items); setCap(r.cap); setHidden({ total: r.hidden ?? 0, strong: r.hidden_strong ?? 0, min: r.strong_min ?? 75 }); }
+    try { const r = await radar(radius, minScore); setItems(r.items); setCap(r.cap); setHidden({ total: r.hidden ?? 0, strong: r.hidden_strong ?? 0, min: r.strong_min ?? 75 }); setUnlockUntil(r.unlock_until ?? null); setUnlockPrice(r.unlock_price_aed ?? null); setUnlockHours(r.unlock_hours ?? 24); }
     catch (e) { toast(e instanceof Error ? e.message : 'Radar unavailable', 'err'); }
   }, [pos, radius, minScore, toast]);
 
@@ -116,17 +119,31 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
   }
 
   const R = 140;
+  const zoneHidden = inZone && privacy !== 'ghost';
+  const visibilitySummary = privacy === 'ghost' ? 'Hidden (Ghost)' : zoneHidden ? 'Hidden by a Safe Zone' : 'Visible, to the nearest 500 m';
   return (
     <div className="grid lg:grid-cols-5 gap-5">
-      <div className="lg:col-span-3 space-y-4">
-        <Card className="!p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <div className="lg:col-span-3 space-y-3">
+        <Card className="!p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
             <h1 className="text-xl font-display">Live radar</h1>
-            <div className="flex items-center gap-2 text-xs">
-              <Badge tone="slate">{radius} km</Badge>
-              {minScore > 0 && <Badge>{minScore}%+</Badge>}
-              <Badge tone="slate">{items.length}{cap ? ` / ${cap}` : ''} nearby</Badge>
-            </div>
+            <button onClick={() => changePrivacy(privacy === 'ghost' ? 'blur' : 'ghost')}
+              className={cx('flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs cursor-pointer',
+                privacy === 'ghost' || zoneHidden ? 'border-slate-400/40 text-slate-500' : 'border-emerald-400/40 text-emerald-600 dark:text-emerald-300')}>
+              {privacy === 'ghost' || zoneHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              {privacy === 'ghost' ? 'Ghost' : zoneHidden ? 'Safe Zone' : 'Visible'}
+            </button>
+          </div>
+          {/* Filters sit with the map they change */}
+          <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1">
+            {RADAR.radiusOptionsKm.map((k) => (
+              <button key={k} onClick={() => setRadius(k)} className={cx('shrink-0 px-3 py-1.5 rounded-full text-xs border cursor-pointer', radius === k ? 'bg-gold text-navy border-gold font-semibold' : 'border-slate-300 dark:border-white/15')}>{k} km</button>
+            ))}
+            <select value={String(minScore)} onChange={(e) => setMinScore(Number(e.target.value))}
+              className="shrink-0 ml-auto rounded-full border border-slate-300 dark:border-white/15 bg-transparent px-2.5 py-1.5 text-xs cursor-pointer">
+              <option value="0">All compatible</option>
+              {RADAR.minScoreOptions.filter((x) => x > 0).map((x) => <option key={x} value={String(x)}>{x}%+</option>)}
+            </select>
           </div>
           <div className="relative mx-auto aspect-square max-w-[420px]">
             <svg viewBox={`-${R + 10} -${R + 10} ${2 * R + 20} ${2 * R + 20}`} className="w-full h-full">
@@ -159,55 +176,36 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
               );
             })}
           </div>
-          {geoErr && <p className="text-sm text-rose-500 text-center mt-2">{geoErr}</p>}
-          {!pos && !geoErr && <p className="text-sm text-slate-500 text-center mt-2">Finding your location…</p>}
-          {inZone && <p className="text-sm text-gold text-center mt-2 flex items-center justify-center gap-1.5"><ShieldCheck className="w-4 h-4" />You're in one of your Safe Zones, so Ghost mode is on automatically.</p>}
+          <div className="flex justify-center gap-2 text-xs">
+            <Badge tone="slate">{items.length}{cap ? ` of ${cap}` : ''} nearby</Badge>
+            {unlockUntil && <Badge>Everyone nearby until {new Date(unlockUntil).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</Badge>}
+          </div>
+          {geoErr && <p className="text-sm text-rose-500 text-center">{geoErr}</p>}
+          {!pos && !geoErr && <p className="text-sm text-slate-500 text-center">Finding your location…</p>}
+          {zoneHidden && <p className="text-sm text-gold text-center flex items-center justify-center gap-1.5"><ShieldCheck className="w-4 h-4" />You're in one of your Safe Zones, so you're hidden automatically.</p>}
           {hidden.total > 0 && (
-            <div className="mt-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-sm flex flex-wrap items-center justify-between gap-2">
-              <span>
+            <div className="rounded-xl border border-gold/40 bg-gold/10 p-3 text-sm space-y-2">
+              <p>
                 {hidden.strong > 0
                   ? <><b>{hidden.strong} more strong match{hidden.strong === 1 ? '' : 'es'}</b> ({hidden.min}%+) {hidden.strong === 1 ? 'is' : 'are'} nearby right now.</>
                   : <><b>{hidden.total} more compatible member{hidden.total === 1 ? '' : 's'}</b> {hidden.total === 1 ? 'is' : 'are'} nearby right now.</>}
                 {' '}Your plan shows up to {cap} on the radar.
-              </span>
-              <Button className="!py-1.5 text-xs" onClick={onOpenPlan}>Upgrade to see them</Button>
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {unlockPrice != null && (
+                  <Button className="!py-1.5 text-xs" onClick={() => startCheckout('radar_unlock').catch((e) => toast(e.message, 'err'))}>
+                    See everyone nearby · {unlockHours} h for {unlockPrice} AED
+                  </Button>
+                )}
+                {onOpenPlan && <Button variant="outline" className="!py-1.5 text-xs" onClick={onOpenPlan}>Compare plans</Button>}
+              </div>
             </div>
           )}
         </Card>
-
-        <Card className="!p-4">
-          <div className="text-[11px] uppercase tracking-widest text-gold mb-2">How others see you</div>
-          <div className="grid grid-cols-2 gap-2">
-            {VISIBILITY.map((p) => (
-              <button key={p.id} onClick={() => changePrivacy(p.id as Privacy)} className={cx('rounded-xl border p-3 text-left cursor-pointer', privacy === p.id ? 'border-gold bg-gold/10' : 'border-slate-200 dark:border-white/10')}>
-                <div className="flex items-center gap-1.5 text-sm font-medium">{p.id === 'ghost' ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />}{p.label}</div>
-                <div className="text-[11px] text-slate-500 mt-1">{p.hint}</div>
-              </button>
-            ))}
-          </div>
-        </Card>
-        <NearbyAlerts uid={status.user_id} />
-        <SafeZones status={status} />
       </div>
 
       <div className="lg:col-span-2 space-y-3">
-        <Card className="!p-4 space-y-3">
-          <div className="text-[11px] uppercase tracking-widest text-gold">Filters</div>
-          <div>
-            <div className="text-xs text-slate-500 mb-1.5">Distance</div>
-            <div className="flex flex-wrap gap-1.5">
-              {RADAR.radiusOptionsKm.map((k) => (
-                <button key={k} onClick={() => setRadius(k)} className={cx('px-3 py-1.5 rounded-full text-xs border cursor-pointer', radius === k ? 'bg-gold text-navy border-gold font-semibold' : 'border-slate-300 dark:border-white/15')}>{k} km</button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-slate-500 mb-1.5">Compatibility</div>
-            <Select value={String(minScore)} onChange={(e) => setMinScore(Number(e.target.value))} placeholder="All compatible"
-              options={RADAR.minScoreOptions.filter((x) => x > 0).map((x) => ({ value: String(x), label: `${x}% and above` }))} />
-          </div>
-        </Card>
-        <h2 className="font-display text-lg pt-1">Nearby now</h2>
+        <h2 className="font-display text-lg">Nearby now</h2>
         {items.length === 0 ? (
           <Card><Empty icon={<Eye className="w-5 h-5" />} title="No compatible members in range">Try a wider radius, or check back later. People appear when they open the app nearby.</Empty></Card>
         ) : items.map((m) => (
@@ -227,8 +225,24 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
           </button>
         ))}
 
+        <h2 className="font-display text-lg pt-3">Radar settings</h2>
+        <Card className="!p-0 divide-y divide-slate-200 dark:divide-white/10 overflow-hidden">
+          <SettingRow icon={privacy === 'ghost' ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />} title="How others see you" summary={visibilitySummary}>
+            <div className="grid grid-cols-2 gap-2">
+              {VISIBILITY.map((p) => (
+                <button key={p.id} onClick={() => changePrivacy(p.id as Privacy)} className={cx('rounded-xl border p-3 text-left cursor-pointer', privacy === p.id ? 'border-gold bg-gold/10' : 'border-slate-200 dark:border-white/10')}>
+                  <div className="flex items-center gap-1.5 text-sm font-medium">{p.id === 'ghost' ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />}{p.label}</div>
+                  <div className="text-[11px] text-slate-500 mt-1">{p.hint}</div>
+                </button>
+              ))}
+            </div>
+          </SettingRow>
+          <NearbyAlerts uid={status.user_id} />
+          <SettingRow icon={<ShieldCheck className="w-4 h-4" />} title="Safe Zones" summary={status.safe_zones_enabled ? 'Automatic Ghost at your saved places' : 'Locked · one-time add-on'}>
+            <SafeZones status={status} bare />
+          </SettingRow>
+        </Card>
       </div>
-
 
       <Modal open={!!selected} onClose={() => setSelected(null)} wide>
         {selected && (
@@ -261,13 +275,15 @@ function NearbyAlerts({ uid }: { uid: string }) {
       }
     } catch (e) { setPref(prev); toast(e instanceof Error ? e.message : 'Could not save', 'err'); }
   };
+  const label = (m: number) => (m >= 1000 ? `${m / 1000} km` : `${m} m`);
   return (
-    <Card className="!p-4 space-y-3">
+    <SettingRow icon={<BellRing className="w-4 h-4" />} title="Nearby match alerts"
+      summary={pref.enabled ? `On · ${pref.min_score}%+ within ${label(pref.radius_m)}` : 'Off'}>
       <div className="flex items-center justify-between gap-2">
-        <div className="text-[11px] uppercase tracking-widest text-gold flex items-center gap-1.5"><BellRing className="w-3.5 h-3.5" />Nearby match alerts</div>
+        <span className="text-sm">Alert me</span>
         <Toggle checked={pref.enabled} onChange={(v) => save({ ...pref, enabled: v })} label="" />
       </div>
-      <p className="text-[11px] text-slate-500">Get a notification when a match comes within range, so you don't have to keep checking. Only while you're visible (not Ghost or in a Safe Zone), never their exact spot, and at most once every 12 hours per person.</p>
+      <p className="text-[11px] text-slate-500">A notification when a match comes within range, so you don't have to keep checking. Only while you're visible, never their exact spot, at most once every 12 hours per person.</p>
       {pref.enabled && (
         <div className="grid grid-cols-2 gap-2">
           <label className="text-xs space-y-1"><span className="text-slate-500">Within</span>
@@ -280,6 +296,24 @@ function NearbyAlerts({ uid }: { uid: string }) {
           </label>
         </div>
       )}
-    </Card>
+    </SettingRow>
+  );
+}
+
+/** One collapsible row of the Radar settings list: same look for every setting. */
+function SettingRow({ icon, title, summary, children }: { icon: React.ReactNode; title: string; summary: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center gap-3 p-3.5 text-left cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
+        <span className="w-8 h-8 rounded-full bg-gold/15 text-gold flex items-center justify-center shrink-0">{icon}</span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-sm font-medium">{title}</span>
+          <span className="block text-[11px] text-slate-500 truncate">{summary}</span>
+        </span>
+        <ChevronDown className={cx('w-4 h-4 text-slate-400 transition', open && 'rotate-180')} />
+      </button>
+      {open && <div className="px-3.5 pb-3.5 space-y-3">{children}</div>}
+    </div>
   );
 }

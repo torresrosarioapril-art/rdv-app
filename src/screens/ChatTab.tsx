@@ -149,28 +149,33 @@ function Thread({ m, me, gender, onBack, onChanged }: {
   };
 
   return (
-    <Card className="!p-0 flex flex-col h-[calc(100vh-10rem)] md:h-full overflow-hidden">
-      <div className="flex items-center gap-3 p-3 border-b border-slate-200 dark:border-white/10">
+    <Card className="!p-0 flex flex-col h-[calc(100dvh-9.5rem)] md:h-full overflow-hidden">
+      <div className="flex items-center gap-2 sm:gap-3 px-2.5 py-2 sm:p-3 border-b border-slate-200 dark:border-white/10">
         <button onClick={onBack} className="md:hidden p-1 cursor-pointer"><ArrowLeft className="w-5 h-5" /></button>
         <button onClick={() => setProfileOpen(true)} className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer">
-          <Photo path={partner.photos?.[0]} alt={partner.name} className="w-10 h-10 rounded-full" />
+          <Photo path={partner.photos?.[0]} alt={partner.name} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0" />
           <div className="min-w-0">
             <div className="font-medium truncate">{partner.name}{partner.age ? `, ${partner.age}` : ''}</div>
             <div className="text-[11px] text-slate-500 truncate">{partner.occupation} · tap for profile</div>
           </div>
-          {m.score != null && <span className="shrink-0"><ScoreBadge score={m.score} band={m.band ?? undefined} /></span>}
+          {m.score != null && <>
+            <span className="sm:hidden shrink-0 rounded-full bg-gold/15 border border-gold/40 text-gold text-[11px] font-semibold px-2 py-0.5">{m.score}%</span>
+            <span className="hidden sm:inline-flex shrink-0"><ScoreBadge score={m.score} band={m.band ?? undefined} /></span>
+          </>}
         </button>
         <SafetyMenu memberId={partner.id} name={partner.name} onDone={() => { onBack(); onChanged(); }} />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2 sm:space-y-3">
         {!talked && prompts.length > 0 && (
-          <div className="rounded-xl border border-gold/30 bg-gold/5 p-3">
-            <div className="text-[11px] uppercase tracking-widest text-gold mb-2">Open with one of {partner.name}'s prompts</div>
-            <div className="space-y-2">
+          <div className="rounded-xl border border-gold/30 bg-gold/5 p-2.5">
+            <div className="text-[10px] uppercase tracking-widest text-gold mb-1.5">Start with one of {partner.name}'s prompts</div>
+            <div className="flex gap-2 overflow-x-auto -mx-0.5 px-0.5 pb-0.5 snap-x">
               {prompts.slice(0, 3).map((p) => (
-                <button key={p.key} onClick={() => setText(`About your "${p.question}": `)} className="block w-full text-left text-sm rounded-lg bg-white/70 dark:bg-navy-3 p-2.5 cursor-pointer hover:ring-1 hover:ring-gold/50">
-                  <span className="text-xs text-slate-500">{p.question}</span><br />{p.answer}
+                <button key={p.key} onClick={() => setText(`About your "${p.question}": `)}
+                  className="snap-start shrink-0 w-56 sm:w-64 text-left rounded-lg bg-white/80 dark:bg-navy-3 p-2 cursor-pointer hover:ring-1 hover:ring-gold/50">
+                  <span className="block text-[10px] text-slate-500 truncate">{p.question}</span>
+                  <span className="block text-xs leading-snug line-clamp-2">{p.answer}</span>
                 </button>
               ))}
             </div>
@@ -183,8 +188,8 @@ function Thread({ m, me, gender, onBack, onChanged }: {
         <div ref={bottom} />
       </div>
 
-      <div className="border-t border-slate-200 dark:border-white/10 p-3 space-y-2">
-        <div className="flex flex-wrap gap-2">
+      <div className="border-t border-slate-200 dark:border-white/10 p-2 sm:p-3 space-y-2">
+        <div className="flex flex-wrap gap-1.5 empty:hidden">
           {gender === 'woman' && m.source !== 'radar' && (
             <Button variant="outline" className="!py-1.5 text-xs" onClick={() => act(() => sendPing(m.match_id), 'Ping sent')}><Hand className="w-3.5 h-3.5" />Ping: I'd like to meet</Button>
           )}
@@ -194,11 +199,11 @@ function Thread({ m, me, gender, onBack, onChanged }: {
             </Button>
           )}
         </div>
-        <form onSubmit={send} className="flex items-end gap-2">
-          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a message…" maxLength={4000} className="flex-1" />
+        <form onSubmit={send} className="flex items-end gap-1.5 sm:gap-2">
+          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message…" maxLength={4000} className="flex-1 min-w-0 !py-2" />
           <PhotoButton matchId={m.match_id} me={me} onSent={async () => { await reload(); onChanged(); }} />
           <VoiceButton matchId={m.match_id} onSent={async () => { await reload(); onChanged(); }} />
-          <Button type="submit" busy={sending} className="!px-3"><Send className="w-4 h-4" /></Button>
+          <Button type="submit" busy={sending} className="!px-2.5 sm:!px-3"><Send className="w-4 h-4" /></Button>
         </form>
       </div>
 
@@ -216,7 +221,7 @@ function VoiceButton({ matchId, onSent }: { matchId: string; onSent: () => void 
   const toast = useToast();
   return (
     <>
-      <Button type="button" variant="outline" className="!px-3" onClick={() => setOpen(true)} title="Voice note"><Mic className="w-4 h-4" /></Button>
+      <Button type="button" variant="outline" className="!px-2.5 sm:!px-3" onClick={() => setOpen(true)} title="Voice note"><Mic className="w-4 h-4" /></Button>
       <Modal open={open} onClose={() => setOpen(false)} title="Voice note">
         <p className="text-sm text-slate-500 mb-3">Up to 2 minutes. It sends when you stop recording.</p>
         <Recorder kind="audio" maxSeconds={120} label="Start recording" onDone={async (blob, secs, ext) => {
@@ -248,7 +253,7 @@ function PhotoButton({ matchId, me, onSent }: { matchId: string; me: string; onS
   };
   return (
     <div className="relative">
-      <Button type="button" variant="outline" className="!px-3 pointer-events-none" busy={busy} title="Send a photo"><ImagePlus className="w-4 h-4" /></Button>
+      <Button type="button" variant="outline" className="!px-2.5 sm:!px-3 pointer-events-none" busy={busy} title="Send a photo"><ImagePlus className="w-4 h-4" /></Button>
       <input type="file" accept="image/*" multiple disabled={busy} onChange={pick} aria-label="Send a photo"
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
     </div>
@@ -262,7 +267,7 @@ function ChatImage({ path }: { path: string }) {
   if (!url) return <div className="w-48 h-48 rounded-xl bg-black/10 animate-pulse" />;
   return (
     <>
-      <button onClick={() => setOpen(true)} className="block cursor-pointer"><img src={url} alt="Photo" className="max-w-[220px] max-h-72 rounded-xl object-cover" /></button>
+      <button onClick={() => setOpen(true)} className="block cursor-pointer"><img src={url} alt="Photo" className="max-w-[180px] sm:max-w-[220px] max-h-60 sm:max-h-72 rounded-xl object-cover" /></button>
       {open && (
         <div className="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
           <img src={url} alt="Photo" className="max-w-full max-h-full rounded-xl" />
@@ -275,7 +280,7 @@ function ChatImage({ path }: { path: string }) {
 function VoiceNote({ path, seconds }: { path: string; seconds: number | null }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => { signedUrl('voice', path).then(setUrl); }, [path]);
-  return url ? <audio src={url} controls className="h-9 max-w-[240px]" /> : <span className="text-xs">Voice note {seconds ? `· ${seconds}s` : ''}</span>;
+  return url ? <audio src={url} controls className="h-9 max-w-[200px] sm:max-w-[240px]" /> : <span className="text-xs">Voice note {seconds ? `· ${seconds}s` : ''}</span>;
 }
 
 function Bubble({ x, mine, inv, me, partnerName, partnerId, act }: {
@@ -288,7 +293,7 @@ function Bubble({ x, mine, inv, me, partnerName, partnerId, act }: {
   if (x.kind === 'ping') {
     return (
       <div className={cx('flex', mine ? 'justify-end' : 'justify-start')}>
-        <div className="rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5 text-sm flex items-center gap-2">
+        <div className="rounded-2xl border border-gold/40 bg-gold/10 px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm flex items-center gap-2">
           <Hand className="w-4 h-4 text-gold" />{mine ? 'You sent a Ping: you would like to meet' : `${partnerName} would like to meet`}
         </div>
       </div>
@@ -297,7 +302,7 @@ function Bubble({ x, mine, inv, me, partnerName, partnerId, act }: {
   if (x.kind === 'invitation' && inv) return <InvitationCard inv={inv} me={me} partnerName={partnerName} act={act} />;
   return (
     <div className={cx('flex group', mine ? 'justify-end' : 'justify-start')}>
-      <div className={cx('max-w-[78%] rounded-2xl px-4 py-2.5 text-sm', mine ? 'bg-gold text-navy rounded-br-md' : 'bg-slate-100 dark:bg-navy-3 rounded-bl-md')}>
+      <div className={cx('max-w-[82%] sm:max-w-[78%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm', mine ? 'bg-gold text-navy rounded-br-md' : 'bg-slate-100 dark:bg-navy-3 rounded-bl-md')}>
         {x.is_hidden ? <i className="opacity-70">Hidden pending review</i>
           : x.kind === 'image' && x.image_path ? <><ChatImage path={x.image_path} />{x.body && <span className="block mt-1 whitespace-pre-wrap">{x.body}</span>}</>
           : x.kind === 'voice' && x.voice_path ? <VoiceNote path={x.voice_path} seconds={x.voice_seconds} /> : <span className="whitespace-pre-wrap">{x.body}</span>}
@@ -326,7 +331,7 @@ function InvitationCard({ inv, me, partnerName, act }: {
 
   return (
     <div className={cx('flex', mine ? 'justify-end' : 'justify-start')}>
-      <div className={cx('w-full max-w-sm rounded-2xl border p-4 space-y-2', inv.status === 'accepted' ? 'border-emerald-400/50 bg-emerald-500/5' : 'border-gold/40 bg-gold/5')}>
+      <div className={cx('w-full max-w-sm rounded-2xl border p-3 sm:p-4 space-y-2', inv.status === 'accepted' ? 'border-emerald-400/50 bg-emerald-500/5' : 'border-gold/40 bg-gold/5')}>
         <div className="flex items-center justify-between text-[11px] uppercase tracking-widest">
           <span className="text-gold">{inv.counter_of ? 'Suggested time' : 'Invitation'}{mine ? ' (sent)' : ''}</span>
           <span className={inv.status === 'accepted' ? 'text-emerald-500' : 'text-slate-500'}>{statusText[inv.status]}</span>

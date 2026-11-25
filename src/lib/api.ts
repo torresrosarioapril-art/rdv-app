@@ -61,7 +61,7 @@ export interface Batch {
   swipe_credits: number; items: MemberCard[];
 }
 export interface Drops { week_start: string; cap: number; next_drop_at: string; items: MemberCard[] }
-export interface RadarResult { radius_km: number; cap: number | null; items: MemberCard[]; hidden?: number; hidden_strong?: number; strong_min?: number }
+export interface RadarResult { radius_km: number; cap: number | null; items: MemberCard[]; hidden?: number; hidden_strong?: number; strong_min?: number; unlock_until?: string | null; unlock_price_aed?: number | null; unlock_hours?: number }
 
 export interface PlanLimits {
   plan: Plan; label: string; price_aed: number; swipes_per_day: number; drops_per_week: number;
@@ -275,7 +275,7 @@ export const requestConsultation = (slot: Date, notes?: string) =>
 export const cancelConsultation = (id: string) => rpc<void>('cancel_consultation', { p_id: id });
 
 // ---------- Billing (Stripe sandbox via edge function) ----------
-export async function startCheckout(item: 'plan1' | 'plan2' | 'safe_zones' | 'swipe_refresh' | 'portal') {
+export async function startCheckout(item: 'plan1' | 'plan2' | 'safe_zones' | 'swipe_refresh' | 'radar_unlock' | 'portal') {
   const { data, error } = await supabase.functions.invoke('create-checkout', {
     body: { item, return_url: window.location.origin },
   });

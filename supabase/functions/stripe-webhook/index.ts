@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
         if (obj.mode === 'subscription' && obj.subscription) await syncSubscription(db, obj.subscription);
         if (obj.mode === 'payment' && obj.payment_status === 'paid') {
           const uid = obj.metadata?.user_id, item = obj.metadata?.item;
-          if (uid && (item === 'safe_zones' || item === 'swipe_refresh')) {
+          if (uid && (item === 'safe_zones' || item === 'swipe_refresh' || item === 'radar_unlock')) {
             const { error } = await db.rpc('admin_record_purchase', {
               p_user: uid, p_kind: item, p_qty: Number(obj.metadata?.quantity ?? 1),
               p_amount: (obj.amount_total ?? 0) / 100, p_session: obj.id,

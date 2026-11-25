@@ -58,13 +58,13 @@ Deno.serve(async (req) => {
       return json({ url: s.url });
     }
 
-    if (item === 'safe_zones' || item === 'swipe_refresh') {
+    if (item === 'safe_zones' || item === 'swipe_refresh' || item === 'radar_unlock') {
       const a = addons[item];
       if (!a?.price_aed) return json({ error: 'This add-on has no price set yet.' }, 400);
       const s = await stripe('checkout/sessions', {
         ...base, mode: 'payment',
         'line_items[0][price_data][unit_amount]': String(Math.round(a.price_aed * 100)),
-        'line_items[0][price_data][product_data][name]': item === 'safe_zones' ? 'Rendez-vous Safe Zones' : 'Rendez-vous early refresh',
+        'line_items[0][price_data][product_data][name]': item === 'safe_zones' ? 'Rendez-vous Safe Zones' : item === 'radar_unlock' ? `Rendez-vous: see everyone nearby (${a.hours ?? 24} h)` : 'Rendez-vous early refresh',
         'metadata[quantity]': String(a.quantity ?? 1),
       });
       return json({ url: s.url });

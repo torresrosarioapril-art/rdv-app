@@ -378,7 +378,7 @@ function Consultations({ status, refresh }: { status: Status; refresh: () => Pro
   );
 }
 
-export function SafeZones({ status }: { status: Status }) {
+export function SafeZones({ status, bare }: { status: Status; bare?: boolean }) {
   const [zones, setZones] = useState<{ id: string; label: string; radius_m: number }[]>([]);
   const [label, setLabel] = useState('');
   const { busy, run } = useAction();
@@ -386,12 +386,12 @@ export function SafeZones({ status }: { status: Status }) {
   const load = () => listSafeZones().then(setZones as any).catch(() => {});
   useEffect(() => { if (status.safe_zones_enabled) load(); }, [status.safe_zones_enabled]);
 
-  return (
-    <Card className="space-y-3">
-      <h3 className="font-display text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-gold" />Safe Zones</h3>
-      <p className="text-sm text-slate-500">Save places like home or the office. Whenever your location shows you're inside one, you're switched to Ghost automatically, even if you forgot to turn it on. You become visible again once you leave.</p>
+  const body = (
+    <>
+      {!bare && <h3 className="font-display text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-gold" />Safe Zones</h3>}
+      <p className={bare ? 'text-[11px] text-slate-500' : 'text-sm text-slate-500'}>Save places like home or the office. Whenever your location shows you're inside one, you're switched to Ghost automatically, even if you forgot to turn it on. You become visible again once you leave.</p>
       {!status.safe_zones_enabled ? (
-        <div className="rounded-xl border border-dashed border-gold/40 p-4 text-center space-y-2">
+        <div className={cx("rounded-xl border border-dashed border-gold/40 text-center space-y-2", bare ? "p-3" : "p-4")}>
           <Lock className="w-5 h-5 text-gold mx-auto" />
           <p className="text-sm">Safe Zones is a one-time add-on: automatic Ghost mode at the places you choose.</p>
           <Button onClick={() => startCheckout('safe_zones').catch((e) => toast(e.message, 'err'))}>Unlock Safe Zones</Button>
@@ -413,8 +413,9 @@ export function SafeZones({ status }: { status: Status }) {
           </div>
         </>
       )}
-    </Card>
+    </>
   );
+  return bare ? <div className="space-y-3">{body}</div> : <Card className="space-y-3">{body}</Card>;
 }
 
 function Referral({ status }: { status: Status }) {
