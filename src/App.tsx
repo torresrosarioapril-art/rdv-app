@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { Compass, Heart, MessageCircle, UserRound, Crown, EyeOff, Settings, Waves } from 'lucide-react';
+import { Compass, Heart, MessageCircle, Moon, Sun, UserRound, EyeOff, Settings, Waves } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { myCalendar, myStatus, setPrivacy, updateMyLocation, type CalendarEvent, type Privacy, type Status } from '@/lib/api';
 import { BRAND, VISIBILITY } from '@/config/app';
@@ -141,8 +141,6 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
   const openChat = (matchId: string) => { setOpenMatch(matchId); setTab('chat'); };
   const openPlan = () => { setTab('settings'); setTimeout(() => document.getElementById('plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); };
 
-  // Free and trial members get a small Upgrade pill; paying members and founders don't
-  const showUpgrade = !status.comp && (status.plan === 'free' || status.in_trial);
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'radar', label: 'Radar', icon: <Compass className="w-5 h-5" /> },
     { id: 'matches', label: 'Matches', icon: <Heart className="w-5 h-5" /> },
@@ -172,11 +170,9 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
           </nav>
           <div className="flex items-center gap-1 shrink-0">
             <VisibilityShortcut status={status} refresh={refresh} />
-            {showUpgrade && (
-              <button title="See plans" onClick={openPlan} className="flex items-center gap-1 px-2 py-1 rounded-full bg-gold text-navy text-[11px] font-semibold cursor-pointer">
-                <Crown className="w-3.5 h-3.5" />Upgrade
-              </button>
-            )}
+            <button title="Theme" aria-label="Switch light or dark" onClick={toggleTheme} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer">
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
             <NotificationBell uid={status.user_id} onOpenChat={openChat} onOpenRadar={() => setTab('radar')} />
             <button title="Settings" aria-label="Settings" onClick={() => setTab('settings')}
               className={cx('p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer', tab === 'settings' && 'text-gold')}>
