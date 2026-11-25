@@ -193,7 +193,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
           </div>
         </div>
       </header>
-      <NextDateBanner events={events} onOpen={() => setTab('chat')} />
+      <NextDateBanner events={events} onOpen={() => { setOpenMatch(null); setTab('chat'); setTimeout(() => document.getElementById('your-dates')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200); }} />
 
       <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {tab === 'matches' && <MatchesTab status={status} onOpenChat={openChat} />}

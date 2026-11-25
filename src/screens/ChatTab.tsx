@@ -49,6 +49,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
   events: CalendarEvent[]; onDatesChanged: () => void;
 }) {
   const [matches, setMatches] = useState<MatchSummary[] | null>(null);
+  const [focusInv, setFocusInv] = useState<string | null>(null);
   const [gender, setGender] = useState<string | null>(null);
   const toast = useToast();
 
@@ -74,7 +75,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:h-[calc(100vh-8rem)]">
       <div className={cx('md:col-span-1 space-y-2 overflow-y-auto', active && 'hidden md:block')}>
         <h1 className="text-2xl font-display mb-2">Chat</h1>
-        <DatesList events={events} />
+        <DatesList events={events} onOpenDate={(e) => { if (e.match_id) { setFocusInv(e.invitation_id); setOpenMatch(e.match_id); } }} />
         {matches.length === 0 && (
           <Card><Empty icon={<MessageCircle className="w-5 h-5" />} title="No conversations yet">When you and someone are both interested, or you connect from the radar, your chat appears here.</Empty></Card>
         )}
@@ -97,7 +98,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
         ))}
       </div>
       <div className={cx('md:col-span-2', !active && 'hidden md:block')}>
-        {active ? <Thread key={active.match_id} m={active} me={status.user_id} gender={gender} onBack={() => setOpenMatch(null)} onChanged={() => { load(); onDatesChanged(); }} />
+        {active ? <Thread key={active.match_id} focusInv={focusInv} onFocused={() => setFocusInv(null)} m={active} me={status.user_id} gender={gender} onBack={() => setOpenMatch(null)} onChanged={() => { load(); onDatesChanged(); }} />
           : <Card className="h-full flex items-center justify-center"><Empty icon={<MessageCircle className="w-5 h-5" />} title="Choose a conversation" /></Card>}
       </div>
     </div>
@@ -114,8 +115,9 @@ function preview(l: NonNullable<MatchSummary['last_message']>) {
   return who + (l.body ?? '');
 }
 
-function Thread({ m, me, gender, onBack, onChanged }: {
+function Thread({ m, me, gender, onBack, onChanged, focusInv, onFocused }: {
   m: MatchSummary; me: string; gender: string | null; onBack: () => void; onChanged: () => void;
+  focusInv?: string | null; onFocused?: () => void;
 }) {
   const toast = useToast();
   const [msgs, setMsgs] = useState<Message[]>([]);
@@ -142,7 +144,21 @@ function Thread({ m, me, gender, onBack, onChanged }: {
     return () => { supabase.removeChannel(ch); };
   }, [m.match_id, reload]);
 
-  useEffect(() => { bottom.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs.length]);
+  useEffect(() => {
+    // Opened from Your dates: jump to that date's card (or its latest change) instead of the bottom
+    if (focusInv && invs.length) {
+      const target = [...invs].reverse().find((i) => i.change_of === focusInv && i.status === 'accepted')?.id ?? focusInv;
+      const el = document.getElementById(`inv-${target}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ring-2', 'ring-gold');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-gold'), 2500);
+        onFocused?.();
+        return;
+      }
+    }
+    bottom.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [msgs.length, invs, focusInv]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const invById = useMemo(() => new Map(invs.map((i) => [i.id, i])), [invs]);
   const hasPending = invs.some((i) => i.status === 'pending');
@@ -392,7 +408,7 @@ function InvitationCard({ inv, invs, me, partnerName, act }: {
 
   return (
     <div className={cx('flex', mine ? 'justify-end' : 'justify-start')}>
-      <div className={cx('w-full max-w-sm rounded-2xl border p-3 sm:p-4 space-y-2', inv.status === 'accepted' ? 'border-emerald-400/50 bg-emerald-500/5' : 'border-gold/40 bg-gold/5')}>
+      <div id={`inv-${inv.id}`} className={cx('w-full max-w-sm rounded-2xl border p-3 sm:p-4 space-y-2 transition', inv.status === 'accepted' ? 'border-emerald-400/50 bg-emerald-500/5' : 'border-gold/40 bg-gold/5')}>
         <div className="flex items-center justify-between text-[11px] uppercase tracking-widest">
           <span className="text-gold">{isChange ? 'Suggested change' : inv.counter_of ? 'Suggested time' : 'Invitation'}{mine ? ' (sent)' : ''}</span>
           <span className={inv.status === 'accepted' ? 'text-emerald-500' : 'text-slate-500'}>{statusText[inv.status]}</span>

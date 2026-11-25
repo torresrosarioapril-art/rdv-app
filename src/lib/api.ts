@@ -125,6 +125,7 @@ export interface Invitation {
 
 export interface CalendarEvent {
   id: string; invitation_id: string; starts_at: string; title: string; venue_name: string | null; map_url: string | null;
+  match_id?: string | null;
 }
 
 // ---------- Helpers ----------
@@ -276,9 +277,9 @@ export async function loadThread(match: string) {
 }
 
 export async function myCalendar() {
-  const { data, error } = await supabase.from('calendar_events').select('*').order('starts_at');
+  const { data, error } = await supabase.from('calendar_events').select('*, invitation:invitations(match_id)').order('starts_at');
   friendly(error);
-  return (data ?? []) as CalendarEvent[];
+  return (data ?? []).map((e: any) => ({ ...e, match_id: e.invitation?.match_id ?? null })) as CalendarEvent[];
 }
 
 // ---------- Safety ----------
