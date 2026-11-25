@@ -46,13 +46,13 @@ export const RELIGIONS = [
 ];
 
 export const NATIONALITIES = [
-  'Emirati', 'Saudi', 'Kuwaiti', 'Qatari', 'Bahraini', 'Omani', 'Egyptian', 'Jordanian', 'Lebanese',
-  'Syrian', 'Palestinian', 'Moroccan', 'Tunisian', 'Algerian', 'Iraqi', 'Iranian', 'Turkish', 'Indian',
-  'Pakistani', 'Bangladeshi', 'Sri Lankan', 'Filipino', 'Indonesian', 'Malaysian', 'Chinese', 'Japanese',
-  'Korean', 'British', 'Irish', 'French', 'German', 'Italian', 'Spanish', 'Portuguese', 'Dutch', 'Belgian',
-  'Swiss', 'Swedish', 'Norwegian', 'Danish', 'Polish', 'Russian', 'Ukrainian', 'Greek', 'American',
-  'Canadian', 'Mexican', 'Brazilian', 'Argentinian', 'Colombian', 'Australian', 'New Zealander',
-  'South African', 'Nigerian', 'Kenyan', 'Ethiopian', 'Other',
+  'Algerian', 'American', 'Argentinian', 'Australian', 'Bahraini', 'Bangladeshi', 'Belgian', 'Brazilian',
+  'British', 'Canadian', 'Chinese', 'Colombian', 'Danish', 'Dutch', 'Egyptian', 'Emirati', 'Ethiopian',
+  'Filipino', 'French', 'German', 'Greek', 'Indian', 'Indonesian', 'Iranian', 'Iraqi', 'Irish', 'Italian',
+  'Japanese', 'Jordanian', 'Kenyan', 'Korean', 'Kuwaiti', 'Lebanese', 'Malaysian', 'Mexican', 'Moroccan',
+  'New Zealander', 'Nigerian', 'Norwegian', 'Omani', 'Pakistani', 'Palestinian', 'Polish', 'Portuguese',
+  'Qatari', 'Russian', 'Saudi', 'South African', 'Spanish', 'Sri Lankan', 'Swedish', 'Swiss', 'Syrian',
+  'Tunisian', 'Turkish', 'Ukrainian', 'Other',
 ];
 
 export const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
