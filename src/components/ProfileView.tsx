@@ -9,7 +9,7 @@ export function ScoreBadge({ score, band }: { score?: number; band?: string }) {
   if (score == null) return null;
   return (
     <span className={cx('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
-      score >= 90 ? 'bg-gold text-navy' : score >= 75 ? 'bg-gold/20 text-gold border border-gold/40' : 'bg-white/10 text-slate-200 border border-white/15')}>
+      score >= 90 ? 'bg-gold text-navy' : score >= 75 ? 'bg-gold/20 text-gold border border-gold/40' : 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-white/10 dark:text-slate-200 dark:border-white/15')}>
       <Sparkles className="w-3 h-3" />{score}% · {band}
     </span>
   );

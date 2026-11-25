@@ -11,6 +11,7 @@ import { DatesList } from '@/components/UpcomingDates';
 import { Button, Card, Empty, Field, Input, Modal, Photo, Spinner, cx, useToast } from '@/components/ui';
 import { ProfileView } from '@/components/ProfileView';
 import { SafetyMenu } from '@/components/SafetyMenu';
+import { ScoreBadge } from '@/components/ProfileView';
 import { Recorder } from '@/components/Recorder';
 import { VenueSearch, type PickedPlace } from '@/components/VenueSearch';
 
@@ -68,7 +69,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
               <Photo path={m.partner.photos?.[0]} alt={m.partner.name} className="w-12 h-12 rounded-full" />
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between gap-2">
-                  <span className="font-medium truncate">{m.partner.name}</span>
+                  <span className="font-medium truncate">{m.partner.name}{m.score != null && <span className="ml-1.5 text-[11px] text-gold font-normal">{m.score}%</span>}</span>
                   {m.last_message && <span className="text-[10px] text-slate-500 shrink-0">{new Date(m.last_message.at).toLocaleDateString()}</span>}
                 </div>
                 <div className="text-xs text-slate-500 truncate">
@@ -157,6 +158,7 @@ function Thread({ m, me, gender, onBack, onChanged }: {
             <div className="font-medium truncate">{partner.name}{partner.age ? `, ${partner.age}` : ''}</div>
             <div className="text-[11px] text-slate-500 truncate">{partner.occupation} · tap for profile</div>
           </div>
+          {m.score != null && <span className="shrink-0"><ScoreBadge score={m.score} band={m.band ?? undefined} /></span>}
         </button>
         <SafetyMenu memberId={partner.id} name={partner.name} onDone={() => { onBack(); onChanged(); }} />
       </div>
@@ -204,7 +206,7 @@ function Thread({ m, me, gender, onBack, onChanged }: {
         await act(() => sendInvitation(m.match_id, at, venue, lat, lng, venueId), 'Invitation sent');
         setInviteOpen(false);
       }} />
-      <Modal open={profileOpen} onClose={() => setProfileOpen(false)} wide><ProfileView m={partner} /></Modal>
+      <Modal open={profileOpen} onClose={() => setProfileOpen(false)} wide><ProfileView m={{ ...partner, score: m.score ?? undefined, band: m.band ?? undefined }} /></Modal>
     </Card>
   );
 }

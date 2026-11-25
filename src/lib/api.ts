@@ -97,6 +97,8 @@ export interface MatchSummary {
   source: 'swipe' | 'drop' | 'radar';
   created_at: string;
   partner: MemberCard;
+  score: number | null;
+  band: string | null;
   unread: number;
   last_message: { kind: string; body: string | null; at: string; mine: boolean } | null;
   invitations_used: number;
