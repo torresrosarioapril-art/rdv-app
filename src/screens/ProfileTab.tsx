@@ -8,7 +8,7 @@ import {
   addSafeZone, astroSync, cancelConsultation, manageSubscription, deleteAccount, deleteSafeZone, listSafeZones, myProfile, requestConsultation,
   saveNotifyPrefs, saveProfile, signedUrl, startCheckout, uploadFile, type MemberCard, type NotifyPrefs, type Status,
 } from '@/lib/api';
-import { ANDROID_IOS_RATING, SIGNUP_COPY, SUPPORT } from '@/config/app';
+import { ANDROID_IOS_RATING, SIGNUP_COPY, SUPPORT, DESIRED_MARITAL, desiredMaritalChoice, labelOf } from '@/config/app';
 import { Badge, Button, Card, Field, Input, Modal, Photo, Spinner, Toggle, cx, useAction, useToast } from '@/components/ui';
 import { ProfileView } from '@/components/ProfileView';
 import { Recorder } from '@/components/Recorder';
@@ -173,7 +173,7 @@ function LookingFor({ priv, onEdit }: { priv: Record<string, any>; onEdit: () =>
     ['Religion', priv.desired_religion || 'Any'],
     ['Faith', priv.religion_flexible ? 'Flexible: open to a different faith' : 'Same faith only'],
     ['Children in future', priv.kids_flexible ? 'Flexible' : 'Must match my answer'],
-    ['Marital status', (priv.desired_marital_status ?? []).length ? priv.desired_marital_status.map((v: string) => v[0].toUpperCase() + v.slice(1)).join(', ') : 'Any'],
+    ['Marital status', labelOf(DESIRED_MARITAL, desiredMaritalChoice(priv.desired_marital_status))],
     ['Partner already has children', ({ yes: 'Comfortable', no: 'Prefer not', any: "Doesn't matter" } as Record<string, string>)[priv.partner_children_ok ?? 'any']],
     ['Drinking', ({ never_only: 'Non-drinkers only', occasional_ok: 'Occasionally is OK', any: "Doesn't matter" } as Record<string, string>)[priv.drinking_tolerance ?? 'any']],
     ['Smoking', ({ never_only: 'Non-smokers only', occasional_ok: 'Occasionally is OK', any: "Doesn't matter" } as Record<string, string>)[priv.smoking_tolerance ?? 'any']],

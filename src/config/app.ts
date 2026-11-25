@@ -91,6 +91,23 @@ export const MARITAL_STATUS = [
   { value: 'widowed', label: 'Widowed' },
 ] as const;
 
+/** Desired partner marital status: three choices, stored as the list of statuses that pass the filter. */
+export const DESIRED_MARITAL = [
+  { value: 'single', label: 'Single' },
+  { value: 'previously_married', label: 'Divorced / widowed / separated' },
+  { value: 'any', label: "Doesn't matter" },
+] as const;
+const PREV_MARRIED = ['divorced', 'separated', 'widowed'];
+export const desiredMaritalValue = (choice: string): string[] =>
+  choice === 'single' ? ['single'] : choice === 'previously_married' ? [...PREV_MARRIED] : [];
+export const desiredMaritalChoice = (v?: string[] | null): string => {
+  const set = new Set(v ?? []);
+  if (set.size === 0) return 'any';
+  if (set.size === 1 && set.has('single')) return 'single';
+  if (!set.has('single') && PREV_MARRIED.every((x) => set.has(x))) return 'previously_married';
+  return 'any';
+};
+
 export const PARTNER_CHILDREN = [
   { value: 'yes', label: 'Yes, comfortable' },
   { value: 'no', label: 'No' },

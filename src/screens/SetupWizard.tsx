@@ -3,7 +3,7 @@ import { Check, ChevronLeft, ChevronRight, ImagePlus, Link2, Play, ShieldCheck, 
 import { supabase } from '@/lib/supabase';
 import { astroSync, giveConsent, myProfile, saveProfile, signedUrl, submitForReview, uploadFile, type Status } from '@/lib/api';
 import {
-  BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELOCATION, TIMELINE, UAE_CITIES, labelOf, DRINKING_TOLERANCE, SMOKING_TOLERANCE, MARITAL_STATUS, PARTNER_CHILDREN } from '@/config/app';
+  BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELOCATION, TIMELINE, UAE_CITIES, labelOf, DRINKING_TOLERANCE, SMOKING_TOLERANCE, MARITAL_STATUS, PARTNER_CHILDREN, DESIRED_MARITAL, desiredMaritalChoice, desiredMaritalValue } from '@/config/app';
 import { Badge, Button, Card, Field, Input, Photo, Select, Spinner, Textarea, Toggle, cx, useToast } from '@/components/ui';
 import { Recorder } from '@/components/Recorder';
 import { CityPicker } from '@/components/CityPicker';
@@ -375,17 +375,9 @@ function StepPartner({ f, set }: StepProps) {
       <Field label="Religion" hint="If you pick a specific religion, only members of that religion will be shown to you.">
         <Select options={RELIGIONS} placeholder="Any religion" value={f.desired_religion ?? ''} onChange={(e) => set('desired_religion', e.target.value)} />
       </Field>
-      <Field label="Marital status" hint="Pick any that you're open to. Leave all off for any.">
-        <div className="flex flex-wrap gap-1.5">
-          {MARITAL_STATUS.map((o) => {
-            const cur: string[] = f.desired_marital_status ?? [];
-            const on = cur.includes(o.value);
-            return (
-              <button key={o.value} type="button" onClick={() => set('desired_marital_status', on ? cur.filter((x) => x !== o.value) : [...cur, o.value])}
-                className={cx('px-3 py-1.5 rounded-full text-xs border cursor-pointer', on ? 'bg-gold text-navy border-gold font-semibold' : 'border-slate-300 dark:border-white/15')}>{o.label}</button>
-            );
-          })}
-        </div>
+      <Field label="Marital status">
+        <Select options={DESIRED_MARITAL} value={desiredMaritalChoice(f.desired_marital_status)}
+          onChange={(e) => set('desired_marital_status', desiredMaritalValue(e.target.value || 'any'))} />
       </Field>
       <Field label="Comfortable with a partner who already has children?">
         <Select options={PARTNER_CHILDREN} value={f.partner_children_ok ?? 'any'} onChange={(e) => set('partner_children_ok', e.target.value || 'any')} />
@@ -507,7 +499,7 @@ function StepReview({ f, goTo }: { f: Form; goTo: (n: number) => void }) {
     ['Religion', `${f.religion ?? '—'}${f.religion_flexible ? ' (flexible)' : ''}`, 2],
     ['Marriage timeline', labelOf(TIMELINE, f.marriage_timeline), 2], ['Children', `${labelOf(KIDS, f.kids)}${f.kids_flexible ? ' (flexible)' : ''}`, 2],
     ['Drinking / smoking', `${labelOf(HABITS, f.drinking)} / ${labelOf(HABITS, f.smoking)}`, 2], ['Relocation', labelOf(RELOCATION, f.relocation), 2],
-    ['Looking for', `${f.desired_age_min}–${f.desired_age_max}, ${(f.desired_nationalities ?? []).join(', ') || 'any nationality'}, ${f.desired_religion || 'any religion'}`, 3], ['Partner filters', `${(f.desired_marital_status ?? []).map((v: string) => labelOf(MARITAL_STATUS, v)).join(', ') || 'any marital status'}; partner with children: ${labelOf(PARTNER_CHILDREN, f.partner_children_ok ?? 'any')}`, 3],
+    ['Looking for', `${f.desired_age_min}–${f.desired_age_max}, ${(f.desired_nationalities ?? []).join(', ') || 'any nationality'}, ${f.desired_religion || 'any religion'}`, 3], ['Partner filters', `${labelOf(DESIRED_MARITAL, desiredMaritalChoice(f.desired_marital_status))}; partner with children: ${labelOf(PARTNER_CHILDREN, f.partner_children_ok ?? 'any')}`, 3],
     ['Photos', String((f.photos ?? []).length), 4], ['Voice intro', f.voice_intro_path ? 'Yes' : 'No', 4],
     ['Video ID', f.verification_video_path ? 'Received' : 'Missing', 0],
     ['Place of birth', [f.birth_city, f.birth_country].filter(Boolean).join(', '), 2],
