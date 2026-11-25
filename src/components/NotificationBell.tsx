@@ -55,6 +55,11 @@ export function NotificationBell({ uid, onOpenChat, onOpenRadar }: { uid: string
   }, [uid, load]);
 
   const unread = items.filter((n) => !n.read_at).length;
+  const clearAll = async () => {
+    setItems([]);
+    await supabase.from('notifications').delete().eq('user_id', uid);
+    load();
+  };
   const toggle = async () => {
     const next = !open;
     setOpen(next);
@@ -98,6 +103,9 @@ export function NotificationBell({ uid, onOpenChat, onOpenRadar }: { uid: string
                 </button>
               );
             })}
+            {items.length > 0 && (
+              <button onClick={clearAll} className="w-full mt-1 py-2 text-xs text-slate-500 hover:text-rose-500 border-t border-slate-200 dark:border-white/10 cursor-pointer">Clear all notifications</button>
+            )}
           </div>
         </>
       )}

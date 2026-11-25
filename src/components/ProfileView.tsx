@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Briefcase, Flag, GraduationCap, Heart, Link2, MapPin, Ruler, ShieldCheck, Sparkles, Star } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Briefcase, ChevronLeft, ChevronRight, Flag, GraduationCap, Heart, Link2, MapPin, Ruler, ShieldCheck, Sparkles, Star } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { signedUrl, type MemberCard } from '@/lib/api';
 import { HABITS, KIDS, MARITAL_STATUS, POLITICAL, RELOCATION, TIMELINE, labelOf } from '@/config/app';
@@ -21,12 +21,35 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
   const [voice, setVoice] = useState<string | null>(null);
   useEffect(() => { setPhoto(0); signedUrl('voice', m.voice_intro_path).then(setVoice); }, [m.id, m.voice_intro_path]);
   const answered = (m.prompts ?? []).filter((p) => p.answer?.trim());
+  const count = m.photos?.length ?? 0;
+  const swipeX = useRef<number | null>(null);
+  const go = (d: number) => count > 1 && setPhoto((i) => (i + d + count) % count);
 
   return (
     <div className={cx('grid grid-cols-1 gap-5', !noPhotos && 'md:grid-cols-5')}>
       {!noPhotos && <div className="md:col-span-2 space-y-2">
-        <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-navy-3">
+        <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-navy-3 select-none touch-pan-y"
+          onTouchStart={(e) => { swipeX.current = e.touches[0].clientX; }}
+          onTouchEnd={(e) => {
+            if (swipeX.current == null) return;
+            const dx = e.changedTouches[0].clientX - swipeX.current; swipeX.current = null;
+            if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+          }}>
           <Photo path={m.photos?.[photo]} alt={m.name} className="w-full h-full" />
+          {count > 1 && (
+            <>
+              {/* tap the left or right side to move between photos */}
+              <button aria-label="Previous photo" onClick={() => go(-1)} className="absolute inset-y-0 left-0 w-1/3 flex items-center justify-start pl-2 cursor-pointer group/prev">
+                <span className="w-8 h-8 rounded-full bg-black/35 text-white flex items-center justify-center opacity-70 group-hover/prev:opacity-100"><ChevronLeft className="w-5 h-5" /></span>
+              </button>
+              <button aria-label="Next photo" onClick={() => go(1)} className="absolute inset-y-0 right-0 w-1/3 flex items-center justify-end pr-2 cursor-pointer group/next">
+                <span className="w-8 h-8 rounded-full bg-black/35 text-white flex items-center justify-center opacity-70 group-hover/next:opacity-100"><ChevronRight className="w-5 h-5" /></span>
+              </button>
+              <div className="absolute top-2 inset-x-3 flex gap-1">
+                {m.photos.map((p, i) => <span key={p} className={cx('h-1 flex-1 rounded-full', i === photo ? 'bg-white' : 'bg-white/40')} />)}
+              </div>
+            </>
+          )}
           <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/85 to-transparent text-white">
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-display">{m.name}{m.age ? `, ${m.age}` : ''}</h2>
