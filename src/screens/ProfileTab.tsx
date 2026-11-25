@@ -34,12 +34,12 @@ export default function ProfileTab({ view = 'profile', status, refresh, onEditPr
   if (view === 'settings') {
     return (
       <div className="max-w-2xl mx-auto space-y-4">
-        <div className="flex items-center gap-2">
+        <div className="space-y-2">
           <button onClick={onBack} aria-label="Close settings"
-            className="flex items-center gap-1.5 rounded-full bg-slate-200/70 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 pl-2 pr-3 py-1.5 text-sm font-medium cursor-pointer">
-            <X className="w-5 h-5" />Close
+            className="inline-flex items-center gap-1 rounded-full bg-slate-200/70 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 pl-1.5 pr-2.5 py-1 text-xs font-medium cursor-pointer">
+            <X className="w-3.5 h-3.5" />Close
           </button>
-          <h1 className="text-2xl font-display ml-1">Settings</h1>
+          <h1 className="text-2xl font-display">Settings</h1>
         </div>
         <div id="plan" className="scroll-mt-20"><PlanCard status={status} refresh={refresh} /></div>
         {status.plan === 'plan2' && <Consultations status={status} refresh={refresh} />}
