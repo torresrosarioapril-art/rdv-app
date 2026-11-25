@@ -106,8 +106,8 @@ function LookingFor({ priv, onEdit }: { priv: Record<string, any>; onEdit: () =>
     ['Religion', priv.desired_religion || 'Any'],
     ['Faith', priv.religion_flexible ? 'Flexible: open to a different faith' : 'Same faith only'],
     ['Children', priv.kids_flexible ? 'Flexible' : 'Must match my answer'],
-    ['Drinking', priv.no_drinking_partner ? 'Partner must not drink' : 'No requirement'],
-    ['Smoking', priv.no_smoking_partner ? 'Partner must not smoke' : 'No requirement'],
+    ['Drinking', ({ never_only: 'Non-drinkers only', occasional_ok: 'Occasionally is OK', any: "Doesn't matter" } as Record<string, string>)[priv.drinking_tolerance ?? 'any']],
+    ['Smoking', ({ never_only: 'Non-smokers only', occasional_ok: 'Occasionally is OK', any: "Doesn't matter" } as Record<string, string>)[priv.smoking_tolerance ?? 'any']],
   ];
   return (
     <Card>

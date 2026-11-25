@@ -3,8 +3,7 @@ import { Check, ChevronLeft, ChevronRight, ImagePlus, Link2, Play, ShieldCheck, 
 import { supabase } from '@/lib/supabase';
 import { astroSync, giveConsent, myProfile, saveProfile, signedUrl, submitForReview, uploadFile, type Status } from '@/lib/api';
 import {
-  BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELOCATION, TIMELINE, UAE_CITIES, labelOf,
-} from '@/config/app';
+  BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELOCATION, TIMELINE, UAE_CITIES, labelOf, DRINKING_TOLERANCE, SMOKING_TOLERANCE } from '@/config/app';
 import { Badge, Button, Card, Field, Input, Photo, Select, Spinner, Textarea, Toggle, cx, useToast } from '@/components/ui';
 import { Recorder } from '@/components/Recorder';
 import { CityPicker } from '@/components/CityPicker';
@@ -19,7 +18,7 @@ const PROFILE_KEYS = ['display_name', 'gender', 'nationality', 'country_residenc
   'industry', 'university', 'degree', 'height_cm', 'political', 'religion', 'religion_practice', 'marriage_timeline', 'kids',
   'drinking', 'smoking', 'relocation', 'headline', 'bio', 'prompts', 'photos', 'voice_intro_path', 'linkedin_url'];
 const PRIVATE_KEYS = ['legal_name', 'birth_date', 'birth_time', 'birth_city', 'birth_country', 'religion_flexible', 'kids_flexible',
-  'no_drinking_partner', 'no_smoking_partner', 'desired_age_min', 'desired_age_max', 'desired_nationalities', 'desired_religion',
+  'drinking_tolerance', 'smoking_tolerance', 'desired_age_min', 'desired_age_max', 'desired_nationalities', 'desired_religion',
   'verification_video_path', 'birth_lat', 'birth_lng', 'preferred_plan'];
 
 const clean = (v: unknown) => (v === '' || v === undefined ? null : v);
@@ -278,8 +277,12 @@ function StepLifestyle({ f, set }: StepProps) {
           <Field label="Drinking"><Select options={HABITS} value={f.drinking ?? ''} onChange={(e) => set('drinking', e.target.value)} /></Field>
           <Field label="Smoking"><Select options={HABITS} value={f.smoking ?? ''} onChange={(e) => set('smoking', e.target.value)} /></Field>
         </Grid>
-        <Toggle checked={!!f.no_drinking_partner} onChange={(v) => set('no_drinking_partner', v)} label="My partner must not drink" />
-        <Toggle checked={!!f.no_smoking_partner} onChange={(v) => set('no_smoking_partner', v)} label="My partner must not smoke" />
+        <Grid>
+          <Field label="A partner who drinks" hint="Filters who you see (and who sees you)">
+            <Select options={DRINKING_TOLERANCE} placeholder="Choose" value={f.drinking_tolerance ?? 'any'} onChange={(e) => set('drinking_tolerance', e.target.value || 'any')} /></Field>
+          <Field label="A partner who smokes" hint="Occasionally is OK still favours non-smokers in your match %">
+            <Select options={SMOKING_TOLERANCE} placeholder="Choose" value={f.smoking_tolerance ?? 'any'} onChange={(e) => set('smoking_tolerance', e.target.value || 'any')} /></Field>
+        </Grid>
       </Card>
       <Card>
         <Grid>

@@ -7,3 +7,5 @@ Applied 25 Nov 2026: review_age_check_and_video_retention + schedule_video_purge
   _nearby_check(uid) runs from update_my_location both ways; only visible members (not Ghost / Safe Zone); notification type nearby_match.
 - compliance_events_more_kinds: kind check now allows verification_changes_requested, verification_rejected, verification_video_deleted (fixes Request changes / Reject error).
 - daily_batch_retry_empty: an empty daily batch is rebuilt on the next open instead of waiting an hour.
+- habit_tolerance_levels: profile_private.smoking_tolerance / drinking_tolerance (never_only | occasional_ok | any), migrated from no_*_partner;
+  _habit_ok(); compat_score habits filter uses them both ways; closeness still scored (15%).

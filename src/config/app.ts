@@ -80,8 +80,20 @@ export const KIDS = [
 
 export const HABITS = [
   { value: 'never', label: 'Never' },
-  { value: 'socially', label: 'Socially' },
+  { value: 'socially', label: 'Occasionally' },
   { value: 'regularly', label: 'Regularly' },
+] as const;
+
+export const SMOKING_TOLERANCE = [
+  { value: 'never_only', label: 'Non-smokers only' },
+  { value: 'occasional_ok', label: 'Occasionally is OK' },
+  { value: 'any', label: "Doesn't matter" },
+] as const;
+
+export const DRINKING_TOLERANCE = [
+  { value: 'never_only', label: 'Non-drinkers only' },
+  { value: 'occasional_ok', label: 'Occasionally is OK' },
+  { value: 'any', label: "Doesn't matter" },
 ] as const;
 
 export const POLITICAL = [
