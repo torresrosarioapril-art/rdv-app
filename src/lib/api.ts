@@ -113,7 +113,7 @@ export interface Message {
   id: string; match_id: string; sender_id: string | null;
   kind: 'text' | 'voice' | 'ping' | 'invitation' | 'system' | 'image';
   body: string | null; voice_path: string | null; voice_seconds: number | null; image_path?: string | null;
-  invitation_id: string | null; is_hidden: boolean; created_at: string; read_at: string | null;
+  invitation_id: string | null; is_hidden: boolean; created_at: string; read_at: string | null; deleted_at?: string | null;
 }
 
 export interface Invitation {
@@ -245,8 +245,19 @@ export async function listVenues(): Promise<Venue[]> {
   const { data } = await supabase.from('venues').select('id,name,area,address,lat,lng,is_partner,perk').eq('active', true).order('sort_order').order('name');
   return (data ?? []) as Venue[];
 }
-export const respondInvitation = (id: string, action: 'accept' | 'decline' | 'counter', counterAt?: Date) =>
-  rpc<string>('respond_invitation', { p_invitation: id, p_action: action, p_counter_at: counterAt?.toISOString() ?? null });
+export const respondInvitation = (id: string, action: 'accept' | 'decline' | 'counter', counterAt?: Date | null,
+  place?: { name: string; lat: number | null; lng: number | null; venueId: string | null } | null) =>
+  rpc<string>('respond_invitation', {
+    p_invitation: id, p_action: action, p_counter_at: counterAt?.toISOString() ?? null,
+    p_venue: place?.name ?? null, p_lat: place?.lat ?? null, p_lng: place?.lng ?? null, p_venue_id: place?.venueId ?? null,
+  });
+
+/** Delete one of my own texts, photos or voice notes: both people then see "Message deleted". */
+export async function deleteMyMessage(id: string) {
+  const r = await rpc<{ voice_path: string | null; image_path: string | null }>('delete_my_message', { p_id: id });
+  if (r?.voice_path) await supabase.storage.from('voice').remove([r.voice_path]).catch(() => {});
+  if (r?.image_path) await supabase.storage.from('chat').remove([r.image_path]).catch(() => {});
+}
 
 export async function loadThread(match: string) {
   const [m, i] = await Promise.all([

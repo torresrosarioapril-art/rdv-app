@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowLeft, CalendarCheck, CalendarPlus, Check, Clock, Hand, ImagePlus, MapPin, MessageCircle, Mic, Send, X,
+  ArrowLeft, CalendarCheck, CalendarPlus, Check, Clock, Hand, ImagePlus, MapPin, MessageCircle, Mic, Send, Trash2, X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
-  getMyMatches, loadThread, markRead, respondInvitation, sendImage, sendInvitation, sendMessage, sendPing, sendVoice, signedUrl, uploadFile,
+  deleteMyMessage, getMyMatches, loadThread, markRead, respondInvitation, sendImage, sendInvitation, sendMessage, sendPing, sendVoice, signedUrl, uploadFile,
   type CalendarEvent, type Invitation, type MatchSummary, type Message, type Status,
 } from '@/lib/api';
 import { DatesList } from '@/components/UpcomingDates';
@@ -106,6 +106,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
 
 function preview(l: NonNullable<MatchSummary['last_message']>) {
   const who = l.mine ? 'You: ' : '';
+  if ((l as any).deleted) return who + 'Message deleted';
   if (l.kind === 'voice') return who + 'Voice note';
   if (l.kind === 'image') return who + 'Photo';
   if (l.kind === 'ping') return who + 'Sent a Ping';
@@ -323,19 +324,50 @@ function Bubble({ x, mine, inv, me, partnerName, partnerId, act }: {
     );
   }
   if (x.kind === 'invitation' && inv) return <InvitationCard inv={inv} me={me} partnerName={partnerName} act={act} />;
+  return <TextBubble x={x} mine={mine} partnerName={partnerName} partnerId={partnerId} act={act} />;
+}
+
+/** Text, photo or voice note. Tap your own message to delete it (both people then see "Message deleted"). */
+function TextBubble({ x, mine, partnerName, partnerId, act }: {
+  x: Message; mine: boolean; partnerName: string; partnerId: string;
+  act: (fn: () => Promise<unknown>, ok?: string) => Promise<void>;
+}) {
+  const [menu, setMenu] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const deleted = !!x.deleted_at;
+  const canDelete = mine && !deleted && !x.is_hidden;
+  const what = x.kind === 'voice' ? 'voice note' : x.kind === 'image' ? 'photo' : 'message';
   return (
-    <div className={cx('flex group', mine ? 'justify-end' : 'justify-start')}>
-      <div className={cx('max-w-[82%] sm:max-w-[78%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm', mine ? 'bg-gold text-navy rounded-br-md' : 'bg-slate-100 dark:bg-navy-3 rounded-bl-md')}>
-        {x.is_hidden ? <i className="opacity-70">Hidden pending review</i>
+    <div className={cx('flex flex-col', mine ? 'items-end' : 'items-start')}>
+    <div className={cx('flex group w-full', mine ? 'justify-end' : 'justify-start')}>
+      <div onClick={() => canDelete && setMenu((v) => !v)}
+        className={cx('max-w-[82%] sm:max-w-[78%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm', canDelete && 'cursor-pointer',
+          deleted ? 'border border-dashed border-slate-300 dark:border-white/15 text-slate-500' : mine ? 'bg-gold text-navy rounded-br-md' : 'bg-slate-100 dark:bg-navy-3 rounded-bl-md')}>
+        {deleted ? <i>{mine ? 'You deleted this message' : 'Message deleted'}</i>
+          : x.is_hidden ? <i className="opacity-70">Hidden pending review</i>
           : x.kind === 'image' && x.image_path ? <><ChatImage path={x.image_path} />{x.body && <span className="block mt-1 whitespace-pre-wrap">{x.body}</span>}</>
           : x.kind === 'voice' && x.voice_path ? <VoiceNote path={x.voice_path} seconds={x.voice_seconds} /> : <span className="whitespace-pre-wrap">{x.body}</span>}
-        <div className={cx('text-[10px] mt-1', mine ? 'text-navy/60' : 'text-slate-500')}>{new Date(x.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}{mine && x.read_at ? ' · Read' : ''}</div>
+        <div className={cx('text-[10px] mt-1', mine && !deleted ? 'text-navy/60' : 'text-slate-500')}>{new Date(x.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}{mine && x.read_at ? ' · Read' : ''}</div>
       </div>
-      {!mine && !x.is_hidden && (
+      {!mine && !x.is_hidden && !deleted && (
         <div className="self-center ml-0.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition">
           <SafetyMenu compact memberId={partnerId} name={partnerName} target={x.kind === 'voice' ? 'voice' : x.kind === 'image' ? 'image' : 'message'} refId={x.id} />
         </div>
       )}
+    </div>
+      {menu && canDelete && (
+        <button onClick={() => { setMenu(false); setConfirm(true); }}
+          className="mt-1 flex items-center gap-1 rounded-full border border-rose-300/60 text-rose-500 px-2.5 py-1 text-[11px] cursor-pointer hover:bg-rose-500/10">
+          <Trash2 className="w-3.5 h-3.5" />Delete {what}
+        </button>
+      )}
+      <Modal open={confirm} onClose={() => setConfirm(false)} title={`Delete this ${what}?`}>
+        <p className="text-sm text-slate-500 mb-4">It's removed for both of you. {partnerName} will see "Message deleted". This can't be undone.</p>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setConfirm(false)}>Keep</Button>
+          <Button variant="danger" onClick={async () => { setConfirm(false); await act(() => deleteMyMessage(x.id), 'Deleted'); }}><Trash2 className="w-4 h-4" />Delete</Button>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -345,7 +377,8 @@ function InvitationCard({ inv, me, partnerName, act }: {
 }) {
   const mine = inv.from_id === me;
   const [counterOpen, setCounterOpen] = useState(false);
-  const [counterAt, setCounterAt] = useState(toLocalInput(new Date(new Date(inv.proposed_at).getTime() + 86400000)));
+  const [counterAt, setCounterAt] = useState(toLocalInput(new Date(inv.proposed_at)));
+  const [counterPlace, setCounterPlace] = useState<PickedPlace | null>(null);
   const cal = calendarLinks(inv, partnerName);
   const statusText: Record<Invitation['status'], string> = {
     pending: mine ? 'Waiting for an answer' : 'Waiting for your answer',
@@ -366,7 +399,7 @@ function InvitationCard({ inv, me, partnerName, act }: {
           <div className="flex flex-wrap gap-2 pt-1">
             <Button className="!py-1.5 text-xs" onClick={() => act(() => respondInvitation(inv.id, 'accept'), 'Date confirmed')}><Check className="w-3.5 h-3.5" />Accept</Button>
             <Button variant="outline" className="!py-1.5 text-xs" onClick={() => act(() => respondInvitation(inv.id, 'decline'))}><X className="w-3.5 h-3.5" />Decline</Button>
-            {!inv.counter_of && <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setCounterOpen(true)}>Suggest another time</Button>}
+            {!inv.counter_of && <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setCounterOpen(true)}>Suggest another time or place</Button>}
           </div>
         )}
         {inv.status === 'accepted' && (
@@ -376,13 +409,20 @@ function InvitationCard({ inv, me, partnerName, act }: {
           </div>
         )}
 
-        <Modal open={counterOpen} onClose={() => setCounterOpen(false)} title="Suggest another time">
+        <Modal open={counterOpen} onClose={() => setCounterOpen(false)} title="Suggest another time or place">
           <div className="space-y-4">
-            <p className="text-sm text-slate-500">You can suggest one new time. Same venue: {inv.venue_name}.</p>
-            <Field label="New date & time"><Input type="datetime-local" value={counterAt} min={toLocalInput(new Date(Date.now() + 3600000))} onChange={(e) => setCounterAt(e.target.value)} /></Field>
+            <p className="text-sm text-slate-500">You can suggest one change: a new time, a new place, or both. {partnerName} then accepts or declines.</p>
+            <Field label="Date & time"><Input type="datetime-local" value={counterAt} min={toLocalInput(new Date(Date.now() + 3600000))} onChange={(e) => setCounterAt(e.target.value)} /></Field>
+            <VenueSearch value={counterPlace} onChange={setCounterPlace} />
+            <p className="text-[11px] text-slate-500 -mt-2">Leave the place empty to keep {inv.venue_name}.</p>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setCounterOpen(false)}>Cancel</Button>
-              <Button onClick={async () => { await act(() => respondInvitation(inv.id, 'counter', new Date(counterAt)), 'New time suggested'); setCounterOpen(false); }}>Suggest</Button>
+              <Button onClick={async () => {
+                const timeChanged = new Date(counterAt).getTime() !== new Date(inv.proposed_at).getTime();
+                const place = counterPlace?.name?.trim() ? { name: counterPlace.name.trim(), lat: counterPlace.lat ?? null, lng: counterPlace.lng ?? null, venueId: counterPlace.venueId ?? null } : null;
+                await act(() => respondInvitation(inv.id, 'counter', timeChanged ? new Date(counterAt) : null, place), place && timeChanged ? 'New time and place suggested' : place ? 'New place suggested' : 'New time suggested');
+                setCounterOpen(false);
+              }}>Suggest</Button>
             </div>
           </div>
         </Modal>

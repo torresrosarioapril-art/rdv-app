@@ -139,11 +139,43 @@ const MARS: Record<string, string> = {
   Pisces: 'Drawn to gentleness and creativity; pursues through romance and intuition.',
 };
 
-const ELEMENT_MATCH: Record<string, string> = {
-  same: 'Same element: you tend to understand each other naturally.',
-  complementary: 'Complementary elements: you balance and energise each other.',
-  contrasting: 'Contrasting elements: different rhythms that can teach each other a lot.',
+const SIGN_EL: Record<string, string> = { Aries: 'Fire', Leo: 'Fire', Sagittarius: 'Fire', Taurus: 'Earth', Virgo: 'Earth', Capricorn: 'Earth', Gemini: 'Air', Libra: 'Air', Aquarius: 'Air', Cancer: 'Water', Scorpio: 'Water', Pisces: 'Water' };
+const elRel = (a?: string | null, b?: string | null) => {
+  const x = a ? SIGN_EL[a] : null, y = b ? SIGN_EL[b] : null;
+  if (!x || !y) return null;
+  if (x === y) return 'same';
+  return ['Fire|Air', 'Air|Fire', 'Earth|Water', 'Water|Earth'].includes(`${x}|${y}`) ? 'complementary' : 'contrasting';
 };
+const BAND_READING: Record<string, string> = {
+  Rare: 'A rare fit: the two charts support each other almost everywhere.',
+  Exceptional: 'An unusually natural fit: the charts support each other in most areas.',
+  'Very important': 'Strong chemistry: plenty of natural ease, with a few areas to talk through.',
+  Important: 'A solid base: real chemistry in places, and some differences to navigate.',
+  Medium: 'A mixed picture: easy in some areas, effort needed in others.',
+  Minimal: 'The charts pull in different directions, so this pairing would run more on shared values and effort than on instant chemistry.',
+};
+/** A short written reading built from the score band, Suns, Moons and Venus/Mars. */
+function zodiacReading(m: any): string[] {
+  const out: string[] = [];
+  if (m.band && BAND_READING[m.band]) out.push(BAND_READING[m.band]);
+  if (m.my_sun && m.their_sun && m.element_match) {
+    const t = { same: 'same element, so you tend to get each other quickly', complementary: 'complementary elements that balance and energise each other', contrasting: 'contrasting elements: different rhythms that can teach each other a lot' }[m.element_match as string];
+    out.push(`Suns ${m.my_sun} × ${m.their_sun}: ${t}.`);
+  }
+  const moon = elRel(m.my_moon, m.their_moon);
+  if (moon) {
+    const t = { same: 'you process feelings in a similar way', complementary: 'your emotional styles balance each other', contrasting: 'you show feelings differently, so saying what you need helps' }[moon];
+    out.push(`Moons ${m.my_moon} × ${m.their_moon}: ${t}.`);
+  }
+  const spark = elRel(m.my_venus, m.their_mars) ?? elRel(m.my_mars, m.their_venus);
+  if (spark && m.their_mars && m.my_venus) {
+    out.push(spark === 'contrasting'
+      ? `Attraction: their Mars in ${m.their_mars} and your Venus in ${m.my_venus} spark through contrast rather than ease.`
+      : `Attraction: their Mars in ${m.their_mars} suits your Venus in ${m.my_venus}, a natural spark.`);
+  }
+  return out;
+}
+
 
 /** Birth chart: sun, moon, rising, and love compatibility (instead of houses and the wheel). */
 function BirthChart({ z, self, preview, targetId }: { z: MemberCard['zodiac']; self?: boolean; preview?: boolean; targetId: string }) {
@@ -174,12 +206,19 @@ function BirthChart({ z, self, preview, targetId }: { z: MemberCard['zodiac']; s
       </div>
 
       {!self && match && (
-        <div className="rounded-lg bg-white/60 dark:bg-navy-3 p-3">
-          <div className="text-[10px] uppercase tracking-widest text-gold mb-1 flex items-center gap-1"><Heart className="w-3 h-3" />Your zodiac match</div>
+        <div className="space-y-1.5">
+          <div className="text-[10px] uppercase tracking-widest text-gold flex items-center gap-1"><Heart className="w-3 h-3" />Your zodiac match</div>
           {match.source === 'synastry' && match.band ? (
-            <p className="text-sm"><b>{match.band}</b> chart-to-chart compatibility{match.score != null ? ` (${Math.round(match.score)}/100)` : ''}, based on both full birth charts.</p>
+            <>
+              <p className="text-sm"><b>{match.band}</b>{match.score != null ? ` · ${Math.round(match.score)}/100` : ''}</p>
+              {zodiacReading(match).map((t, i) => <p key={i} className="text-sm text-slate-600 dark:text-slate-300">{t}</p>)}
+              <p className="text-[11px] text-slate-500">Based on both full birth charts. Astrology counts for 10% of your match %.</p>
+            </>
           ) : match.element_match ? (
-            <p className="text-sm">{match.my_sun} × {match.their_sun}: {ELEMENT_MATCH[match.element_match]}</p>
+            <>
+              {zodiacReading(match).map((t, i) => <p key={i} className="text-sm text-slate-600 dark:text-slate-300">{t}</p>)}
+              <p className="text-[11px] text-slate-500">Sun signs only for now. Astrology counts for 10% of your match %.</p>
+            </>
           ) : <p className="text-sm text-slate-500">Not enough birth details yet.</p>}
         </div>
       )}
