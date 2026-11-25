@@ -47,7 +47,7 @@ function Root() {
 function Member() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [status, setStatus] = useState<Status | null>(null);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState<number | null>(null);
   const { theme, toggle } = useTheme();
 
   useEffect(() => {
@@ -90,17 +90,17 @@ function Member() {
   if (status.verification_status === 'rejected') {
     return <PendingScreen status={status} onRefresh={refresh} rejected />;
   }
-  if (editing || status.verification_status === 'incomplete' || status.verification_status === 'changes_requested') {
-    return <SetupWizard status={status} onDone={() => { setEditing(false); refresh(); }} onCancel={status.verification_status === 'approved' || status.verification_status === 'pending' ? () => setEditing(false) : undefined} />;
+  if (editing != null || status.verification_status === 'incomplete' || status.verification_status === 'changes_requested') {
+    return <SetupWizard status={status} initialStep={editing ?? undefined} onDone={() => { setEditing(null); refresh(); }} onCancel={status.verification_status === 'approved' || status.verification_status === 'pending' ? () => setEditing(null) : undefined} />;
   }
   if (status.verification_status === 'pending') {
-    return <PendingScreen status={status} onRefresh={refresh} onEdit={() => setEditing(true)} />;
+    return <PendingScreen status={status} onRefresh={refresh} onEdit={() => setEditing(0)} />;
   }
-  return <Shell status={status} refresh={refresh} theme={theme} toggleTheme={toggle} onEditProfile={() => setEditing(true)} />;
+  return <Shell status={status} refresh={refresh} theme={theme} toggleTheme={toggle} onEditProfile={(step?: number) => setEditing(step ?? 1)} />;
 }
 
 function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
-  status: Status; refresh: () => Promise<void>; theme: 'dark' | 'light'; toggleTheme: () => void; onEditProfile: () => void;
+  status: Status; refresh: () => Promise<void>; theme: 'dark' | 'light'; toggleTheme: () => void; onEditProfile: (step?: number) => void;
 }) {
   const [tab, setTab] = useState<Tab>('matches');
   const [openMatch, setOpenMatch] = useState<string | null>(null);

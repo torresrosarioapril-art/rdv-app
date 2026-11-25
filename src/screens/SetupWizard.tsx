@@ -31,14 +31,17 @@ function ageFrom(d?: string) {
   return a;
 }
 
-export default function SetupWizard({ status, onDone, onCancel }: { status: Status; onDone: () => void; onCancel?: () => void }) {
+export default function SetupWizard({ status, onDone, onCancel, initialStep }: { status: Status; onDone: () => void; onCancel?: () => void; initialStep?: number }) {
   const toast = useToast();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(initialStep ?? 0);
   const [f, setF] = useState<Form | null>(null);
   const [saved, setSaved] = useState<Form | null>(null);
   const [busy, setBusy] = useState(false);
   const [plans, setPlans] = useState<Record<string, any> | null>(null);
   const approved = status.verification_status === 'approved';
+  // Anyone past the first application can jump straight to any section.
+  const freeNav = status.verification_status !== 'incomplete';
+  const sections = approved ? STEPS.slice(0, 5) : STEPS;
 
   useEffect(() => {
     myProfile().then(({ profile, priv }) => {
@@ -93,6 +96,14 @@ export default function SetupWizard({ status, onDone, onCancel }: { status: Stat
     finally { setBusy(false); }
   };
 
+  const saveOnly = async () => {
+    if (missing.length) { toast('Please complete: ' + missing.join(', '), 'err'); return; }
+    setBusy(true);
+    try { await persist(); astroSync(); toast('Saved'); onDone(); }
+    catch (e) { toast(e instanceof Error ? e.message : 'Could not save', 'err'); }
+    finally { setBusy(false); }
+  };
+
   const submit = async () => {
     setBusy(true);
     try {
@@ -116,18 +127,30 @@ export default function SetupWizard({ status, onDone, onCancel }: { status: Stat
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <img src={BRAND.logo} alt="" className="w-7 h-7 rounded-full" />
-              <span className="text-xs uppercase tracking-widest text-gold">Step {step + 1} of {STEPS.length}</span>
+              <span className="text-xs uppercase tracking-widest text-gold">{approved ? 'Edit profile' : `Step ${step + 1} of ${STEPS.length}`}</span>
             </div>
             <div className="flex gap-2">
               {onCancel && <Button variant="ghost" className="!py-1.5 text-xs" onClick={onCancel}>Close</Button>}
               <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => supabase.auth.signOut()}>Sign out</Button>
             </div>
           </div>
-          <div className="flex gap-1">
-            {STEPS.map((s, i) => (
-              <button key={s} title={s} onClick={() => i < step && setStep(i)} className={cx('h-1.5 flex-1 rounded-full', i <= step ? 'bg-gold' : 'bg-slate-300 dark:bg-white/10', i < step && 'cursor-pointer')} />
-            ))}
-          </div>
+          {freeNav ? (
+            <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
+              {sections.map((s, i) => (
+                <button key={s} onClick={() => { setStep(i); window.scrollTo(0, 0); }}
+                  className={cx('shrink-0 rounded-full px-3 py-1.5 text-xs border cursor-pointer whitespace-nowrap',
+                    i === step ? 'bg-gold text-navy border-gold font-semibold' : 'border-slate-300 dark:border-white/15 text-slate-600 dark:text-slate-300 hover:border-gold/60')}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex gap-1">
+              {STEPS.map((s, i) => (
+                <button key={s} title={s} onClick={() => i < step && setStep(i)} className={cx('h-1.5 flex-1 rounded-full', i <= step ? 'bg-gold' : 'bg-slate-300 dark:bg-white/10', i < step && 'cursor-pointer')} />
+              ))}
+            </div>
+          )}
           <h1 className="text-xl font-display mt-3">{STEPS[step]}</h1>
           {status.verification_status === 'changes_requested' && (
             <div className="mt-2 rounded-xl border border-gold/50 bg-gold/10 p-3 text-sm">
@@ -148,12 +171,19 @@ export default function SetupWizard({ status, onDone, onCancel }: { status: Stat
         {step === 5 && <StepPlan plans={plans} status={status} f={f} set={set} />}
         {step === 6 && <StepReview f={f} goTo={setStep} />}
 
+        {approved ? (
+          <div className="flex items-center justify-end gap-2 pt-2">
+            {onCancel && <Button variant="ghost" onClick={onCancel}>Cancel</Button>}
+            <Button onClick={saveOnly} busy={busy}><Check className="w-4 h-4" />Save changes</Button>
+          </div>
+        ) : (
         <div className="flex items-center justify-between pt-2">
           <Button variant="outline" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}><ChevronLeft className="w-4 h-4" />Back</Button>
           {step < STEPS.length - 1
             ? <Button onClick={next} busy={busy}>Save & continue<ChevronRight className="w-4 h-4" /></Button>
             : <Button onClick={submit} busy={busy}><ShieldCheck className="w-4 h-4" />{approved ? 'Save profile' : 'Submit for verification'}</Button>}
         </div>
+        )}
       </div>
     </div>
   );

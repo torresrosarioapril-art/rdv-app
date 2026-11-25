@@ -15,7 +15,7 @@ import { Recorder } from '@/components/Recorder';
 import { SafetyStandardsModal } from '@/components/SafetyStandardsModal';
 
 export default function ProfileTab({ status, refresh, onEditProfile }: {
-  status: Status; refresh: () => Promise<void>; onEditProfile: () => void;
+  status: Status; refresh: () => Promise<void>; onEditProfile: (step?: number) => void;
 }) {
   const [data, setData] = useState<{ profile: Record<string, any>; priv: Record<string, any> } | null>(null);
   const [safety, setSafety] = useState(false);
@@ -40,7 +40,7 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setPreview(true)} disabled={!card}><Eye className="w-4 h-4" />Preview</Button>
-              <Button variant="outline" onClick={onEditProfile}><Pencil className="w-4 h-4" />Edit profile</Button>
+              <Button variant="outline" onClick={() => onEditProfile(1)}><Pencil className="w-4 h-4" />Edit profile</Button>
             </div>
           </div>
           <p className="text-xs text-slate-500 mb-4">This is how other members see you.</p>
@@ -48,7 +48,7 @@ export default function ProfileTab({ status, refresh, onEditProfile }: {
         </Card>
         {data && <PhotoManager uid={data.profile.id} photos={data.profile.photos ?? []} name={data.profile.display_name} onChange={loadMe} />}
         {data && <VoiceIntro uid={data.profile.id} path={data.profile.voice_intro_path ?? null} onChange={loadMe} />}
-        {data && <LookingFor priv={data.priv} onEdit={onEditProfile} />}
+        {data && <LookingFor priv={data.priv} onEdit={() => onEditProfile(3)} />}
       </div>
 
       <div className="space-y-5">
