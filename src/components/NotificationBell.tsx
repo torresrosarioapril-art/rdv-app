@@ -23,6 +23,7 @@ function describe(n: Notif): { text: string; icon: React.ReactNode; to?: { chat?
     case 'invitation_declined': return { text: 'Your invitation was declined', icon: <CalendarPlus className="w-4 h-4" />, to: { chat } };
     case 'invitation_countered': return { text: 'A new time was suggested for your date', icon: <CalendarPlus className="w-4 h-4" />, to: { chat } };
     case 'match_nudge': return { text: `It's been ${d.days ?? 30} days since you matched with ${d.name ?? 'someone'}. Ready to meet?`, icon: <CalendarPlus className="w-4 h-4" />, to: { chat } };
+    case 'date_change': return { text: 'A change to your date was suggested', icon: <CalendarPlus className="w-4 h-4" />, to: { chat } };
     case 'verification_approved': return { text: "You're verified. Welcome to Rendez-vous", icon: <ShieldCheck className="w-4 h-4" /> };
     case 'purchase': return { text: d.kind === 'safe_zones' ? 'Safe Zones unlocked' : d.kind === 'radar_unlock' ? 'Everyone nearby unlocked for 24 h' : 'Purchase confirmed', icon: <Sparkles className="w-4 h-4" /> };
     default: return { text: 'Update from Rendez-vous', icon: <Bell className="w-4 h-4" /> };

@@ -120,7 +120,7 @@ export interface Invitation {
   id: string; match_id: string; from_id: string; to_id: string; proposed_at: string;
   venue_name: string; venue_lat: number | null; venue_lng: number | null; venue_id?: string | null;
   status: 'pending' | 'accepted' | 'declined' | 'countered' | 'cancelled';
-  counter_of: string | null; created_at: string;
+  counter_of: string | null; change_of?: string | null; created_at: string;
 }
 
 export interface CalendarEvent {
@@ -249,6 +249,13 @@ export const respondInvitation = (id: string, action: 'accept' | 'decline' | 'co
   place?: { name: string; lat: number | null; lng: number | null; venueId: string | null } | null) =>
   rpc<string>('respond_invitation', {
     p_invitation: id, p_action: action, p_counter_at: counterAt?.toISOString() ?? null,
+    p_venue: place?.name ?? null, p_lat: place?.lat ?? null, p_lng: place?.lng ?? null, p_venue_id: place?.venueId ?? null,
+  });
+
+/** Either person suggests a change (time and/or place) to a confirmed date; the other accepts or declines. */
+export const suggestDateChange = (id: string, at: Date | null, place: { name: string; lat: number | null; lng: number | null; venueId: string | null } | null) =>
+  rpc<string>('suggest_date_change', {
+    p_invitation: id, p_at: at?.toISOString() ?? null,
     p_venue: place?.name ?? null, p_lat: place?.lat ?? null, p_lng: place?.lng ?? null, p_venue_id: place?.venueId ?? null,
   });
 

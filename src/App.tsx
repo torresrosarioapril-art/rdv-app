@@ -128,7 +128,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
     let alive = true;
     const load = async () => {
       const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true })
-        .is('read_at', null).in('type', ['message', 'ping', 'invitation', 'invitation_accepted', 'invitation_declined', 'invitation_countered', 'new_match', 'radar_connect', 'match_nudge']);
+        .is('read_at', null).in('type', ['message', 'ping', 'invitation', 'invitation_accepted', 'invitation_declined', 'invitation_countered', 'new_match', 'radar_connect', 'match_nudge', 'date_change']);
       if (alive) setUnread(count ?? 0);
     };
     load();

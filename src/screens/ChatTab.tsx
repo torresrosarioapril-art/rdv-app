@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
-  deleteMyMessage, getMyMatches, loadThread, markRead, respondInvitation, sendImage, sendInvitation, sendMessage, sendPing, sendVoice, signedUrl, uploadFile,
+  deleteMyMessage, suggestDateChange, getMyMatches, loadThread, markRead, respondInvitation, sendImage, sendInvitation, sendMessage, sendPing, sendVoice, signedUrl, uploadFile,
   type CalendarEvent, type Invitation, type MatchSummary, type Message, type Status,
 } from '@/lib/api';
 import { DatesList } from '@/components/UpcomingDates';
@@ -60,7 +60,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
     load();
     supabase.from('profiles').select('gender').eq('id', status.user_id).single().then(({ data }) => setGender(data?.gender ?? null));
     supabase.from('notifications').update({ read_at: new Date().toISOString() }).is('read_at', null)
-      .in('type', ['message', 'ping', 'invitation', 'invitation_accepted', 'invitation_declined', 'invitation_countered', 'new_match', 'radar_connect', 'match_nudge']).then(() => onRead());
+      .in('type', ['message', 'ping', 'invitation', 'invitation_accepted', 'invitation_declined', 'invitation_countered', 'new_match', 'radar_connect', 'match_nudge', 'date_change']).then(() => onRead());
     const ch = supabase.channel('matches-' + status.user_id)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${status.user_id}` }, load)
       .subscribe();
@@ -146,7 +146,7 @@ function Thread({ m, me, gender, onBack, onChanged }: {
 
   const invById = useMemo(() => new Map(invs.map((i) => [i.id, i])), [invs]);
   const hasPending = invs.some((i) => i.status === 'pending');
-  const used = invs.filter((i) => i.from_id === me && !i.counter_of).length;
+  const used = invs.filter((i) => i.from_id === me && !i.counter_of && !i.change_of).length;
   const talked = msgs.some((x) => x.sender_id && (x.kind === 'text' || x.kind === 'voice' || x.kind === 'image'));
   const inputRef = useRef<HTMLInputElement>(null);
   const pickPrompt = (q: string) => {
@@ -204,7 +204,7 @@ function Thread({ m, me, gender, onBack, onChanged }: {
           </div>
         )}
         {msgs.map((x) => (
-          <Bubble key={x.id} x={x} mine={x.sender_id === me} inv={x.invitation_id ? invById.get(x.invitation_id) : undefined}
+          <Bubble key={x.id} x={x} mine={x.sender_id === me} inv={x.invitation_id ? invById.get(x.invitation_id) : undefined} invs={invs}
             me={me} partnerName={partner.name} partnerId={partner.id} act={act} />
         ))}
         <div ref={bottom} />
@@ -307,8 +307,8 @@ function VoiceNote({ path, seconds }: { path: string; seconds: number | null }) 
   return url ? <audio src={url} controls className="h-9 max-w-[200px] sm:max-w-[240px]" /> : <span className="text-xs">Voice note {seconds ? `· ${seconds}s` : ''}</span>;
 }
 
-function Bubble({ x, mine, inv, me, partnerName, partnerId, act }: {
-  x: Message; mine: boolean; inv?: Invitation; me: string; partnerName: string; partnerId: string;
+function Bubble({ x, mine, inv, invs, me, partnerName, partnerId, act }: {
+  x: Message; mine: boolean; inv?: Invitation; invs: Invitation[]; me: string; partnerName: string; partnerId: string;
   act: (fn: () => Promise<unknown>, ok?: string) => Promise<void>;
 }) {
   if (x.kind === 'system') {
@@ -323,7 +323,7 @@ function Bubble({ x, mine, inv, me, partnerName, partnerId, act }: {
       </div>
     );
   }
-  if (x.kind === 'invitation' && inv) return <InvitationCard inv={inv} me={me} partnerName={partnerName} act={act} />;
+  if (x.kind === 'invitation' && inv) return <InvitationCard inv={inv} invs={invs} me={me} partnerName={partnerName} act={act} />;
   return <TextBubble x={x} mine={mine} partnerName={partnerName} partnerId={partnerId} act={act} />;
 }
 
@@ -372,24 +372,29 @@ function TextBubble({ x, mine, partnerName, partnerId, act }: {
   );
 }
 
-function InvitationCard({ inv, me, partnerName, act }: {
-  inv: Invitation; me: string; partnerName: string; act: (fn: () => Promise<unknown>, ok?: string) => Promise<void>;
+function InvitationCard({ inv, invs, me, partnerName, act }: {
+  inv: Invitation; invs: Invitation[]; me: string; partnerName: string; act: (fn: () => Promise<unknown>, ok?: string) => Promise<void>;
 }) {
   const mine = inv.from_id === me;
+  const isChange = !!inv.change_of;
+  const replaced = inv.status === 'cancelled' && invs.some((i) => i.change_of === inv.id && i.status === 'accepted');
+  const changePending = invs.some((i) => i.change_of === inv.id && i.status === 'pending');
+  const upcoming = new Date(inv.proposed_at).getTime() > Date.now();
+  const [changeOpen, setChangeOpen] = useState(false);
   const [counterOpen, setCounterOpen] = useState(false);
   const [counterAt, setCounterAt] = useState(toLocalInput(new Date(inv.proposed_at)));
   const [counterPlace, setCounterPlace] = useState<PickedPlace | null>(null);
   const cal = calendarLinks(inv, partnerName);
   const statusText: Record<Invitation['status'], string> = {
     pending: mine ? 'Waiting for an answer' : 'Waiting for your answer',
-    accepted: 'Confirmed', declined: 'Declined', countered: 'New time suggested', cancelled: 'Cancelled',
+    accepted: 'Confirmed', declined: 'Declined', countered: 'New time suggested', cancelled: replaced ? 'Changed (see below)' : 'Cancelled',
   };
 
   return (
     <div className={cx('flex', mine ? 'justify-end' : 'justify-start')}>
       <div className={cx('w-full max-w-sm rounded-2xl border p-3 sm:p-4 space-y-2', inv.status === 'accepted' ? 'border-emerald-400/50 bg-emerald-500/5' : 'border-gold/40 bg-gold/5')}>
         <div className="flex items-center justify-between text-[11px] uppercase tracking-widest">
-          <span className="text-gold">{inv.counter_of ? 'Suggested time' : 'Invitation'}{mine ? ' (sent)' : ''}</span>
+          <span className="text-gold">{isChange ? 'Suggested change' : inv.counter_of ? 'Suggested time' : 'Invitation'}{mine ? ' (sent)' : ''}</span>
           <span className={inv.status === 'accepted' ? 'text-emerald-500' : 'text-slate-500'}>{statusText[inv.status]}</span>
         </div>
         <div className="flex items-center gap-2 text-sm font-medium"><Clock className="w-4 h-4 text-gold" />{fmt(inv.proposed_at)}</div>
@@ -399,15 +404,19 @@ function InvitationCard({ inv, me, partnerName, act }: {
           <div className="flex flex-wrap gap-2 pt-1">
             <Button className="!py-1.5 text-xs" onClick={() => act(() => respondInvitation(inv.id, 'accept'), 'Date confirmed')}><Check className="w-3.5 h-3.5" />Accept</Button>
             <Button variant="outline" className="!py-1.5 text-xs" onClick={() => act(() => respondInvitation(inv.id, 'decline'))}><X className="w-3.5 h-3.5" />Decline</Button>
-            {!inv.counter_of && <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setCounterOpen(true)}>Suggest another time or place</Button>}
+            {!inv.counter_of && !isChange && <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setCounterOpen(true)}>Suggest another time or place</Button>}
           </div>
         )}
         {inv.status === 'accepted' && (
           <div className="flex flex-wrap gap-2 pt-1">
             <a href={cal.google} target="_blank" rel="noreferrer"><Button variant="outline" className="!py-1.5 text-xs"><CalendarCheck className="w-3.5 h-3.5" />Google Calendar</Button></a>
             <Button variant="outline" className="!py-1.5 text-xs" onClick={() => openIcs(cal.ics)}><CalendarPlus className="w-3.5 h-3.5" />Apple / Outlook</Button>
+            {upcoming && !changePending && <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setChangeOpen(true)}>Suggest a change</Button>}
           </div>
         )}
+        {inv.status === 'accepted' && changePending && <p className="text-[11px] text-slate-500">A change is waiting for an answer below.</p>}
+        <ChangeModal open={changeOpen} onClose={() => setChangeOpen(false)} inv={inv} partnerName={partnerName}
+          onSend={(at, place) => act(() => suggestDateChange(inv.id, at, place), 'Change suggested')} />
 
         <Modal open={counterOpen} onClose={() => setCounterOpen(false)} title="Suggest another time or place">
           <div className="space-y-4">
@@ -428,6 +437,33 @@ function InvitationCard({ inv, me, partnerName, act }: {
         </Modal>
       </div>
     </div>
+  );
+}
+
+function ChangeModal({ open, onClose, inv, partnerName, onSend }: {
+  open: boolean; onClose: () => void; inv: Invitation; partnerName: string;
+  onSend: (at: Date | null, place: { name: string; lat: number | null; lng: number | null; venueId: string | null } | null) => Promise<void>;
+}) {
+  const [at, setAt] = useState(toLocalInput(new Date(inv.proposed_at)));
+  const [place, setPlace] = useState<PickedPlace | null>(null);
+  return (
+    <Modal open={open} onClose={onClose} title="Suggest a change">
+      <div className="space-y-4">
+        <p className="text-sm text-slate-500">Change the time, the place, or both. Your date stays as it is until {partnerName} accepts; your calendars update when they do.</p>
+        <Field label="Date & time"><Input type="datetime-local" value={at} min={toLocalInput(new Date(Date.now() + 3600000))} onChange={(e) => setAt(e.target.value)} /></Field>
+        <VenueSearch value={place} onChange={setPlace} />
+        <p className="text-[11px] text-slate-500 -mt-2">Leave the place empty to keep {inv.venue_name}.</p>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={async () => {
+            const changed = new Date(at).getTime() !== new Date(inv.proposed_at).getTime();
+            const p = place?.name?.trim() ? { name: place.name.trim(), lat: place.lat ?? null, lng: place.lng ?? null, venueId: place.venueId ?? null } : null;
+            await onSend(changed ? new Date(at) : null, p);
+            onClose();
+          }}>Send suggestion</Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
