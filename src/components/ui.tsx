@@ -48,7 +48,7 @@ export function Field({ label, hint, optional, children }: { label: string; hint
 }
 
 const inputCls =
-  'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-gold dark:border-white/15 dark:bg-navy-3 dark:text-slate-100';
+  'w-full rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 px-3 py-2.5 text-sm outline-none focus:border-gold dark:border-white/15 dark:bg-navy-3 dark:text-slate-100 dark:placeholder:text-slate-500';
 
 export const Input = (p: React.InputHTMLAttributes<HTMLInputElement>) => <input {...p} className={cx(inputCls, p.className)} />;
 export const Textarea = (p: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (

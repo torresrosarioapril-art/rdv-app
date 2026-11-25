@@ -3,7 +3,11 @@ import { Eye, EyeOff, KeyRound, Mail, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { checkInviteCode, signupOptions } from '@/lib/api';
 import { BRAND, SIGNUP_COPY, SUPPORT } from '@/config/app';
-import { Button, Card, Field, Input, cx, useToast } from '@/components/ui';
+import { Button, Card, Field, Input as BaseInput, cx, useToast } from '@/components/ui';
+
+const Input = (p: React.InputHTMLAttributes<HTMLInputElement>) => (
+  <BaseInput {...p} className={cx('!bg-navy-3 !border-white/15 !text-slate-100 placeholder:!text-slate-500', p.className)} />
+);
 import { CHARTER_VERSION, SafetyStandardsModal } from '@/components/SafetyStandardsModal';
 
 type Mode = 'signin' | 'signup' | 'reset';
