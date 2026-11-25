@@ -19,6 +19,9 @@ export type Tab = 'radar' | 'matches' | 'chat' | 'profile';
 
 function useTheme() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    // ?theme=light or ?theme=dark in the link sets the theme (and remembers it)
+    const q = new URLSearchParams(window.location.search).get('theme');
+    if (q === 'light' || q === 'dark') return q;
     try { return (localStorage.getItem('rdv-theme') as 'dark' | 'light') || 'dark'; } catch { return 'dark'; }
   });
   useEffect(() => {
