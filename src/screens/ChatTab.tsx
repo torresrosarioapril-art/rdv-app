@@ -131,7 +131,13 @@ function Thread({ m, me, gender, onBack, onChanged }: {
   const invById = useMemo(() => new Map(invs.map((i) => [i.id, i])), [invs]);
   const hasPending = invs.some((i) => i.status === 'pending');
   const used = invs.filter((i) => i.from_id === me && !i.counter_of).length;
-  const talked = msgs.some((x) => x.sender_id && (x.kind === 'text' || x.kind === 'voice'));
+  const talked = msgs.some((x) => x.sender_id && (x.kind === 'text' || x.kind === 'voice' || x.kind === 'image'));
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pickPrompt = (q: string) => {
+    const v = `About your "${q}": `;
+    setText(v);
+    requestAnimationFrame(() => { const el = inputRef.current; if (el) { el.focus(); el.setSelectionRange(v.length, v.length); } });
+  };
   const prompts = (partner.prompts ?? []).filter((p) => p.answer?.trim());
 
   const send = async (e?: React.FormEvent) => {
@@ -151,10 +157,10 @@ function Thread({ m, me, gender, onBack, onChanged }: {
   return (
     <Card className="!p-0 flex flex-col h-[calc(100dvh-9.5rem)] md:h-full overflow-hidden">
       <div className="flex items-center gap-2 sm:gap-3 px-2.5 py-2 sm:p-3 border-b border-slate-200 dark:border-white/10">
-        <button onClick={onBack} className="md:hidden p-1 cursor-pointer"><ArrowLeft className="w-5 h-5" /></button>
-        <button onClick={() => setProfileOpen(true)} className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer">
+        <button onClick={onBack} className="md:hidden p-1 shrink-0 cursor-pointer"><ArrowLeft className="w-5 h-5" /></button>
+        <button onClick={() => setProfileOpen(true)} className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 text-left cursor-pointer">
           <Photo path={partner.photos?.[0]} alt={partner.name} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0" />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="font-medium truncate">{partner.name}{partner.age ? `, ${partner.age}` : ''}</div>
             <div className="text-[11px] text-slate-500 truncate">{partner.occupation} · tap for profile</div>
           </div>
@@ -170,10 +176,10 @@ function Thread({ m, me, gender, onBack, onChanged }: {
         {!talked && prompts.length > 0 && (
           <div className="rounded-xl border border-gold/30 bg-gold/5 p-2.5">
             <div className="text-[10px] uppercase tracking-widest text-gold mb-1.5">Start with one of {partner.name}'s prompts</div>
-            <div className="flex gap-2 overflow-x-auto -mx-0.5 px-0.5 pb-0.5 snap-x">
+            <div className="space-y-1.5">
               {prompts.slice(0, 3).map((p) => (
-                <button key={p.key} onClick={() => setText(`About your "${p.question}": `)}
-                  className="snap-start shrink-0 w-56 sm:w-64 text-left rounded-lg bg-white/80 dark:bg-navy-3 p-2 cursor-pointer hover:ring-1 hover:ring-gold/50">
+                <button key={p.key} onClick={() => pickPrompt(p.question)}
+                  className="block w-full text-left rounded-lg bg-white/80 dark:bg-navy-3 px-2.5 py-2 cursor-pointer hover:ring-1 hover:ring-gold/50">
                   <span className="block text-[10px] text-slate-500 truncate">{p.question}</span>
                   <span className="block text-xs leading-snug line-clamp-2">{p.answer}</span>
                 </button>
@@ -200,7 +206,7 @@ function Thread({ m, me, gender, onBack, onChanged }: {
           )}
         </div>
         <form onSubmit={send} className="flex items-end gap-1.5 sm:gap-2">
-          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message…" maxLength={4000} className="flex-1 min-w-0 !py-2" />
+          <Input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} placeholder="Message…" maxLength={4000} className="flex-1 min-w-0 !py-2" />
           <PhotoButton matchId={m.match_id} me={me} onSent={async () => { await reload(); onChanged(); }} />
           <VoiceButton matchId={m.match_id} onSent={async () => { await reload(); onChanged(); }} />
           <Button type="submit" busy={sending} className="!px-2.5 sm:!px-3"><Send className="w-4 h-4" /></Button>

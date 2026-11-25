@@ -21,9 +21,9 @@ export function SafetyMenu({ memberId, name, onDone, target = 'profile', refId, 
         <button onClick={() => setOpen('report')} aria-label={`Report this ${target}`} title={`Report this ${target}`}
           className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer"><Flag className="w-3.5 h-3.5" /></button>
       ) : (
-        <div className="flex gap-2">
-          <Button variant="ghost" className="!px-2.5 !py-1.5 text-xs" onClick={() => setOpen('report')}><Flag className="w-3.5 h-3.5" />Report</Button>
-          <Button variant="ghost" className="!px-2.5 !py-1.5 text-xs" onClick={() => setOpen('block')}><Ban className="w-3.5 h-3.5" />Block</Button>
+        <div className="flex gap-0.5 sm:gap-2 shrink-0">
+          <Button variant="ghost" className="!px-2 sm:!px-2.5 !py-1.5 text-xs" aria-label="Report" title="Report" onClick={() => setOpen('report')}><Flag className="w-4 h-4 sm:w-3.5 sm:h-3.5" /><span className="hidden sm:inline">Report</span></Button>
+          <Button variant="ghost" className="!px-2 sm:!px-2.5 !py-1.5 text-xs" aria-label="Block" title="Block" onClick={() => setOpen('block')}><Ban className="w-4 h-4 sm:w-3.5 sm:h-3.5" /><span className="hidden sm:inline">Block</span></Button>
         </div>
       )}
 
