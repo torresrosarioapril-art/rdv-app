@@ -10,3 +10,4 @@ Applied 25 Nov 2026: review_age_check_and_video_retention + schedule_video_purge
 - habit_tolerance_levels: profile_private.smoking_tolerance / drinking_tolerance (never_only | occasional_ok | any), migrated from no_*_partner;
   _habit_ok(); compat_score habits filter uses them both ways; closeness still scored (15%).
 - live_scores_and_batch_lock: batch and drop cards show the live compat score; one batch/drop build at a time per member; duplicate batches tidied.
+- radar_hidden_count_and_random_batch: radar returns hidden / hidden_strong beyond the plan cap; daily batch = random compatible members (batch_fill_min 0).

@@ -61,7 +61,7 @@ export interface Batch {
   swipe_credits: number; items: MemberCard[];
 }
 export interface Drops { week_start: string; cap: number; next_drop_at: string; items: MemberCard[] }
-export interface RadarResult { radius_km: number; cap: number | null; items: MemberCard[] }
+export interface RadarResult { radius_km: number; cap: number | null; items: MemberCard[]; hidden?: number; hidden_strong?: number; strong_min?: number }
 
 export interface PlanLimits {
   plan: Plan; label: string; price_aed: number; swipes_per_day: number; drops_per_week: number;

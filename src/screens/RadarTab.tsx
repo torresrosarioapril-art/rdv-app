@@ -39,8 +39,8 @@ function activeAgo(min?: number) {
   return `active ${Math.floor(min / 60)} h ago`;
 }
 
-export default function RadarTab({ status, refreshStatus, onOpenChat }: {
-  status: Status; refreshStatus: () => Promise<void>; onOpenChat: (id: string) => void;
+export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan }: {
+  status: Status; refreshStatus: () => Promise<void>; onOpenChat: (id: string) => void; onOpenPlan?: () => void;
 }) {
   const toast = useToast();
   const [consented, setConsented] = useState(!!status.consents.location);
@@ -53,6 +53,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat }: {
   const [minScore, setMinScore] = useState(0);
   const [items, setItems] = useState<MemberCard[]>([]);
   const [cap, setCap] = useState<number | null>(null);
+  const [hidden, setHidden] = useState({ total: 0, strong: 0, min: 75 });
   const [selected, setSelected] = useState<MemberCard | null>(null);
   const [busy, setBusy] = useState(false);
   const lastSent = useRef(0);
@@ -77,7 +78,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat }: {
 
   const scan = useCallback(async () => {
     if (!pos) return;
-    try { const r = await radar(radius, minScore); setItems(r.items); setCap(r.cap); }
+    try { const r = await radar(radius, minScore); setItems(r.items); setCap(r.cap); setHidden({ total: r.hidden ?? 0, strong: r.hidden_strong ?? 0, min: r.strong_min ?? 75 }); }
     catch (e) { toast(e instanceof Error ? e.message : 'Radar unavailable', 'err'); }
   }, [pos, radius, minScore, toast]);
 
@@ -161,6 +162,17 @@ export default function RadarTab({ status, refreshStatus, onOpenChat }: {
           {geoErr && <p className="text-sm text-rose-500 text-center mt-2">{geoErr}</p>}
           {!pos && !geoErr && <p className="text-sm text-slate-500 text-center mt-2">Finding your location…</p>}
           {inZone && <p className="text-sm text-gold text-center mt-2 flex items-center justify-center gap-1.5"><ShieldCheck className="w-4 h-4" />You're in one of your Safe Zones, so Ghost mode is on automatically.</p>}
+          {hidden.total > 0 && (
+            <div className="mt-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-sm flex flex-wrap items-center justify-between gap-2">
+              <span>
+                {hidden.strong > 0
+                  ? <><b>{hidden.strong} more strong match{hidden.strong === 1 ? '' : 'es'}</b> ({hidden.min}%+) {hidden.strong === 1 ? 'is' : 'are'} nearby right now.</>
+                  : <><b>{hidden.total} more compatible member{hidden.total === 1 ? '' : 's'}</b> {hidden.total === 1 ? 'is' : 'are'} nearby right now.</>}
+                {' '}Your plan shows up to {cap} on the radar.
+              </span>
+              <Button className="!py-1.5 text-xs" onClick={onOpenPlan}>Upgrade to see them</Button>
+            </div>
+          )}
         </Card>
 
         <Card className="!p-4">
@@ -214,9 +226,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat }: {
             </Card>
           </button>
         ))}
-        {cap != null && items.length >= cap && (
-          <p className="text-xs text-slate-500 text-center">Your plan shows up to {cap} matches on the radar. Upgrade to Premium to see everyone in range.</p>
-        )}
+
       </div>
 
 
