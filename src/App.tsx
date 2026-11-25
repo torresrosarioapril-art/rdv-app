@@ -104,6 +104,8 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
   status: Status; refresh: () => Promise<void>; theme: 'dark' | 'light'; toggleTheme: () => void; onEditProfile: (step?: number) => void;
 }) {
   const [tab, setTab] = useState<Tab>('matches');
+  const [prevTab, setPrevTab] = useState<Tab>('matches');
+  const openSettings = () => { if (tab !== 'settings') setPrevTab(tab); setTab('settings'); };
   const [openMatch, setOpenMatch] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
   const toast = useToast();
@@ -139,7 +141,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
   useBackgroundLocation(status, refresh);
 
   const openChat = (matchId: string) => { setOpenMatch(matchId); setTab('chat'); };
-  const openPlan = () => { setTab('settings'); setTimeout(() => document.getElementById('plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); };
+  const openPlan = () => { openSettings(); setTimeout(() => document.getElementById('plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'radar', label: 'Radar', icon: <Compass className="w-5 h-5" /> },
@@ -168,13 +170,13 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
               </button>
             ))}
           </nav>
-          <div className="flex items-center gap-0.5 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0 pl-2">
             <VisibilityShortcut status={status} refresh={refresh} />
             <button title="Theme" aria-label="Switch light or dark" onClick={toggleTheme} className={HEADER_ICON}>
               {theme === 'dark' ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
             </button>
             <NotificationBell uid={status.user_id} onOpenChat={openChat} onOpenRadar={() => setTab('radar')} />
-            <button title="Settings" aria-label="Settings" onClick={() => setTab('settings')}
+            <button title="Settings" aria-label="Settings" onClick={openSettings}
               className={HEADER_ICON}>
               <Settings className="w-[18px] h-[18px]" />
             </button>
@@ -188,7 +190,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
         {tab === 'radar' && <RadarTab status={status} refreshStatus={refresh} onOpenChat={openChat} onOpenPlan={openPlan} />}
         {tab === 'chat' && <ChatTab status={status} openMatch={openMatch} setOpenMatch={setOpenMatch} onRead={() => setUnread(0)} events={events} onDatesChanged={loadEvents} />}
         {(tab === 'profile' || tab === 'settings') && <ProfileTab view={tab} status={status} refresh={refresh} onEditProfile={onEditProfile}
-          theme={theme} onToggleTheme={toggleTheme} onOpenSettings={() => setTab('settings')} onBack={() => setTab('profile')} />}
+          theme={theme} onToggleTheme={toggleTheme} onOpenSettings={openSettings} onBack={() => setTab(prevTab)} />}
       </main>
 
       <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-navy-2/95 backdrop-blur border-t border-slate-200 dark:border-white/10 grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">

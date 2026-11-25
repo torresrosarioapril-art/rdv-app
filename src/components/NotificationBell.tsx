@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Bell, CalendarCheck, CalendarPlus, Hand, Heart, MapPin, MessageCircle, ShieldCheck, Sparkles } from 'lucide-react';
+import { Bell, CalendarCheck, CalendarPlus, Hand, Heart, MapPin, MessageCircle, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { cx } from './ui';
 
@@ -73,7 +73,13 @@ export function NotificationBell({ uid, onOpenChat, onOpenRadar }: { uid: string
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 top-14 sm:top-auto sm:mt-2 z-50 sm:w-80 max-h-[70dvh] overflow-y-auto rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-navy-2 shadow-xl p-1.5">
-            <div className="px-2.5 pt-1.5 pb-1 text-[10px] uppercase tracking-widest text-gold">Notifications</div>
+            <div className="flex items-center justify-between px-1 pb-1">
+              <button onClick={() => setOpen(false)} aria-label="Close"
+                className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 pl-1.5 pr-2.5 py-1 text-xs font-medium cursor-pointer">
+                <X className="w-4 h-4" />Close
+              </button>
+              <span className="text-[10px] uppercase tracking-widest text-gold pr-1.5">Notifications</span>
+            </div>
             {items.length === 0 && <p className="px-2.5 py-4 text-sm text-slate-500">Nothing yet. Matches, messages, Pings, date invitations and nearby match alerts show up here.</p>}
             {items.map((n) => {
               const x = describe(n);

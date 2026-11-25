@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import {
-  ArrowLeft, Bell, Copy, Crown, Eye, ImagePlus, Lock, LogOut, MapPin, Moon, Pencil, Plus, Shield, ShieldCheck, Sun, Trash2, UserX,
+  Bell, Copy, Crown, Eye, ImagePlus, Lock, LogOut, MapPin, Moon, Pencil, Plus, Shield, ShieldCheck, Sun, Trash2, UserX, X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
@@ -35,8 +35,11 @@ export default function ProfileTab({ view = 'profile', status, refresh, onEditPr
     return (
       <div className="max-w-2xl mx-auto space-y-4">
         <div className="flex items-center gap-2">
-          <button onClick={onBack} className="p-1.5 -ml-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer" aria-label="Back to profile"><ArrowLeft className="w-5 h-5" /></button>
-          <h1 className="text-2xl font-display">Settings</h1>
+          <button onClick={onBack} aria-label="Close settings"
+            className="flex items-center gap-1.5 rounded-full bg-slate-200/70 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 pl-2 pr-3 py-1.5 text-sm font-medium cursor-pointer">
+            <X className="w-5 h-5" />Close
+          </button>
+          <h1 className="text-2xl font-display ml-1">Settings</h1>
         </div>
         <div id="plan" className="scroll-mt-20"><PlanCard status={status} refresh={refresh} /></div>
         {status.plan === 'plan2' && <Consultations status={status} refresh={refresh} />}
