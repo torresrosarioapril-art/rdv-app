@@ -215,10 +215,15 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{m.name}{m.age ? `, ${m.age}` : ''}</div>
                 <div className="text-xs text-slate-500 truncate">{m.occupation}</div>
-                <div className="text-[11px] text-slate-500 truncate">
+                <div className="text-[11px] text-slate-500 leading-snug">
                   {[m.lat != null && m.lng != null ? nearestArea({ lat: m.lat, lng: m.lng }) && `Near ${nearestArea({ lat: m.lat, lng: m.lng })}` : null,
-                    `~${m.distance_km} km`, activeAgo(m.last_active_min)].filter(Boolean).join(' · ')}
+                    `~${m.distance_km} km`].filter(Boolean).join(' · ')}
                 </div>
+                {activeAgo(m.last_active_min) && (
+                  <div className="text-[11px] text-emerald-600 dark:text-emerald-400 leading-snug flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-current" />{activeAgo(m.last_active_min)}
+                  </div>
+                )}
               </div>
               <ScoreBadge score={m.score} band={undefined} />
             </Card>
@@ -244,10 +249,10 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
         </Card>
       </div>
 
-      <Modal open={!!selected} onClose={() => setSelected(null)} wide>
+      <Modal open={!!selected} onClose={() => setSelected(null)} wide
+        actions={selected && <SafetyMenu memberId={selected.id} name={selected.name} onDone={() => { setSelected(null); scan(); }} />}>
         {selected && (
           <>
-            <div className="flex justify-end mb-2 pr-8"><SafetyMenu memberId={selected.id} name={selected.name} onDone={() => { setSelected(null); scan(); }} /></div>
             <ProfileView m={selected} />
             <div className="mt-5 flex justify-end">
               <Button busy={busy} onClick={() => connect(selected)}><MessageCircle className="w-4 h-4" />Message & meet</Button>

@@ -80,8 +80,10 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
   );
 }
 
-export function Modal({ open, onClose, title, children, wide }: {
+export function Modal({ open, onClose, title, children, wide, actions }: {
   open: boolean; onClose: () => void; title?: string; children: React.ReactNode; wide?: boolean;
+  /** Shown on the right of the top bar (e.g. report / block). Close is always on the left. */
+  actions?: React.ReactNode;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -96,10 +98,15 @@ export function Modal({ open, onClose, title, children, wide }: {
         onClick={(e) => e.stopPropagation()}
         className={cx('relative w-full max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-white dark:bg-navy-2 border border-slate-200 dark:border-white/10 p-5 sm:p-6', wide ? 'sm:max-w-3xl' : 'sm:max-w-lg')}
       >
-        <button onClick={onClose} aria-label="Close" className="absolute right-4 top-4 p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer">
-          <X className="w-4 h-4" />
-        </button>
-        {title && <h2 className="text-xl font-display mb-4 pr-8">{title}</h2>}
+        {/* Top bar stays visible while scrolling: big Close on the left, actions on the right */}
+        <div className="sticky -top-5 sm:-top-6 z-20 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-3 px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 bg-white/95 dark:bg-navy-2/95 backdrop-blur border-b border-slate-200/70 dark:border-white/10 rounded-t-3xl">
+          <button onClick={onClose} aria-label="Close"
+            className="flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 pl-2 pr-3 py-1.5 text-sm font-medium cursor-pointer">
+            <X className="w-5 h-5" />Close
+          </button>
+          {actions && <div className="flex items-center gap-1">{actions}</div>}
+        </div>
+        {title && <h2 className="text-xl font-display mb-4">{title}</h2>}
         {children}
       </div>
     </div>
