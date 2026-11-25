@@ -46,13 +46,19 @@ export const RELIGIONS = [
 ];
 
 export const NATIONALITIES = [
-  'Algerian', 'American', 'Argentinian', 'Australian', 'Bahraini', 'Bangladeshi', 'Belgian', 'Brazilian',
-  'British', 'Canadian', 'Chinese', 'Colombian', 'Danish', 'Dutch', 'Egyptian', 'Emirati', 'Ethiopian',
-  'Filipino', 'French', 'German', 'Greek', 'Indian', 'Indonesian', 'Iranian', 'Iraqi', 'Irish', 'Italian',
-  'Japanese', 'Jordanian', 'Kenyan', 'Korean', 'Kuwaiti', 'Lebanese', 'Malaysian', 'Mexican', 'Moroccan',
-  'New Zealander', 'Nigerian', 'Norwegian', 'Omani', 'Pakistani', 'Palestinian', 'Polish', 'Portuguese',
-  'Qatari', 'Russian', 'Saudi', 'South African', 'Spanish', 'Sri Lankan', 'Swedish', 'Swiss', 'Syrian',
-  'Tunisian', 'Turkish', 'Ukrainian', 'Other',
+  'Afghan', 'Albanian', 'Algerian', 'American', 'Argentinian', 'Armenian', 'Australian', 'Austrian',
+  'Azerbaijani', 'Bahraini', 'Bangladeshi', 'Belarusian', 'Belgian', 'Bosnian', 'Brazilian', 'British',
+  'Bulgarian', 'Burmese', 'Cambodian', 'Cameroonian', 'Canadian', 'Chilean', 'Chinese', 'Colombian',
+  'Croatian', 'Cypriot', 'Czech', 'Danish', 'Dutch', 'Egyptian', 'Emirati', 'Eritrean', 'Estonian',
+  'Ethiopian', 'Filipino', 'Finnish', 'French', 'Georgian', 'German', 'Ghanaian', 'Greek', 'Hong Konger',
+  'Hungarian', 'Indian', 'Indonesian', 'Iranian', 'Iraqi', 'Irish', 'Italian', 'Ivorian', 'Japanese',
+  'Jordanian', 'Kazakh', 'Kenyan', 'Korean', 'Kuwaiti', 'Kyrgyz', 'Latvian', 'Lebanese', 'Libyan',
+  'Lithuanian', 'Malaysian', 'Maltese', 'Mauritian', 'Mexican', 'Mongolian', 'Moroccan', 'Nepali',
+  'New Zealander', 'Nigerian', 'Norwegian', 'Omani', 'Pakistani', 'Palestinian', 'Peruvian', 'Polish',
+  'Portuguese', 'Qatari', 'Romanian', 'Russian', 'Saudi', 'Senegalese', 'Serbian', 'Singaporean', 'Slovak',
+  'Somali', 'South African', 'Spanish', 'Sri Lankan', 'Sudanese', 'Swedish', 'Swiss', 'Syrian', 'Taiwanese',
+  'Tajik', 'Tanzanian', 'Thai', 'Tunisian', 'Turkish', 'Turkmen', 'Ugandan', 'Ukrainian', 'Uzbek',
+  'Venezuelan', 'Vietnamese', 'Yemeni', 'Zimbabwean', 'Other',
 ];
 
 export const UAE_CITIES = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah', 'Umm Al Quwain'];
