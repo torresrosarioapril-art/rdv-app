@@ -4,7 +4,9 @@ import {
   giveConsent, radar, radarConnect, setPrivacy, updateMyLocation, type MemberCard, type Privacy, type Status,
 } from '@/lib/api';
 import { RADAR, VISIBILITY } from '@/config/app';
-import { Badge, Button, Card, Empty, Modal, Photo, Select, cx, useToast } from '@/components/ui';
+import { Badge, Button, Card, Empty, Modal, Photo, Select, Toggle, cx, useToast } from '@/components/ui';
+import { getNearbyAlert, saveNearbyAlert, type NearbyAlert } from '@/lib/api';
+import { BellRing } from 'lucide-react';
 import { SafeZones } from '@/screens/ProfileTab';
 import { ProfileView, ScoreBadge } from '@/components/ProfileView';
 import { SafetyMenu } from '@/components/SafetyMenu';
@@ -146,6 +148,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat }: {
             ))}
           </div>
         </Card>
+        <NearbyAlerts uid={status.user_id} />
         <SafeZones status={status} />
       </div>
 
@@ -199,5 +202,44 @@ export default function RadarTab({ status, refreshStatus, onOpenChat }: {
         )}
       </Modal>
     </div>
+  );
+}
+
+/** Nearby match alerts: get told when a visible match comes within your chosen distance. */
+function NearbyAlerts({ uid }: { uid: string }) {
+  const toast = useToast();
+  const [pref, setPref] = useState<NearbyAlert | null>(null);
+  useEffect(() => { getNearbyAlert(uid).then(setPref).catch(() => setPref({ enabled: false, radius_m: 500, min_score: 75 })); }, [uid]);
+  if (!pref) return null;
+  const save = async (next: NearbyAlert) => {
+    const prev = pref; setPref(next);
+    try {
+      await saveNearbyAlert(uid, next);
+      if (next.enabled && !prev.enabled) {
+        if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission().catch(() => {});
+        toast(`You'll be alerted when a ${next.min_score}%+ match is within ${next.radius_m >= 1000 ? next.radius_m / 1000 + ' km' : next.radius_m + ' m'}`);
+      }
+    } catch (e) { setPref(prev); toast(e instanceof Error ? e.message : 'Could not save', 'err'); }
+  };
+  return (
+    <Card className="!p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[11px] uppercase tracking-widest text-gold flex items-center gap-1.5"><BellRing className="w-3.5 h-3.5" />Nearby match alerts</div>
+        <Toggle checked={pref.enabled} onChange={(v) => save({ ...pref, enabled: v })} label="" />
+      </div>
+      <p className="text-[11px] text-slate-500">Get a notification when a match comes within range, so you don't have to keep checking. Only while you're visible (not Ghost or in a Safe Zone), never their exact spot, and at most once every 12 hours per person.</p>
+      {pref.enabled && (
+        <div className="grid grid-cols-2 gap-2">
+          <label className="text-xs space-y-1"><span className="text-slate-500">Within</span>
+            <Select value={String(pref.radius_m)} onChange={(e) => save({ ...pref, radius_m: Number(e.target.value) })} placeholder="Distance"
+              options={[{ value: '500', label: '500 m' }, { value: '1000', label: '1 km' }, { value: '2000', label: '2 km' }]} />
+          </label>
+          <label className="text-xs space-y-1"><span className="text-slate-500">Match of at least</span>
+            <Select value={String(pref.min_score)} onChange={(e) => save({ ...pref, min_score: Number(e.target.value) })} placeholder="Match %"
+              options={[{ value: '60', label: '60%' }, { value: '75', label: '75%' }, { value: '90', label: '90%' }]} />
+          </label>
+        </div>
+      )}
+    </Card>
   );
 }

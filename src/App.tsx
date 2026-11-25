@@ -102,6 +102,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
   const [tab, setTab] = useState<Tab>('matches');
   const [openMatch, setOpenMatch] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
+  const toast = useToast();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const loadEvents = useCallback(() => { myCalendar().then(setEvents).catch(() => {}); }, []);
   useEffect(() => { loadEvents(); }, [loadEvents]);
@@ -116,10 +117,20 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
     };
     load();
     const ch = supabase.channel('notif-' + status.user_id)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${status.user_id}` }, () => { load(); loadEvents(); })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${status.user_id}` }, (ev: any) => {
+        load(); loadEvents();
+        const n = ev?.new;
+        if (n?.type === 'nearby_match') {
+          const d = n.payload ?? {};
+          const where = d.within_m >= 1000 ? `${d.within_m / 1000} km` : `${d.within_m} m`;
+          const text = `${d.name ?? 'A match'} (${d.score}% match) is within ${where} of you right now`;
+          toast(`${text}. Open Radar to see.`);
+          try { if (document.hidden && 'Notification' in window && Notification.permission === 'granted') new Notification('Rendez-vous', { body: text, icon: BRAND.logo }); } catch { /* ignore */ }
+        }
+      })
       .subscribe();
     return () => { alive = false; supabase.removeChannel(ch); };
-  }, [status.user_id, loadEvents]);
+  }, [status.user_id, loadEvents, toast]);
 
   useBackgroundLocation(status, refresh);
 

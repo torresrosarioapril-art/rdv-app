@@ -154,6 +154,15 @@ export async function myProfile() {
   return { profile: p.data as Record<string, any>, priv: x.data as Record<string, any> };
 }
 
+export type NearbyAlert = { enabled: boolean; radius_m: number; min_score: number };
+export async function getNearbyAlert(uid: string): Promise<NearbyAlert> {
+  const { data } = await supabase.from('profile_private').select('nearby_alert').eq('user_id', uid).single();
+  return (data?.nearby_alert as NearbyAlert) ?? { enabled: false, radius_m: 500, min_score: 75 };
+}
+export async function saveNearbyAlert(uid: string, pref: NearbyAlert) {
+  friendly((await supabase.from('profile_private').update({ nearby_alert: pref }).eq('user_id', uid)).error);
+}
+
 export type NotifyPrefs = { messages: boolean; matches: boolean; drops: boolean; invitations: boolean; radar: boolean };
 export async function saveNotifyPrefs(uid: string, prefs: NotifyPrefs) {
   friendly((await supabase.from('profile_private').update({ notify_prefs: prefs }).eq('user_id', uid)).error);
