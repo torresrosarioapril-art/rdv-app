@@ -134,18 +134,18 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
               {privacy === 'ghost' ? 'Ghost' : zoneHidden ? 'Safe Zone' : 'Visible'}
             </button>
           </div>
-          {/* Filters sit with the map they change */}
-          <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1">
-            {RADAR.radiusOptionsKm.map((k) => (
-              <button key={k} onClick={() => setRadius(k)} className={cx('shrink-0 px-3 py-1.5 rounded-full text-xs border cursor-pointer', radius === k ? 'bg-gold text-navy border-gold font-semibold' : 'border-slate-300 dark:border-white/15')}>{k} km</button>
-            ))}
-            <select value={String(minScore)} onChange={(e) => setMinScore(Number(e.target.value))}
-              className="shrink-0 ml-auto rounded-full border border-slate-300 dark:border-white/15 bg-transparent px-2.5 py-1.5 text-xs cursor-pointer">
+          {/* Filters sit with the map they change: match % first, then distance. Wraps, never scrolls sideways. */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <select value={String(minScore)} onChange={(e) => setMinScore(Number(e.target.value))} aria-label="Minimum match"
+              className="rounded-full border border-gold/50 bg-gold/10 text-gold font-semibold px-2.5 py-1 text-[16px] sm:text-xs cursor-pointer">
               <option value="0">All compatible</option>
-              {RADAR.minScoreOptions.filter((x) => x > 0).map((x) => <option key={x} value={String(x)}>{x}%+</option>)}
+              {RADAR.minScoreOptions.filter((x) => x > 0).map((x) => <option key={x} value={String(x)}>{x}%+ match</option>)}
             </select>
+            {RADAR.radiusOptionsKm.map((k) => (
+              <button key={k} onClick={() => setRadius(k)} className={cx('px-2.5 py-1 rounded-full text-xs border cursor-pointer', radius === k ? 'bg-gold text-navy border-gold font-semibold' : 'border-slate-300 dark:border-white/15')}>{k} km</button>
+            ))}
           </div>
-          <div className="relative mx-auto aspect-square max-w-[420px]">
+          <div className="relative mx-auto aspect-square w-full max-w-[min(420px,46vh)]">
             <svg viewBox={`-${R + 10} -${R + 10} ${2 * R + 20} ${2 * R + 20}`} className="w-full h-full">
               {[1, 0.66, 0.33].map((f) => <circle key={f} r={R * f} fill="none" stroke="#c9a24a" strokeOpacity={0.25} />)}
               <line x1={-R} x2={R} y1={0} y2={0} stroke="#c9a24a" strokeOpacity={0.12} />
