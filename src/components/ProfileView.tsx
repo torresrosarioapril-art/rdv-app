@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Briefcase, Flag, GraduationCap, Heart, Link2, MapPin, Ruler, ShieldCheck, Sparkles, Star } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { signedUrl, type MemberCard } from '@/lib/api';
-import { HABITS, KIDS, POLITICAL, RELOCATION, TIMELINE, labelOf } from '@/config/app';
+import { HABITS, KIDS, MARITAL_STATUS, POLITICAL, RELOCATION, TIMELINE, labelOf } from '@/config/app';
 import { Badge, Photo, cx } from './ui';
 
 export function ScoreBadge({ score, band }: { score?: number; band?: string }) {
@@ -63,6 +63,7 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
           {(m.university || m.degree) && <Badge tone="slate"><GraduationCap className="w-3 h-3" />{[m.degree, m.university].filter(Boolean).join(', ')}</Badge>}
           {m.nationality && <Badge tone="slate"><Flag className="w-3 h-3" />{m.nationality}</Badge>}
           {m.height_cm && <Badge tone="slate"><Ruler className="w-3 h-3" />{m.height_cm} cm</Badge>}
+          {m.work_verified && <Badge tone="green"><ShieldCheck className="w-3 h-3" />Work email verified</Badge>}
           {m.linkedin_url && <a href={m.linkedin_url} target="_blank" rel="noreferrer"><Badge><Link2 className="w-3 h-3" />LinkedIn</Badge></a>}
         </div>
         {m.bio && <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-line">{m.bio}</p>}
@@ -70,7 +71,9 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
         <div className="grid grid-cols-2 gap-2 text-sm">
           <Fact k="Faith" v={[m.religion, m.religion_practice].filter(Boolean).join(' · ')} />
           <Fact k="Marriage" v={labelOf(TIMELINE, m.marriage_timeline)} />
-          <Fact k="Children" v={labelOf(KIDS, m.kids)} />
+          {m.marital_status && <Fact k="Marital status" v={labelOf(MARITAL_STATUS, m.marital_status)} />}
+          {m.has_children != null && <Fact k="Has children" v={m.has_children ? `Yes${m.children_count ? ` (${m.children_count})` : ''}` : 'No'} />}
+          <Fact k="Children in future" v={labelOf(KIDS, m.kids)} />
           <Fact k="Relocation" v={labelOf(RELOCATION, m.relocation)} />
           <Fact k="Drinking" v={labelOf(HABITS, m.drinking)} />
           <Fact k="Smoking" v={labelOf(HABITS, m.smoking)} />

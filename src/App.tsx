@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Compass, Heart, MessageCircle, Moon, Sun, UserRound, EyeOff, Settings, Waves } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { myCalendar, myStatus, setPrivacy, updateMyLocation, type CalendarEvent, type Privacy, type Status } from '@/lib/api';
+import { confirmWorkEmail, myCalendar, myStatus, setPrivacy, updateMyLocation, type CalendarEvent, type Privacy, type Status } from '@/lib/api';
 import { BRAND } from '@/config/app';
 import { ToastProvider, Spinner, cx, useToast } from '@/components/ui';
 import AuthScreen from '@/screens/AuthScreen';
@@ -41,6 +41,16 @@ export default function App() {
 }
 
 function Root() {
+  const toast = useToast();
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const t = q.get('verify_work_email');
+    if (!t) return;
+    q.delete('verify_work_email');
+    window.history.replaceState(null, '', window.location.pathname + (q.toString() ? `?${q}` : ''));
+    confirmWorkEmail(t).then((r) => toast(r?.ok ? 'Work email confirmed. You can now turn on Hide from coworkers in Settings.' : r?.error ?? 'This link is not valid.', r?.ok ? undefined : 'err'))
+      .catch(() => toast('Could not confirm the link. Please try again.', 'err'));
+  }, [toast]);
   if (window.location.pathname.startsWith('/review')) return <ReviewPage />;
   return <Member />;
 }
@@ -118,7 +128,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
     let alive = true;
     const load = async () => {
       const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true })
-        .is('read_at', null).in('type', ['message', 'ping', 'invitation', 'invitation_accepted', 'invitation_declined', 'invitation_countered', 'new_match', 'radar_connect']);
+        .is('read_at', null).in('type', ['message', 'ping', 'invitation', 'invitation_accepted', 'invitation_declined', 'invitation_countered', 'new_match', 'radar_connect', 'match_nudge']);
       if (alive) setUnread(count ?? 0);
     };
     load();

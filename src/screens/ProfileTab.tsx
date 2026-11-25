@@ -14,6 +14,7 @@ import { ProfileView } from '@/components/ProfileView';
 import { Recorder } from '@/components/Recorder';
 import { SafetyStandardsModal } from '@/components/SafetyStandardsModal';
 import { NearbyAlerts, SettingRow } from '@/screens/RadarTab';
+import { WorkEmailCard } from '@/components/WorkEmail';
 
 export default function ProfileTab({ view = 'profile', status, refresh, onEditProfile, theme, onToggleTheme, onOpenSettings, onBack }: {
   view?: 'profile' | 'settings'; status: Status; refresh: () => Promise<void>; onEditProfile: (step?: number) => void;
@@ -51,6 +52,8 @@ export default function ProfileTab({ view = 'profile', status, refresh, onEditPr
           <NearbyAlerts uid={status.user_id} />
         </Card>
         <p className="text-[11px] text-slate-500 -mt-2">To switch between Visible and Ghost, use the eye button at the top of every screen.</p>
+        <SectionTitle>Work email & coworkers</SectionTitle>
+        <WorkEmailCard />
         <SectionTitle>Notifications</SectionTitle>
         {data && <NotificationSettings uid={data.profile.id} initial={data.priv.notify_prefs} />}
         <SectionTitle>Invite friends</SectionTitle>
@@ -154,6 +157,7 @@ function toCard(p: Record<string, any>, x: Record<string, any>): MemberCard {
     id: p.id, name: p.display_name, age: ageOf(x.birth_date), gender: p.gender, nationality: p.nationality, city: p.city,
     district: p.district, occupation: p.occupation, company: p.company, industry: p.industry, university: p.university,
     degree: p.degree, height_cm: p.height_cm, political: p.political, religion: p.religion, religion_practice: p.religion_practice,
+    marital_status: p.marital_status, has_children: p.has_children, children_count: p.children_count,
     marriage_timeline: p.marriage_timeline, kids: p.kids, drinking: p.drinking, smoking: p.smoking, relocation: p.relocation,
     zodiac: { sun: p.zodiac_sun, moon: p.zodiac_moon, rising: p.zodiac_rising, element: ELEMENT[p.zodiac_sun] ?? null,
       placements: p.natal_placements, chart_path: p.natal_chart_path },
@@ -168,7 +172,9 @@ function LookingFor({ priv, onEdit }: { priv: Record<string, any>; onEdit: () =>
     ['Nationality', (priv.desired_nationalities ?? []).length ? priv.desired_nationalities.join(', ') : 'Any'],
     ['Religion', priv.desired_religion || 'Any'],
     ['Faith', priv.religion_flexible ? 'Flexible: open to a different faith' : 'Same faith only'],
-    ['Children', priv.kids_flexible ? 'Flexible' : 'Must match my answer'],
+    ['Children in future', priv.kids_flexible ? 'Flexible' : 'Must match my answer'],
+    ['Marital status', (priv.desired_marital_status ?? []).length ? priv.desired_marital_status.map((v: string) => v[0].toUpperCase() + v.slice(1)).join(', ') : 'Any'],
+    ['Partner already has children', ({ yes: 'Comfortable', no: 'Prefer not', any: "Doesn't matter" } as Record<string, string>)[priv.partner_children_ok ?? 'any']],
     ['Drinking', ({ never_only: 'Non-drinkers only', occasional_ok: 'Occasionally is OK', any: "Doesn't matter" } as Record<string, string>)[priv.drinking_tolerance ?? 'any']],
     ['Smoking', ({ never_only: 'Non-smokers only', occasional_ok: 'Occasionally is OK', any: "Doesn't matter" } as Record<string, string>)[priv.smoking_tolerance ?? 'any']],
   ];

@@ -10,6 +10,10 @@ export interface Prompt { key: string; question: string; answer: string }
 
 export interface MemberCard {
   id: string;
+  marital_status?: string | null;
+  has_children?: boolean | null;
+  children_count?: number | null;
+  work_verified?: boolean;
   name: string;
   age: number | null;
   gender: Gender | null;
@@ -275,6 +279,37 @@ export const requestConsultation = (slot: Date, notes?: string) =>
 export const cancelConsultation = (id: string) => rpc<void>('cancel_consultation', { p_id: id });
 
 // ---------- Billing (Stripe sandbox via edge function) ----------
+// ---------- Work email (optional; unlocks Hide from coworkers) ----------
+export type WorkEmailState = { email: string | null; verified: boolean; pending: boolean; hide_from_coworkers: boolean };
+export async function myWorkEmail(): Promise<WorkEmailState | null> {
+  const { data, error } = await supabase.rpc('my_work_email');
+  friendly(error);
+  return data as WorkEmailState | null;
+}
+export async function sendWorkEmailLink(email: string) {
+  const { data, error } = await supabase.functions.invoke('work-email', { body: { email, return_url: window.location.origin } });
+  if (error) {
+    let msg = error.message;
+    try { const j = await (error as any).context?.json(); if (j?.error) msg = j.error; } catch { /* keep */ }
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data as { ok: boolean; sent: boolean };
+}
+export async function removeWorkEmail() {
+  const { error } = await supabase.rpc('remove_work_email');
+  friendly(error);
+}
+export async function setHideFromCoworkers(uid: string, on: boolean) {
+  const { error } = await supabase.from('profile_private').update({ hide_from_coworkers: on }).eq('user_id', uid);
+  friendly(error);
+}
+export async function confirmWorkEmail(token: string) {
+  const { data, error } = await supabase.rpc('confirm_work_email', { p_token: token });
+  friendly(error);
+  return data as { ok: boolean; error?: string };
+}
+
 export async function startCheckout(item: 'plan1' | 'plan2' | 'safe_zones' | 'swipe_refresh' | 'radar_unlock' | 'portal') {
   const { data, error } = await supabase.functions.invoke('create-checkout', {
     body: { item, return_url: window.location.origin },

@@ -3,10 +3,11 @@ import { Check, ChevronLeft, ChevronRight, ImagePlus, Link2, Play, ShieldCheck, 
 import { supabase } from '@/lib/supabase';
 import { astroSync, giveConsent, myProfile, saveProfile, signedUrl, submitForReview, uploadFile, type Status } from '@/lib/api';
 import {
-  BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELOCATION, TIMELINE, UAE_CITIES, labelOf, DRINKING_TOLERANCE, SMOKING_TOLERANCE } from '@/config/app';
+  BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELOCATION, TIMELINE, UAE_CITIES, labelOf, DRINKING_TOLERANCE, SMOKING_TOLERANCE, MARITAL_STATUS, PARTNER_CHILDREN } from '@/config/app';
 import { Badge, Button, Card, Field, Input, Photo, Select, Spinner, Textarea, Toggle, cx, useToast } from '@/components/ui';
 import { Recorder } from '@/components/Recorder';
 import { CityPicker } from '@/components/CityPicker';
+import { WorkEmailCard } from '@/components/WorkEmail';
 import { SafetyStandardsModal } from '@/components/SafetyStandardsModal';
 import { COUNTRIES } from '@/config/app';
 
@@ -16,10 +17,11 @@ type Form = Record<string, any>;
 
 const PROFILE_KEYS = ['display_name', 'gender', 'nationality', 'country_residence', 'city', 'district', 'occupation', 'company',
   'industry', 'university', 'degree', 'height_cm', 'political', 'religion', 'religion_practice', 'marriage_timeline', 'kids',
-  'drinking', 'smoking', 'relocation', 'headline', 'bio', 'prompts', 'photos', 'voice_intro_path', 'linkedin_url'];
+  'drinking', 'smoking', 'relocation', 'headline', 'bio', 'prompts', 'photos', 'voice_intro_path', 'linkedin_url',
+  'marital_status', 'has_children', 'children_count'];
 const PRIVATE_KEYS = ['legal_name', 'birth_date', 'birth_time', 'birth_city', 'birth_country', 'religion_flexible', 'kids_flexible',
   'drinking_tolerance', 'smoking_tolerance', 'desired_age_min', 'desired_age_max', 'desired_nationalities', 'desired_religion',
-  'verification_video_path', 'birth_lat', 'birth_lng', 'preferred_plan'];
+  'verification_video_path', 'birth_lat', 'birth_lng', 'preferred_plan', 'desired_marital_status', 'partner_children_ok'];
 
 const clean = (v: unknown) => (v === '' || v === undefined ? null : v);
 
@@ -62,7 +64,7 @@ export default function SetupWizard({ status, onDone, onCancel, initialStep }: {
     if (!f) return [] as string[];
     const req: Record<number, [string, string][]> = {
       0: [['legal_name', 'Full legal name'], ['verification_video_path', 'Video ID'], ['terms', 'Terms'], ['biometric', 'ID video consent']],
-      1: [['display_name', 'First name'], ['birth_date', 'Birth date'], ['gender', 'Gender'], ['nationality', 'Nationality'], ['city', 'City'], ['occupation', 'Occupation']],
+      1: [['display_name', 'First name'], ['birth_date', 'Birth date'], ['gender', 'Gender'], ['nationality', 'Nationality'], ['city', 'City'], ['occupation', 'Occupation'], ['marital_status', 'Marital status']],
       2: [['religion', 'Religion'], ['marriage_timeline', 'Marriage timeline'], ['kids', 'Kids'], ['drinking', 'Drinking'], ['smoking', 'Smoking'], ['relocation', 'Relocation']],
       3: [],
       4: [],
@@ -239,6 +241,7 @@ function StepIdentity({ f, set, approved }: StepProps & { approved: boolean }) {
           </label>
         </div>
       </Card>
+      <WorkEmailCard />
       <Card>
         <Field label="LinkedIn profile" optional hint="Shown on your profile as a trust signal.">
           <div className="relative"><Link2 className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
@@ -280,6 +283,18 @@ function StepBasics({ f, set, approved }: StepProps & { approved: boolean }) {
         <Field label="University" optional><Input value={f.university ?? ''} onChange={(e) => set('university', e.target.value)} /></Field>
         <Field label="Degree" optional><Input value={f.degree ?? ''} onChange={(e) => set('degree', e.target.value)} /></Field>
         <Field label="Height (cm)" optional><Input type="number" min={120} max={230} value={f.height_cm ?? ''} onChange={(e) => set('height_cm', e.target.value)} /></Field>
+        <Field label="Marital status"><Select options={MARITAL_STATUS} value={f.marital_status ?? ''} onChange={(e) => set('marital_status', e.target.value || null)} /></Field>
+        <Field label="Do you have children already?" optional>
+          <div className="flex gap-2">
+            <Select options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]} placeholder="Choose"
+              value={f.has_children == null ? '' : f.has_children ? 'yes' : 'no'}
+              onChange={(e) => { const v = e.target.value; set('has_children', v === '' ? null : v === 'yes'); if (v !== 'yes') set('children_count', null); }} />
+            {f.has_children === true && (
+              <Input type="number" min={1} max={20} placeholder="How many?" className="!w-28" value={f.children_count ?? ''}
+                onChange={(e) => set('children_count', e.target.value === '' ? null : Number(e.target.value))} />
+            )}
+          </div>
+        </Field>
       </Grid>
     </Card>
   );
@@ -298,7 +313,7 @@ function StepLifestyle({ f, set }: StepProps) {
       <Card className="space-y-4">
         <Grid>
           <Field label="Marriage timeline"><Select options={TIMELINE} value={f.marriage_timeline ?? ''} onChange={(e) => set('marriage_timeline', e.target.value)} /></Field>
-          <Field label="Children"><Select options={KIDS} value={f.kids ?? ''} onChange={(e) => set('kids', e.target.value)} /></Field>
+          <Field label="Children in the future" hint="Whether you want (more) children. Children you already have go in Basic info."><Select options={KIDS} value={f.kids ?? ''} onChange={(e) => set('kids', e.target.value)} /></Field>
         </Grid>
         <Toggle checked={!!f.kids_flexible} onChange={(v) => set('kids_flexible', v)} label="I'm flexible on children" />
       </Card>
@@ -359,6 +374,21 @@ function StepPartner({ f, set }: StepProps) {
       </Field>
       <Field label="Religion" hint="If you pick a specific religion, only members of that religion will be shown to you.">
         <Select options={RELIGIONS} placeholder="Any religion" value={f.desired_religion ?? ''} onChange={(e) => set('desired_religion', e.target.value)} />
+      </Field>
+      <Field label="Marital status" hint="Pick any that you're open to. Leave all off for any.">
+        <div className="flex flex-wrap gap-1.5">
+          {MARITAL_STATUS.map((o) => {
+            const cur: string[] = f.desired_marital_status ?? [];
+            const on = cur.includes(o.value);
+            return (
+              <button key={o.value} type="button" onClick={() => set('desired_marital_status', on ? cur.filter((x) => x !== o.value) : [...cur, o.value])}
+                className={cx('px-3 py-1.5 rounded-full text-xs border cursor-pointer', on ? 'bg-gold text-navy border-gold font-semibold' : 'border-slate-300 dark:border-white/15')}>{o.label}</button>
+            );
+          })}
+        </div>
+      </Field>
+      <Field label="Comfortable with a partner who already has children?">
+        <Select options={PARTNER_CHILDREN} value={f.partner_children_ok ?? 'any'} onChange={(e) => set('partner_children_ok', e.target.value || 'any')} />
       </Field>
     </Card>
   );
@@ -473,11 +503,11 @@ function StepPlan({ plans, status, f, set }: { plans: Record<string, any> | null
 function StepReview({ f, goTo }: { f: Form; goTo: (n: number) => void }) {
   const rows: [string, string, number][] = [
     ['Name', f.display_name, 1], ['Age', String(ageFrom(f.birth_date) ?? '—'), 1], ['Gender', labelOf(GENDERS, f.gender), 1],
-    ['Nationality', f.nationality, 1], ['City', [f.city, f.district].filter(Boolean).join(', '), 1], ['Occupation', f.occupation, 1],
+    ['Nationality', f.nationality, 1], ['City', [f.city, f.district].filter(Boolean).join(', '), 1], ['Occupation', f.occupation, 1], ['Marital status', labelOf(MARITAL_STATUS, f.marital_status), 1], ['Children now', f.has_children == null ? '' : f.has_children ? `Yes${f.children_count ? ` (${f.children_count})` : ''}` : 'No', 1],
     ['Religion', `${f.religion ?? '—'}${f.religion_flexible ? ' (flexible)' : ''}`, 2],
     ['Marriage timeline', labelOf(TIMELINE, f.marriage_timeline), 2], ['Children', `${labelOf(KIDS, f.kids)}${f.kids_flexible ? ' (flexible)' : ''}`, 2],
     ['Drinking / smoking', `${labelOf(HABITS, f.drinking)} / ${labelOf(HABITS, f.smoking)}`, 2], ['Relocation', labelOf(RELOCATION, f.relocation), 2],
-    ['Looking for', `${f.desired_age_min}–${f.desired_age_max}, ${(f.desired_nationalities ?? []).join(', ') || 'any nationality'}, ${f.desired_religion || 'any religion'}`, 3],
+    ['Looking for', `${f.desired_age_min}–${f.desired_age_max}, ${(f.desired_nationalities ?? []).join(', ') || 'any nationality'}, ${f.desired_religion || 'any religion'}`, 3], ['Partner filters', `${(f.desired_marital_status ?? []).map((v: string) => labelOf(MARITAL_STATUS, v)).join(', ') || 'any marital status'}; partner with children: ${labelOf(PARTNER_CHILDREN, f.partner_children_ok ?? 'any')}`, 3],
     ['Photos', String((f.photos ?? []).length), 4], ['Voice intro', f.voice_intro_path ? 'Yes' : 'No', 4],
     ['Video ID', f.verification_video_path ? 'Received' : 'Missing', 0],
     ['Place of birth', [f.birth_city, f.birth_country].filter(Boolean).join(', '), 2],

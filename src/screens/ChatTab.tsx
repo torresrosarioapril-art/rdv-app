@@ -46,7 +46,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
     load();
     supabase.from('profiles').select('gender').eq('id', status.user_id).single().then(({ data }) => setGender(data?.gender ?? null));
     supabase.from('notifications').update({ read_at: new Date().toISOString() }).is('read_at', null)
-      .in('type', ['message', 'ping', 'invitation', 'invitation_accepted', 'invitation_declined', 'invitation_countered', 'new_match', 'radar_connect']).then(() => onRead());
+      .in('type', ['message', 'ping', 'invitation', 'invitation_accepted', 'invitation_declined', 'invitation_countered', 'new_match', 'radar_connect', 'match_nudge']).then(() => onRead());
     const ch = supabase.channel('matches-' + status.user_id)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${status.user_id}` }, load)
       .subscribe();

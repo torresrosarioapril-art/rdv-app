@@ -84,6 +84,19 @@ export const HABITS = [
   { value: 'regularly', label: 'Regularly' },
 ] as const;
 
+export const MARITAL_STATUS = [
+  { value: 'single', label: 'Single' },
+  { value: 'divorced', label: 'Divorced' },
+  { value: 'separated', label: 'Separated' },
+  { value: 'widowed', label: 'Widowed' },
+] as const;
+
+export const PARTNER_CHILDREN = [
+  { value: 'yes', label: 'Yes, comfortable' },
+  { value: 'no', label: 'No' },
+  { value: 'any', label: "Doesn't matter" },
+] as const;
+
 export const SMOKING_TOLERANCE = [
   { value: 'never_only', label: 'Non-smokers only' },
   { value: 'occasional_ok', label: 'Occasionally is OK' },
