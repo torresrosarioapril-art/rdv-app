@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { Compass, Heart, MessageCircle, Moon, Sun, UserRound, EyeOff, Settings, Waves } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { myCalendar, myStatus, setPrivacy, updateMyLocation, type CalendarEvent, type Privacy, type Status } from '@/lib/api';
-import { BRAND, VISIBILITY } from '@/config/app';
+import { BRAND } from '@/config/app';
 import { ToastProvider, Spinner, cx, useToast } from '@/components/ui';
 import AuthScreen from '@/screens/AuthScreen';
 import SetupWizard from '@/screens/SetupWizard';
@@ -168,15 +168,15 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
               </button>
             ))}
           </nav>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0">
             <VisibilityShortcut status={status} refresh={refresh} />
-            <button title="Theme" aria-label="Switch light or dark" onClick={toggleTheme} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer">
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            <button title="Theme" aria-label="Switch light or dark" onClick={toggleTheme} className={HEADER_ICON}>
+              {theme === 'dark' ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
             </button>
             <NotificationBell uid={status.user_id} onOpenChat={openChat} onOpenRadar={() => setTab('radar')} />
             <button title="Settings" aria-label="Settings" onClick={() => setTab('settings')}
-              className={cx('p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer', tab === 'settings' && 'text-gold')}>
-              <Settings className="w-5 h-5" />
+              className={HEADER_ICON}>
+              <Settings className="w-[18px] h-[18px]" />
             </button>
           </div>
         </div>
@@ -203,41 +203,33 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
   );
 }
 
+export const HEADER_ICON = 'p-1.5 rounded-lg text-gold dark:text-white hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer';
+
 /** Header shortcut: how others see you on the radar (approximate or hidden). */
 function VisibilityShortcut({ status, refresh }: { status: Status; refresh: () => Promise<void> }) {
-  const [open, setOpen] = useState(false);
   const toast = useToast();
+  const [busy, setBusy] = useState(false);
   const current: Privacy = status.privacy === 'ghost' ? 'ghost' : 'blur';
   const zoneHidden = current !== 'ghost' && status.in_safe_zone;
-  const choose = async (p: Privacy) => {
-    setOpen(false);
-    try { await setPrivacy(p); await refresh(); toast(p === 'ghost' ? "You're hidden from the radar" : 'You show up approximately (500 m)'); }
-    catch (e) { toast(e instanceof Error ? e.message : 'Could not change', 'err'); }
+  const hidden = current === 'ghost' || zoneHidden;
+  // One tap switches, like the theme button
+  const flip = async () => {
+    if (busy) return;
+    const next: Privacy = current === 'ghost' ? 'blur' : 'ghost';
+    setBusy(true);
+    try {
+      await setPrivacy(next); await refresh();
+      toast(next === 'ghost' ? "Ghost on: you're hidden from the radar"
+        : status.in_safe_zone ? "Ghost off. You're still hidden while you're in a Safe Zone" : 'Visible: you show up approximately (500 m)');
+    } catch (e) { toast(e instanceof Error ? e.message : 'Could not change', 'err'); }
+    finally { setBusy(false); }
   };
   return (
-    <div className="relative">
-      <button title="How others see you" onClick={() => setOpen((o) => !o)}
-        className={cx('flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs cursor-pointer border',
-          current === 'ghost' || zoneHidden ? 'border-slate-400/40 text-slate-500' : 'border-emerald-400/40 text-emerald-600 dark:text-emerald-300')}>
-        {current === 'ghost' || zoneHidden ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />}
-        <span className="hidden md:inline">{current === 'ghost' ? 'Hidden' : zoneHidden ? 'Hidden · Safe Zone' : 'Visible'}</span>
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-2 z-50 w-64 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-navy-2 shadow-xl p-1.5">
-            <div className="px-2.5 pt-1.5 pb-1 text-[10px] uppercase tracking-widest text-gold">How others see you</div>
-            {zoneHidden && <div className="mx-2.5 mb-1.5 rounded-lg bg-gold/10 px-2.5 py-2 text-[11px]">You're inside one of your Safe Zones, so Ghost is on automatically until you leave.</div>}
-            {VISIBILITY.map((v) => (
-              <button key={v.id} onClick={() => choose(v.id as Privacy)} className={cx('w-full text-left rounded-lg px-2.5 py-2 cursor-pointer', current === v.id ? 'bg-gold/15' : 'hover:bg-black/5 dark:hover:bg-white/5')}>
-                <div className="text-sm font-medium flex items-center gap-1.5">{v.id === 'ghost' ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />}{v.label}</div>
-                <div className="text-[11px] text-slate-500">{v.hint}</div>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+    <button title={hidden ? (zoneHidden ? 'Hidden by a Safe Zone · tap for Ghost' : 'Ghost · tap to be visible') : 'Visible (approximate) · tap for Ghost'}
+      aria-label={hidden ? 'Ghost on, tap to be visible' : 'Visible, tap to go Ghost'} onClick={flip}
+      className={cx(HEADER_ICON, !hidden && '!text-emerald-500 dark:!text-emerald-300', busy && 'opacity-50')}>
+      {hidden ? <EyeOff className="w-[18px] h-[18px]" /> : <Waves className="w-[18px] h-[18px]" />}
+    </button>
   );
 }
 
