@@ -72,7 +72,7 @@ export function NotificationBell({ uid, onOpenChat, onOpenRadar }: { uid: string
   return (
     <div className="relative">
       <button title="Notifications" aria-label="Notifications" onClick={toggle}
-        className="relative p-1.5 rounded-lg text-gold dark:text-white hover:bg-white/10 cursor-pointer">
+        className="relative p-1.5 rounded-lg text-gold dark:text-white hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer">
         <Bell className="w-[18px] h-[18px]" />
         {unread > 0 && <span className="absolute top-0 right-0 min-w-4 h-4 px-1 rounded-full bg-gold text-navy text-[10px] font-semibold leading-4 text-center">{unread > 9 ? '9+' : unread}</span>}
       </button>
@@ -97,7 +97,7 @@ export function NotificationBell({ uid, onOpenChat, onOpenRadar }: { uid: string
               };
               return (
                 <button key={n.id} onClick={go} className={cx('w-full flex items-start gap-2.5 text-left rounded-lg px-2.5 py-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5', !n.read_at && 'bg-gold/10')}>
-                  <span className="mt-0.5 w-7 h-7 shrink-0 rounded-full bg-gold/15 text-gold flex items-center justify-center">{x.icon}</span>
+                  <span className="mt-0.5 w-7 h-7 shrink-0 rounded-full bg-navy text-gold dark:bg-gold/15 flex items-center justify-center">{x.icon}</span>
                   <span className="flex-1 min-w-0 text-sm leading-snug">{x.text}</span>
                   <span className="shrink-0 text-[10px] text-slate-500 mt-0.5">{ago(n.created_at)}</span>
                 </button>

@@ -330,7 +330,7 @@ function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="text-[11px] uppercase tracking-widest text-gold">Your plan</div>
-          <h2 className="text-2xl font-display flex items-center gap-2"><Crown className="w-5 h-5 text-gold" />{status.limits.label}</h2>
+          <h2 className="text-2xl font-display flex items-center gap-2"><Crown className="w-5 h-5 text-navy dark:text-gold" />{status.limits.label}</h2>
           <p className="text-sm text-slate-500 mt-1">
             {status.comp && !paid ? `${status.comp.label ?? 'Complimentary'}: ${plans?.[status.comp.plan]?.label ?? 'Regular'} free until ${new Date(status.comp.until).toLocaleDateString()}. Thank you for helping us test.`
               : status.in_trial && !paid && status.trial_ends_at ? `Full-access trial until ${new Date(status.trial_ends_at).toLocaleDateString()}, then the free plan unless you upgrade.`
@@ -457,7 +457,7 @@ export function SafeZones({ status, bare }: { status: Status; bare?: boolean }) 
 
   const body = (
     <>
-      {!bare && <h3 className="font-display text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-gold" />Safe Zones</h3>}
+      {!bare && <h3 className="font-display text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-navy dark:text-gold" />Safe Zones</h3>}
       <p className={bare ? 'text-[11px] text-slate-500' : 'text-sm text-slate-500'}>Save places like home or the office. Whenever your location shows you're inside one, you're switched to Ghost automatically, even if you forgot to turn it on. You become visible again once you leave.</p>
       {!status.safe_zones_enabled ? (
         <div className={cx("rounded-xl border border-dashed border-gold/40 text-center space-y-2", bare ? "p-3" : "p-4")}>
@@ -469,7 +469,7 @@ export function SafeZones({ status, bare }: { status: Status; bare?: boolean }) 
         <>
           {zones.map((z) => (
             <div key={z.id} className="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-navy-3 p-3 text-sm">
-              <span className="flex items-center gap-2"><MapPin className="w-4 h-4 text-gold" />{z.label} · {z.radius_m} m</span>
+              <span className="flex items-center gap-2"><MapPin className="w-4 h-4 text-navy dark:text-gold" />{z.label} · {z.radius_m} m</span>
               <Button variant="ghost" busy={busy} onClick={async () => { if (await run(() => deleteSafeZone(z.id))) load(); }}><Trash2 className="w-4 h-4" /></Button>
             </div>
           ))}
@@ -526,7 +526,7 @@ function NotificationSettings({ uid, initial }: { uid: string; initial?: NotifyP
   };
   return (
     <Card className="space-y-3">
-      <h3 className="font-display text-lg flex items-center gap-2"><Bell className="w-5 h-5 text-gold" />Notifications</h3>
+      <h3 className="font-display text-lg flex items-center gap-2"><Bell className="w-5 h-5 text-navy dark:text-gold" />Notifications</h3>
       {NOTIFY_ROWS.map(([k, label, hint]) => (
         <div key={k} className="flex items-center justify-between gap-3">
           <div><div className="text-sm">{label}</div><div className="text-[11px] text-slate-500">{hint}</div></div>

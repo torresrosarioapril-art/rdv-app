@@ -315,7 +315,7 @@ export function SettingRow({ icon, title, summary, children }: { icon: React.Rea
   return (
     <div>
       <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center gap-3 p-3.5 text-left cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
-        <span className="w-8 h-8 rounded-full bg-gold/15 text-gold flex items-center justify-center shrink-0">{icon}</span>
+        <span className="w-8 h-8 rounded-full bg-navy text-gold dark:bg-gold/15 flex items-center justify-center shrink-0">{icon}</span>
         <span className="flex-1 min-w-0">
           <span className="block text-sm font-medium">{title}</span>
           <span className="block text-[11px] text-slate-500 truncate">{summary}</span>

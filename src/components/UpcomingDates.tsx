@@ -23,14 +23,14 @@ export function NextDateBanner({ events, onOpen }: { events: CalendarEvent[]; on
   if (!next) return null;
   const started = new Date(next.starts_at).getTime() <= Date.now();
   return (
-    <button onClick={onOpen} className="block w-full text-left bg-gold/15 border-b border-gold/30 cursor-pointer hover:bg-gold/20">
+    <button onClick={onOpen} className="block w-full text-left bg-navy text-ivory-2 hover:bg-navy-3 dark:bg-gold/15 dark:text-inherit dark:hover:bg-gold/20 border-b border-gold/40 dark:border-gold/30 cursor-pointer">
       <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-3 text-sm">
         <CalendarHeart className="w-4 h-4 text-gold shrink-0" />
         <span className="flex-1 min-w-0 truncate">
           <span className="font-medium">{next.title}</span>
-          <span className="text-slate-600 dark:text-slate-300"> · {started ? 'Now' : whenLabel(next.starts_at)}</span>
-          {next.venue_name && <span className="text-slate-500"> · {next.venue_name}</span>}
-          {soon.length > 1 && <span className="text-slate-500"> · +{soon.length - 1} more</span>}
+          <span className="text-slate-300"> · {started ? 'Now' : whenLabel(next.starts_at)}</span>
+          {next.venue_name && <span className="text-slate-400"> · {next.venue_name}</span>}
+          {soon.length > 1 && <span className="text-slate-400"> · +{soon.length - 1} more</span>}
         </span>
         <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
       </div>

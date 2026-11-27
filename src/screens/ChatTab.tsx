@@ -333,7 +333,7 @@ function Bubble({ x, mine, inv, invs, me, partnerName, partnerId, act }: {
   if (x.kind === 'ping') {
     return (
       <div className={cx('flex', mine ? 'justify-end' : 'justify-start')}>
-        <div className="rounded-2xl border border-gold/40 bg-gold/10 px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm flex items-center gap-2">
+        <div className="rounded-2xl border border-navy bg-navy text-ivory-2 dark:border-gold/40 dark:bg-gold/10 dark:text-inherit px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm flex items-center gap-2">
           <Hand className="w-4 h-4 text-gold" />{mine ? 'You sent a Ping: you would like to meet' : `${partnerName} would like to meet`}
         </div>
       </div>
@@ -413,8 +413,8 @@ function InvitationCard({ inv, invs, me, partnerName, act }: {
           <span className="text-gold">{isChange ? 'Suggested change' : inv.counter_of ? 'Suggested time' : 'Invitation'}{mine ? ' (sent)' : ''}</span>
           <span className={inv.status === 'accepted' ? 'text-emerald-500' : 'text-slate-500'}>{statusText[inv.status]}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm font-medium"><Clock className="w-4 h-4 text-gold" />{fmt(inv.proposed_at)}</div>
-        <a href={mapUrl(inv)} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm hover:text-gold"><MapPin className="w-4 h-4 text-gold" />{inv.venue_name}</a>
+        <div className="flex items-center gap-2 text-sm font-medium"><Clock className="w-4 h-4 text-navy dark:text-gold" />{fmt(inv.proposed_at)}</div>
+        <a href={mapUrl(inv)} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm hover:text-gold"><MapPin className="w-4 h-4 text-navy dark:text-gold" />{inv.venue_name}</a>
 
         {!mine && inv.status === 'pending' && (
           <div className="flex flex-wrap gap-2 pt-1">
