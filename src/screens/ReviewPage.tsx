@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, ShieldCheck, XCircle } from 'lucide-react';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, BRAND } from '@/config/app';
 import { Button, Card, Field, Spinner, Textarea } from '@/components/ui';
+import { BrandLogo } from '@/components/BrandLogo';
 
 /** One-tap review links from the shared inbox open here (no sign-in needed; the link itself is the key). */
 export default function ReviewPage() {
@@ -34,7 +35,7 @@ export default function ReviewPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="max-w-lg w-full space-y-4">
-        <div className="flex items-center gap-2"><img src={BRAND.logo} alt="" className="w-8 h-8" /><span className="text-xs uppercase tracking-widest text-gold">Review team</span></div>
+        <div className="flex items-center gap-2"><BrandLogo className="w-8 h-8" /><span className="text-xs uppercase tracking-widest text-gold">Review team</span></div>
         {!info ? <Spinner /> : done ? (
           <div className="text-center py-6">
             {done.ok ? <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" /> : <XCircle className="w-10 h-10 text-rose-500 mx-auto" />}

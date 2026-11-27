@@ -7,6 +7,7 @@ import { Button, Card, Field, Input as BaseInput, cx, useToast } from '@/compone
 
 const Input = BaseInput;
 import { CHARTER_VERSION, SafetyStandardsModal } from '@/components/SafetyStandardsModal';
+import { BrandLogo } from '@/components/BrandLogo';
 
 type Mode = 'signin' | 'signup' | 'reset';
 type Route = 'manual' | 'code';
@@ -85,7 +86,7 @@ export default function AuthScreen({ theme, onToggleTheme }: { theme?: 'dark' | 
       )}
       <div className="w-full max-w-md">
         <div className="text-center mb-8 text-navy dark:text-slate-100">
-          <img src={BRAND.logo} alt="" className="w-20 h-20 mx-auto mb-4" />
+          <BrandLogo className="w-20 h-20 mx-auto mb-4" />
           <h1 className="text-3xl font-display">{BRAND.name}</h1>
           <p className="font-display text-gold text-base mt-1 italic">{BRAND.tagline}</p>
         </div>

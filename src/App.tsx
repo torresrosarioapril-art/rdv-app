@@ -15,6 +15,7 @@ import ProfileTab from '@/screens/ProfileTab';
 import ReviewPage from '@/screens/ReviewPage';
 import { NextDateBanner } from '@/components/UpcomingDates';
 import { NotificationBell } from '@/components/NotificationBell';
+import { BrandLogo } from '@/components/BrandLogo';
 
 export type Tab = 'radar' | 'matches' | 'chat' | 'profile' | 'settings';
 
@@ -165,7 +166,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
       <header className="sticky top-0 z-40 backdrop-blur bg-ivory/85 dark:bg-navy/85 border-b border-gold/30 dark:border-white/10">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-3">
           <button onClick={() => setTab('matches')} className="flex items-center gap-2 cursor-pointer min-w-0 text-left">
-            <img src={BRAND.logo} alt="" className="w-8 h-8 shrink-0" />
+            <BrandLogo className="w-8 h-8 shrink-0" />
             <span className="min-w-0 overflow-hidden leading-tight">
               <span className="block font-display text-[15px] sm:text-base whitespace-nowrap">{BRAND.name}</span>
               <span className="block font-display text-[10px] sm:text-[11px] text-gold italic truncate">{BRAND.tagline}</span>
