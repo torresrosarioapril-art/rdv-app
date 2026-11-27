@@ -74,7 +74,7 @@ export function SafetyStandardsModal({ isOpen, onClose, onAccept }: {
           ))}
         </div>
         <button onClick={() => { onAccept?.(); onClose(); }}
-          className="w-full py-3 rounded-xl bg-gold text-navy text-sm font-semibold hover:brightness-105 cursor-pointer">
+          className="w-full py-3 rounded-xl bg-gold-soft text-ink text-sm font-semibold hover:bg-[#d9bd7f] cursor-pointer">
           {onAccept ? 'I agree to the Community Charter' : 'Close'}
         </button>
       </div>

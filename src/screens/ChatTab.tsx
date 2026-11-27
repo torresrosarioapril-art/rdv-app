@@ -350,7 +350,7 @@ function Bubble({ x, mine, inv, invs, me, partnerName, partnerId, act }: {
   if (x.kind === 'ping') {
     return (
       <div className={cx('flex', mine ? 'justify-end' : 'justify-start')}>
-        <div className="rounded-2xl border border-ink bg-ink text-ivory-2 dark:border-ivory-2 dark:bg-ivory-2 dark:text-navy px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm flex items-center gap-2">
+        <div className="rounded-2xl border border-ink bg-ink text-gold-soft dark:border-ivory-2 dark:bg-ivory-2 dark:text-navy px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm flex items-center gap-2">
           <Hand className="w-4 h-4 text-gold" />{mine ? 'You sent a Ping: you would like to meet' : `${partnerName} would like to meet`}
         </div>
       </div>
@@ -375,7 +375,7 @@ function TextBubble({ x, mine, partnerName, partnerId, act }: {
     <div className={cx('flex group w-full', mine ? 'justify-end' : 'justify-start')}>
       <div onClick={() => canDelete && setMenu((v) => !v)}
         className={cx('max-w-[82%] sm:max-w-[78%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm', canDelete && 'cursor-pointer',
-          deleted ? 'border border-dashed border-slate-300 dark:border-white/15 text-slate-500' : mine ? 'bg-gold text-navy rounded-br-md shadow-sm' : 'bg-white border border-gold/50 dark:bg-navy-2 dark:border-gold/40 rounded-bl-md')}>
+          deleted ? 'border border-dashed border-slate-300 dark:border-white/15 text-slate-500' : mine ? 'bg-gold-soft text-ink rounded-br-md shadow-sm' : 'bg-white border border-gold/50 dark:bg-navy-2 dark:border-gold/40 rounded-bl-md')}>
         {deleted ? <i>{mine ? 'You deleted this message' : 'Message deleted'}</i>
           : x.is_hidden ? <i className="opacity-70">Hidden pending review</i>
           : x.kind === 'image' && x.image_path ? <><ChatImage path={x.image_path} />{x.body && <span className="block mt-1 whitespace-pre-wrap">{x.body}</span>}</>

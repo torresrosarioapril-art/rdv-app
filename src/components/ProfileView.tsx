@@ -104,12 +104,16 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
 
         <BirthChart z={m.zodiac} self={self} preview={preview} targetId={m.id} />
 
-        {!compact && answered.map((p) => (
-          <div key={p.key} className="rounded-xl bg-slate-50 dark:bg-navy-3 p-4">
-            <div className="text-[11px] uppercase tracking-widest text-gold mb-1">{p.question}</div>
-            <p className="text-sm leading-relaxed whitespace-pre-line">{p.answer}</p>
+        {!compact && answered.length > 0 && (
+          <div className="space-y-2">
+            {answered.map((p) => (
+              <div key={p.key} className="rounded-xl bg-slate-50 dark:bg-navy-3 px-3 py-2">
+                <div className="text-[10px] uppercase tracking-wider text-gold-deep dark:text-gold">{p.question}</div>
+                <p className="text-sm whitespace-pre-line">{p.answer}</p>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
