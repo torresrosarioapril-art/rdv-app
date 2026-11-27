@@ -79,7 +79,7 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
       </div>}
 
       <div className={cx('space-y-4', !noPhotos && 'md:col-span-3')}>
-        {m.headline && <p className="font-display italic text-base">{m.headline}</p>}
+        {m.headline && <p className="font-display italic text-lg">{m.headline}</p>}
         <div className="flex flex-wrap gap-1.5 text-xs">
           {m.occupation && <Badge tone="slate"><Briefcase className="w-3 h-3" />{m.occupation}{m.company ? ` · ${m.company}` : ''}</Badge>}
           {(m.university || m.degree) && <Badge tone="slate"><GraduationCap className="w-3 h-3" />{[m.degree, m.university].filter(Boolean).join(', ')}</Badge>}
@@ -88,9 +88,9 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
           {m.work_verified && <Badge tone="green"><ShieldCheck className="w-3 h-3" />Work email verified</Badge>}
           {m.linkedin_url && <a href={m.linkedin_url} target="_blank" rel="noreferrer"><Badge><Link2 className="w-3 h-3" />LinkedIn</Badge></a>}
         </div>
-        {m.bio && <p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-line">{m.bio}</p>}
+        {m.bio && <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-line">{m.bio}</p>}
 
-        <div className="grid grid-cols-2 gap-2 text-[13px]">
+        <div className="grid grid-cols-2 gap-2 text-sm">
           <Fact k="Faith" v={[m.religion, m.religion_practice].filter(Boolean).join(' · ')} />
           <Fact k="Marriage" v={labelOf(TIMELINE, m.marriage_timeline)} />
           {m.marital_status && <Fact k="Marital status" v={labelOf(MARITAL_STATUS, m.marital_status)} />}
@@ -107,7 +107,7 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
         {!compact && answered.map((p) => (
           <div key={p.key} className="rounded-xl bg-slate-50 dark:bg-navy-3 p-4">
             <div className="text-[11px] uppercase tracking-widest text-gold mb-1">{p.question}</div>
-            <p className="text-[13px] leading-relaxed whitespace-pre-line">{p.answer}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-line">{p.answer}</p>
           </div>
         ))}
       </div>
@@ -119,7 +119,7 @@ function Fact({ k, v }: { k: string; v: string }) {
   return (
     <div className="rounded-xl bg-slate-50 dark:bg-navy-3 px-3 py-2">
       <div className="text-[10px] uppercase tracking-wider text-slate-500">{k}</div>
-      <div className="text-[13px]">{v || '—'}</div>
+      <div className="text-sm">{v || '—'}</div>
     </div>
   );
 }

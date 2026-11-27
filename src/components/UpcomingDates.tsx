@@ -51,7 +51,7 @@ export function DatesList({ events, onOpenDate }: { events: CalendarEvent[]; onO
           <div key={e.id} role="button" tabIndex={0} onClick={() => onOpenDate(e)} onKeyDown={(k) => k.key === 'Enter' && onOpenDate(e)}
             className="rounded-xl bg-gold/10 hover:bg-gold/15 p-3 flex items-center gap-2 cursor-pointer">
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate">{e.title}</div>
+              <div className="text-sm font-medium leading-snug">{e.title}</div>
               <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">{whenLabel(e.starts_at)}</div>
               {e.map_url && <a onClick={(ev) => ev.stopPropagation()} className="text-xs text-gold inline-flex items-center gap-1 mt-1" href={e.map_url} target="_blank" rel="noreferrer"><MapPin className="w-3 h-3" />{e.venue_name}</a>}
             </div>
