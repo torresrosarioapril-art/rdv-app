@@ -50,6 +50,7 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
 }) {
   const [matches, setMatches] = useState<MatchSummary[] | null>(null);
   const [focusInv, setFocusInv] = useState<string | null>(null);
+  const [profileOf, setProfileOf] = useState<MatchSummary | null>(null);
   const [gender, setGender] = useState<string | null>(null);
   const toast = useToast();
 
@@ -82,7 +83,13 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
         {matches.map((m) => (
           <button key={m.match_id} onClick={() => setOpenMatch(m.match_id)} className="w-full text-left cursor-pointer">
             <Card className={cx('!p-3 flex items-center gap-3', m.match_id === openMatch && '!border-gold/60')}>
-              <Photo path={m.partner.photos?.[0]} alt={m.partner.name} className="w-12 h-12 rounded-full" />
+              {/* Tap the photo for their profile; the rest of the row opens the chat */}
+              <span role="button" tabIndex={0} aria-label={`View ${m.partner.name}'s profile`}
+                onClick={(e) => { e.stopPropagation(); setProfileOf(m); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setProfileOf(m); } }}
+                className="shrink-0 rounded-full ring-2 ring-gold/40 hover:ring-gold cursor-pointer">
+                <Photo path={m.partner.photos?.[0]} alt={m.partner.name} className="w-12 h-12 rounded-full" />
+              </span>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between gap-2">
                   <span className="font-medium truncate">{m.partner.name}{m.score != null && <span className="ml-1.5 text-[11px] text-gold font-normal">{m.score}%</span>}</span>
@@ -101,6 +108,16 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
         {active ? <Thread key={active.match_id} focusInv={focusInv} onFocused={() => setFocusInv(null)} m={active} me={status.user_id} gender={gender} onBack={() => setOpenMatch(null)} onChanged={() => { load(); onDatesChanged(); }} />
           : <Card className="h-full flex items-center justify-center"><Empty icon={<MessageCircle className="w-5 h-5" />} title="Choose a conversation" /></Card>}
       </div>
+      <Modal open={!!profileOf} onClose={() => setProfileOf(null)} wide>
+        {profileOf && (
+          <>
+            <ProfileView m={{ ...profileOf.partner, score: profileOf.score ?? undefined, band: profileOf.band ?? undefined }} />
+            <div className="sticky bottom-0 pt-3 mt-3 bg-white dark:bg-navy-2">
+              <Button className="w-full" onClick={() => { const id = profileOf.match_id; setProfileOf(null); setOpenMatch(id); }}><MessageCircle className="w-4 h-4" />Open chat</Button>
+            </div>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
