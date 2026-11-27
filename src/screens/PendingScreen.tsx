@@ -10,7 +10,7 @@ export default function PendingScreen({ status, onRefresh, onEdit, suspended, re
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="max-w-md w-full text-center space-y-4">
-        <img src={BRAND.logo} alt="" className="w-14 h-14 rounded-full mx-auto" />
+        <img src={BRAND.logo} alt="" className="w-14 h-14 mx-auto" />
         {rejected ? (
           <>
             <ShieldAlert className="w-7 h-7 text-rose-500 mx-auto" />

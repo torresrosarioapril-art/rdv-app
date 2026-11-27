@@ -128,7 +128,7 @@ export default function SetupWizard({ status, onDone, onCancel, initialStep }: {
         <div className="max-w-3xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <img src={BRAND.logo} alt="" className="w-7 h-7 rounded-full" />
+              <img src={BRAND.logo} alt="" className="w-7 h-7" />
               <span className="text-xs uppercase tracking-widest text-gold">{approved ? 'Edit profile' : `Step ${step + 1} of ${STEPS.length}`}</span>
             </div>
             <div className="flex gap-2">

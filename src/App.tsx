@@ -141,7 +141,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
           const where = d.within_m >= 1000 ? `${d.within_m / 1000} km` : `${d.within_m} m`;
           const text = `${d.name ?? 'A match'} (${d.score}% match) is within ${where} of you right now`;
           toast(`${text}. Open Radar to see.`);
-          try { if (document.hidden && 'Notification' in window && Notification.permission === 'granted') new Notification('Rendez-vous', { body: text, icon: BRAND.logo }); } catch { /* ignore */ }
+          try { if (document.hidden && 'Notification' in window && Notification.permission === 'granted') new Notification('Rendez-vous', { body: text, icon: BRAND.icon }); } catch { /* ignore */ }
         }
       })
       .subscribe();
@@ -165,7 +165,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
       <header className="sticky top-0 z-40 backdrop-blur bg-ivory/85 dark:bg-navy/85 border-b border-gold/30 dark:border-white/10">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-3">
           <button onClick={() => setTab('matches')} className="flex items-center gap-2 cursor-pointer min-w-0 text-left">
-            <img src={BRAND.logo} alt="" className="w-8 h-8 rounded-full shrink-0" />
+            <img src={BRAND.logo} alt="" className="w-8 h-8 shrink-0" />
             <span className="min-w-0 overflow-hidden leading-tight">
               <span className="block font-display text-[15px] sm:text-base whitespace-nowrap">{BRAND.name}</span>
               <span className="block font-display text-[10px] sm:text-[11px] text-gold italic truncate">{BRAND.tagline}</span>
