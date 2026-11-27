@@ -82,7 +82,7 @@ export default function MatchesTab({ status, onOpenChat }: { status: Status; onO
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-display">{view === 'daily' ? <>Your daily <span className="italic text-gold">batch</span></> : <>Curated <span className="italic text-gold">drops</span> this week</>}</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             {view === 'daily'
               ? `${batch?.used ?? 0} of ${batch?.size ?? 0} reviewed today · your plan allows ${status.limits.swipes_per_day} daily profile swipes`
               : `Hand-picked 75%+ matches · ${drops?.items.length ?? 0} of ${drops?.cap ?? 0} this week`}

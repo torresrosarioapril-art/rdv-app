@@ -330,7 +330,7 @@ function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-display flex items-center gap-2"><Crown className="w-5 h-5 text-navy dark:text-gold" />{status.limits.label}</h2>
+          <h2 className="text-2xl font-display flex items-center gap-2"><Crown className="w-5 h-5 text-gold" />{status.limits.label}</h2>
           <p className="text-sm text-slate-500 mt-1">
             {status.comp && !paid ? `${status.comp.label ?? 'Complimentary'}: ${plans?.[status.comp.plan]?.label ?? 'Regular'} free until ${new Date(status.comp.until).toLocaleDateString()}. Thank you for helping us test.`
               : status.in_trial && !paid && status.trial_ends_at ? `Full-access trial until ${new Date(status.trial_ends_at).toLocaleDateString()}, then the free plan unless you upgrade.`

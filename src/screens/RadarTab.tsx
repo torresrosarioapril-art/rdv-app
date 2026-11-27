@@ -126,9 +126,9 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
       <div className="lg:col-span-3 space-y-3">
         <Card className="!p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <h1 className="text-xl font-display">Live <span className="italic text-gold">radar</span></h1>
+            <h1 className="text-2xl font-display">Live <span className="italic text-gold">radar</span></h1>
             <button onClick={() => changePrivacy(privacy === 'ghost' ? 'blur' : 'ghost')}
-              className={cx('flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium cursor-pointer bg-ink text-ivory-2 dark:bg-transparent dark:border',
+              className={cx('flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium cursor-pointer bg-ink text-gold dark:bg-transparent dark:border',
                 privacy === 'ghost' || zoneHidden ? 'dark:border-white/20 dark:text-slate-300' : 'dark:border-emerald-400/40 dark:text-emerald-300')}>
               {privacy === 'ghost' || zoneHidden ? <EyeOff className="w-3.5 h-3.5" /> : <RadarRings className="w-3.5 h-3.5 text-emerald-300" />}
               {privacy === 'ghost' ? 'Ghost' : zoneHidden ? 'Safe Zone' : 'Visible'}
