@@ -126,7 +126,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
       <div className="lg:col-span-3 space-y-3">
         <Card className="!p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <h1 className="text-xl font-display">Live radar</h1>
+            <h1 className="text-xl font-display">Live <span className="italic text-gold">radar</span></h1>
             <button onClick={() => changePrivacy(privacy === 'ghost' ? 'blur' : 'ghost')}
               className={cx('flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium cursor-pointer bg-navy text-ivory-2 dark:bg-transparent dark:border',
                 privacy === 'ghost' || zoneHidden ? 'dark:border-white/20 dark:text-slate-300' : 'dark:border-emerald-400/40 dark:text-emerald-300')}>
@@ -211,7 +211,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
       <div className="lg:col-span-2 space-y-3">
         <h2 className="font-display text-lg">Nearby now</h2>
         {items.length === 0 ? (
-          <Card><Empty icon={<Eye className="w-5 h-5" />} title="No compatible members in range">Try a wider radius, or check back later. People appear when they open the app nearby.</Empty></Card>
+          <Card className="!p-3.5"><Empty compact icon={<RadarRings className="w-4 h-4" />} title="No one in range just yet">Try a wider radius, or check back later.</Empty></Card>
         ) : items.map((m) => (
           <button key={m.id} onClick={() => setSelected(m)} className="w-full text-left cursor-pointer">
             <Card className="!p-3 flex items-center gap-3 hover:border-gold/50">
@@ -235,12 +235,12 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
         ))}
 
         <h2 className="font-display text-lg pt-3">Radar settings</h2>
-        <Card className="!p-0 divide-y divide-slate-200 dark:divide-white/10 overflow-hidden">
+        <Card className="!p-0 divide-y divide-gold/20 dark:divide-white/10 overflow-hidden">
           <SettingRow icon={privacy === 'ghost' ? <EyeOff className="w-4 h-4" /> : <RadarRings className="w-4 h-4" />} title="How others see you" summary={visibilitySummary}>
             <div className="grid grid-cols-2 gap-2">
               {VISIBILITY.map((p) => (
                 <button key={p.id} onClick={() => changePrivacy(p.id as Privacy)} className={cx('rounded-xl border p-3 text-left cursor-pointer', privacy === p.id ? 'border-gold bg-gold/10' : 'border-slate-200 bg-white dark:bg-transparent dark:border-white/10')}>
-                  <div className="flex items-center gap-1.5 text-[13px] font-semibold">{p.id === 'ghost' ? <EyeOff className="w-4 h-4 text-slate-500 dark:text-slate-400" /> : <RadarRings className="w-4 h-4 text-gold" />}{p.label}</div>
+                  <div className="flex items-center gap-1.5 text-[13px] font-semibold">{p.id === 'ghost' ? <EyeOff className="w-4 h-4 text-gold" /> : <RadarRings className="w-4 h-4 text-gold" />}{p.label}</div>
                   <div className="text-[10.5px] leading-snug text-slate-500 dark:text-slate-400 mt-1">{p.hint}</div>
                 </button>
               ))}

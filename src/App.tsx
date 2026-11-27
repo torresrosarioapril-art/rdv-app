@@ -162,7 +162,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
 
   return (
     <div className="min-h-screen pb-20 sm:pb-0">
-      <header className="sticky top-0 z-40 backdrop-blur bg-ivory/85 dark:bg-navy/85 border-b border-slate-200 dark:border-white/10">
+      <header className="sticky top-0 z-40 backdrop-blur bg-ivory/85 dark:bg-navy/85 border-b border-gold/30 dark:border-white/10">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-3">
           <button onClick={() => setTab('matches')} className="flex items-center gap-2 cursor-pointer min-w-0 text-left">
             <img src={BRAND.logo} alt="" className="w-8 h-8 rounded-full shrink-0" />
@@ -203,7 +203,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
           theme={theme} onToggleTheme={toggleTheme} onOpenSettings={openSettings} onBack={() => setTab(prevTab)} />}
       </main>
 
-      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-navy-2/95 backdrop-blur border-t border-slate-200 dark:border-white/10 grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-navy-2/95 backdrop-blur border-t border-gold/30 dark:border-white/10 grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
         {tabs.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)} className={cx('relative flex flex-col items-center gap-0.5 py-2.5 text-[11px] cursor-pointer', (tab === t.id || (t.id === 'profile' && tab === 'settings')) ? 'text-gold' : 'text-slate-500')}>
             {t.icon}{t.label}

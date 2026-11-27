@@ -125,11 +125,23 @@ export function Spinner({ label }: { label?: string }) {
   );
 }
 
-export function Empty({ icon, title, children }: { icon?: React.ReactNode; title: string; children?: React.ReactNode }) {
+export function Empty({ icon, title, children, compact }: { icon?: React.ReactNode; title: string; children?: React.ReactNode; compact?: boolean }) {
+  if (compact) {
+    // One line: icon + italic serif title, short hint underneath (for lists that are often empty)
+    return (
+      <div className="flex items-center gap-3 py-1">
+        {icon && <div className="w-9 h-9 shrink-0 rounded-full border border-gold/40 flex items-center justify-center text-gold">{icon}</div>}
+        <div className="min-w-0">
+          <h3 className="font-display italic text-[15px] leading-tight">{title}</h3>
+          {children && <div className="text-[11px] leading-snug text-slate-500 dark:text-slate-400 mt-0.5">{children}</div>}
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="text-center py-14 px-6">
-      {icon && <div className="mx-auto mb-4 w-14 h-14 rounded-full border border-gold/30 flex items-center justify-center text-gold">{icon}</div>}
-      <h3 className="text-lg font-display mb-1.5">{title}</h3>
+    <div className="text-center py-12 px-6">
+      {icon && <div className="mx-auto mb-4 w-14 h-14 rounded-full border border-gold/40 flex items-center justify-center text-gold">{icon}</div>}
+      <h3 className="text-xl font-display italic mb-1.5">{title}</h3>
       {children && <div className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">{children}</div>}
     </div>
   );
