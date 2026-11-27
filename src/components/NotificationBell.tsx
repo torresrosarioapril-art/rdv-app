@@ -97,7 +97,7 @@ export function NotificationBell({ uid, onOpenChat, onOpenRadar }: { uid: string
               };
               return (
                 <button key={n.id} onClick={go} className={cx('w-full flex items-start gap-2.5 text-left rounded-lg px-2.5 py-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5', !n.read_at && 'bg-gold/10')}>
-                  <span className="mt-0.5 w-7 h-7 shrink-0 rounded-full bg-navy text-gold dark:bg-gold/15 flex items-center justify-center">{x.icon}</span>
+                  <span className="mt-0.5 w-7 h-7 shrink-0 rounded-full icon-disc flex items-center justify-center">{x.icon}</span>
                   <span className="flex-1 min-w-0 text-sm leading-snug">{x.text}</span>
                   <span className="shrink-0 text-[10px] text-slate-500 mt-0.5">{ago(n.created_at)}</span>
                 </button>

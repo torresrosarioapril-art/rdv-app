@@ -42,6 +42,7 @@ export default function ProfileTab({ view = 'profile', status, refresh, onEditPr
             <X className="w-3.5 h-3.5" />Close
           </button>
         </div>
+        <SectionTitle>Your plan</SectionTitle>
         <div id="plan" className="scroll-mt-20"><PlanCard status={status} refresh={refresh} /></div>
         {status.plan === 'plan2' && <Consultations status={status} refresh={refresh} />}
         <SectionTitle>Visibility & safety on the radar</SectionTitle>
@@ -329,7 +330,6 @@ function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-[11px] uppercase tracking-widest text-gold">Your plan</div>
           <h2 className="text-2xl font-display flex items-center gap-2"><Crown className="w-5 h-5 text-navy dark:text-gold" />{status.limits.label}</h2>
           <p className="text-sm text-slate-500 mt-1">
             {status.comp && !paid ? `${status.comp.label ?? 'Complimentary'}: ${plans?.[status.comp.plan]?.label ?? 'Regular'} free until ${new Date(status.comp.until).toLocaleDateString()}. Thank you for helping us test.`

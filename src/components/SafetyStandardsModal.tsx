@@ -65,7 +65,7 @@ export function SafetyStandardsModal({ isOpen, onClose, onAccept }: {
         <div className="space-y-2.5 mb-5">
           {RULES.map((r) => (
             <div key={r.title} className="p-3.5 rounded-xl bg-slate-50 dark:bg-navy-3 border border-slate-200 dark:border-white/10 flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-navy text-gold dark:bg-gold/10 shrink-0">{r.icon}</div>
+              <div className="p-2 rounded-full icon-disc shrink-0">{r.icon}</div>
               <div>
                 <h3 className="text-sm font-semibold mb-0.5">{r.title}</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{r.body}</p>

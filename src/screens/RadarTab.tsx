@@ -176,7 +176,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
             <label className="relative inline-flex items-center gap-1 rounded-full border border-gold/50 bg-gold/10 text-gold font-medium px-2.5 py-0.5 text-xs cursor-pointer">
               {minScore ? `${minScore}%+ match` : 'All compatible'}<ChevronDown className="w-3 h-3" />
               <select value={String(minScore)} onChange={(e) => setMinScore(Number(e.target.value))} aria-label="Minimum match"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-[16px]">
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-xs">
                 <option value="0">All compatible</option>
                 {RADAR.minScoreOptions.filter((x) => x > 0).map((x) => <option key={x} value={String(x)}>{x}%+ match</option>)}
               </select>
@@ -240,7 +240,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
             <div className="grid grid-cols-2 gap-2">
               {VISIBILITY.map((p) => (
                 <button key={p.id} onClick={() => changePrivacy(p.id as Privacy)} className={cx('rounded-xl border p-3 text-left cursor-pointer', privacy === p.id ? 'border-gold bg-gold/10' : 'border-slate-200 dark:border-white/10')}>
-                  <div className="flex items-center gap-1.5 text-sm font-medium">{p.id === 'ghost' ? <EyeOff className="w-4 h-4" /> : <RadarRings className="w-4 h-4" />}{p.label}</div>
+                  <div className="flex items-center gap-2 text-sm font-medium"><span className="w-7 h-7 rounded-full icon-disc flex items-center justify-center shrink-0">{p.id === 'ghost' ? <EyeOff className="w-4 h-4" /> : <RadarRings className="w-4 h-4" />}</span>{p.label}</div>
                   <div className="text-[11px] text-slate-500 mt-1">{p.hint}</div>
                 </button>
               ))}
@@ -315,7 +315,7 @@ export function SettingRow({ icon, title, summary, children }: { icon: React.Rea
   return (
     <div>
       <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center gap-3 p-3.5 text-left cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
-        <span className="w-8 h-8 rounded-full bg-navy text-gold dark:bg-gold/15 flex items-center justify-center shrink-0">{icon}</span>
+        <span className="w-8 h-8 rounded-full icon-disc flex items-center justify-center shrink-0">{icon}</span>
         <span className="flex-1 min-w-0">
           <span className="block text-sm font-medium">{title}</span>
           <span className="block text-[11px] text-slate-500 truncate">{summary}</span>
