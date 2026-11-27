@@ -11,6 +11,17 @@
   --color-ivory: #f7f4ee;
   --color-ivory-2: #f4efe3;
   --color-gold-deep: #a8842f;
+  /* Neutrals retuned to the brand: warm ivory surfaces and lines, navy-tinted text (no cool greys) */
+  --color-slate-50: #faf7f0;
+  --color-slate-100: #f3eee3;
+  --color-slate-200: #e8e1d2;
+  --color-slate-300: #d8cfbd;
+  --color-slate-400: #9a9fab;
+  --color-slate-500: #646d7e;
+  --color-slate-600: #475166;
+  --color-slate-700: #2f394d;
+  --color-slate-800: #1b2537;
+  --color-slate-900: #0a1322;
   --font-display: 'Fraunces', serif;
   --font-sans: 'Sora', system-ui, sans-serif;
 }

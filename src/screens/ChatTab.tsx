@@ -358,12 +358,12 @@ function TextBubble({ x, mine, partnerName, partnerId, act }: {
     <div className={cx('flex group w-full', mine ? 'justify-end' : 'justify-start')}>
       <div onClick={() => canDelete && setMenu((v) => !v)}
         className={cx('max-w-[82%] sm:max-w-[78%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm', canDelete && 'cursor-pointer',
-          deleted ? 'border border-dashed border-slate-300 dark:border-white/15 text-slate-500' : mine ? 'bg-gold text-navy rounded-br-md' : 'bg-slate-100 dark:bg-navy-3 rounded-bl-md')}>
+          deleted ? 'border border-dashed border-slate-300 dark:border-white/15 text-slate-500' : mine ? 'bg-navy text-ivory-2 dark:bg-gold dark:text-navy rounded-br-md' : 'bg-white border border-gold/50 dark:bg-navy-3 dark:border-gold/25 rounded-bl-md')}>
         {deleted ? <i>{mine ? 'You deleted this message' : 'Message deleted'}</i>
           : x.is_hidden ? <i className="opacity-70">Hidden pending review</i>
           : x.kind === 'image' && x.image_path ? <><ChatImage path={x.image_path} />{x.body && <span className="block mt-1 whitespace-pre-wrap">{x.body}</span>}</>
           : x.kind === 'voice' && x.voice_path ? <VoiceNote path={x.voice_path} seconds={x.voice_seconds} /> : <span className="whitespace-pre-wrap">{x.body}</span>}
-        <div className={cx('text-[10px] mt-1', mine && !deleted ? 'text-navy/60' : 'text-slate-500')}>{new Date(x.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}{mine && x.read_at ? ' · Read' : ''}</div>
+        <div className={cx('text-[10px] mt-1', mine && !deleted ? 'text-ivory-2/60 dark:text-navy/60' : 'text-slate-500')}>{new Date(x.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}{mine && x.read_at ? ' · Read' : ''}</div>
       </div>
       {!mine && !x.is_hidden && !deleted && (
         <div className="self-center ml-0.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition">

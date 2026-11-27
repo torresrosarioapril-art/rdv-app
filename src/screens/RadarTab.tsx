@@ -128,9 +128,9 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
           <div className="flex items-center justify-between gap-2">
             <h1 className="text-xl font-display">Live radar</h1>
             <button onClick={() => changePrivacy(privacy === 'ghost' ? 'blur' : 'ghost')}
-              className={cx('flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs cursor-pointer',
-                privacy === 'ghost' || zoneHidden ? 'border-slate-400/40 text-slate-500' : 'border-emerald-400/40 text-emerald-600 dark:text-emerald-300')}>
-              {privacy === 'ghost' || zoneHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              className={cx('flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium cursor-pointer bg-navy text-ivory-2 dark:bg-transparent dark:border',
+                privacy === 'ghost' || zoneHidden ? 'dark:border-white/20 dark:text-slate-300' : 'dark:border-emerald-400/40 dark:text-emerald-300')}>
+              {privacy === 'ghost' || zoneHidden ? <EyeOff className="w-3.5 h-3.5" /> : <RadarRings className="w-3.5 h-3.5 text-emerald-300" />}
               {privacy === 'ghost' ? 'Ghost' : zoneHidden ? 'Safe Zone' : 'Visible'}
             </button>
           </div>
@@ -188,7 +188,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
           {!pos && !geoErr && <p className="text-sm text-slate-500 text-center">Finding your location…</p>}
           {zoneHidden && <p className="text-sm text-gold text-center flex items-center justify-center gap-1.5"><ShieldCheck className="w-4 h-4" />You're in one of your Safe Zones, so you're hidden automatically.</p>}
           {hidden.total > 0 && (
-            <div className="rounded-xl border border-gold/40 bg-gold/10 p-3 text-sm space-y-2">
+            <div className="rounded-xl border border-gold/40 bg-gold/10 dark:bg-navy-3 p-3 text-sm space-y-2">
               <p>
                 {hidden.strong > 0
                   ? <><b>{hidden.strong} more strong match{hidden.strong === 1 ? '' : 'es'}</b> ({hidden.min}%+) {hidden.strong === 1 ? 'is' : 'are'} nearby right now.</>
@@ -239,9 +239,9 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
           <SettingRow icon={privacy === 'ghost' ? <EyeOff className="w-4 h-4" /> : <RadarRings className="w-4 h-4" />} title="How others see you" summary={visibilitySummary}>
             <div className="grid grid-cols-2 gap-2">
               {VISIBILITY.map((p) => (
-                <button key={p.id} onClick={() => changePrivacy(p.id as Privacy)} className={cx('rounded-xl border p-3 text-left cursor-pointer', privacy === p.id ? 'border-gold bg-gold/10' : 'border-slate-200 dark:border-white/10')}>
-                  <div className="flex items-center gap-2 text-sm font-medium"><span className="w-7 h-7 rounded-full icon-disc flex items-center justify-center shrink-0">{p.id === 'ghost' ? <EyeOff className="w-4 h-4" /> : <RadarRings className="w-4 h-4" />}</span>{p.label}</div>
-                  <div className="text-[11px] text-slate-500 mt-1">{p.hint}</div>
+                <button key={p.id} onClick={() => changePrivacy(p.id as Privacy)} className={cx('rounded-xl border p-3 text-left cursor-pointer', privacy === p.id ? 'border-gold bg-gold/10' : 'border-slate-200 bg-white dark:bg-transparent dark:border-white/10')}>
+                  <div className="flex items-center gap-1.5 text-[13px] font-semibold">{p.id === 'ghost' ? <EyeOff className="w-4 h-4 text-slate-500 dark:text-slate-400" /> : <RadarRings className="w-4 h-4 text-gold" />}{p.label}</div>
+                  <div className="text-[10.5px] leading-snug text-slate-500 dark:text-slate-400 mt-1">{p.hint}</div>
                 </button>
               ))}
             </div>
