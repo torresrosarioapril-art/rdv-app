@@ -131,8 +131,8 @@ export default function MatchesTab({ status, onOpenChat }: { status: Status; onO
 
       <Modal open={!!matched} onClose={() => setMatched(null)}>
         <div className="text-center py-4">
-          <Sparkles className="w-8 h-8 text-gold mx-auto mb-3" />
-          <h2 className="text-2xl font-display">It's mutual</h2>
+          <div className="match-burst" aria-hidden="true"><span /><span /><span /><i /></div>
+          <h2 className="text-3xl font-display italic shimmer-gold">It's mutual</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">You and {matched?.name} are both interested. Open the chat and start with one of their prompts.</p>
           <div className="mt-6 flex justify-center gap-2">
             <Button variant="ghost" onClick={() => setMatched(null)}>Keep reviewing</Button>

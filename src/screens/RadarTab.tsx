@@ -215,7 +215,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
         ) : items.map((m) => (
           <button key={m.id} onClick={() => setSelected(m)} className="w-full text-left cursor-pointer">
             <Card className="!p-3 flex items-center gap-3 hover:border-gold/50">
-              <Photo path={m.photos?.[0]} alt={m.name} className="w-14 h-14 rounded-xl" />
+              <Photo path={m.photos?.[0]} alt={m.name} className="w-14 h-14 rounded-full ring-2 ring-gold/60 ring-offset-2 ring-offset-white dark:ring-offset-navy-2" />
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{m.name}{m.age ? `, ${m.age}` : ''}</div>
                 <div className="text-xs text-slate-500 truncate">{m.occupation}</div>
@@ -229,7 +229,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
                   </div>
                 )}
               </div>
-              <ScoreBadge score={m.score} band={undefined} />
+              <ScoreBadge score={m.score} compact />
             </Card>
           </button>
         ))}

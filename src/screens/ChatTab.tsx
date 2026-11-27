@@ -87,12 +87,12 @@ export default function ChatTab({ status, openMatch, setOpenMatch, onRead, event
               <span role="button" tabIndex={0} aria-label={`View ${m.partner.name}'s profile`}
                 onClick={(e) => { e.stopPropagation(); setProfileOf(m); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setProfileOf(m); } }}
-                className="shrink-0 rounded-full ring-2 ring-gold/40 hover:ring-gold cursor-pointer">
+                className="shrink-0 rounded-full ring-2 ring-gold/60 hover:ring-gold cursor-pointer">
                 <Photo path={m.partner.photos?.[0]} alt={m.partner.name} className="w-12 h-12 rounded-full" />
               </span>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between gap-2">
-                  <span className="font-medium truncate">{m.partner.name}{m.score != null && <span className="ml-1.5 text-[11px] text-gold font-normal">{m.score}%</span>}</span>
+                  <span className="font-medium truncate">{m.partner.name}{m.score != null && <span className="ml-1.5 text-[11px] text-gold-deep dark:text-gold font-semibold">{m.score}% match</span>}</span>
                   {m.last_message && <span className="text-[10px] text-slate-500 shrink-0">{new Date(m.last_message.at).toLocaleDateString()}</span>}
                 </div>
                 <div className="text-xs text-slate-500 truncate">
@@ -208,13 +208,13 @@ function Thread({ m, me, gender, onBack, onChanged, focusInv, onFocused }: {
       <div className="flex items-center gap-2 sm:gap-3 px-2.5 py-2 sm:p-3 border-b border-slate-200 dark:border-white/10">
         <button onClick={onBack} className="md:hidden p-1 shrink-0 cursor-pointer"><ArrowLeft className="w-5 h-5" /></button>
         <button onClick={() => setProfileOpen(true)} className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 text-left cursor-pointer">
-          <Photo path={partner.photos?.[0]} alt={partner.name} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0" />
+          <Photo path={partner.photos?.[0]} alt={partner.name} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0 ring-2 ring-gold/60" />
           <div className="min-w-0 flex-1">
             <div className="font-medium truncate">{partner.name}{partner.age ? `, ${partner.age}` : ''}</div>
             <div className="text-[11px] text-slate-500 truncate">{partner.occupation} · tap for profile</div>
           </div>
           {m.score != null && <>
-            <span className="sm:hidden shrink-0 rounded-full bg-gold/15 border border-gold/40 text-gold text-[11px] font-semibold px-2 py-0.5">{m.score}%</span>
+            <span className="sm:hidden shrink-0"><ScoreBadge score={m.score} compact /></span>
             <span className="hidden sm:inline-flex shrink-0"><ScoreBadge score={m.score} band={m.band ?? undefined} /></span>
           </>}
         </button>

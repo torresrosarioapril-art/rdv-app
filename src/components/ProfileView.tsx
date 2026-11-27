@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { Briefcase, ChevronLeft, ChevronRight, Flag, GraduationCap, Heart, Link2, MapPin, Ruler, ShieldCheck, Sparkles, Star } from 'lucide-react';
+import { Briefcase, ChevronLeft, ChevronRight, Flag, GraduationCap, Heart, Link2, MapPin, Ruler, ShieldCheck, Star } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { signedUrl, type MemberCard } from '@/lib/api';
 import { HABITS, KIDS, MARITAL_STATUS, POLITICAL, RELOCATION, TIMELINE, labelOf } from '@/config/app';
 import { Badge, Photo, cx } from './ui';
 
-export function ScoreBadge({ score, band }: { score?: number; band?: string }) {
+export function ScoreBadge({ score, band, compact, onDark }: { score?: number; band?: string; compact?: boolean; onDark?: boolean }) {
   if (score == null) return null;
   return (
-    <span className={cx('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
-      score >= 90 ? 'bg-gold text-navy' : score >= 75 ? 'bg-gold/20 text-gold border border-gold/40' : 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-white/10 dark:text-slate-200 dark:border-white/15')}>
-      <Sparkles className="w-3 h-3" />{score}% · {band}
+    <span className={`inline-flex items-center gap-1 rounded-full border border-gold/60 bg-gold/10 ${onDark ? 'text-gold bg-navy/40 backdrop-blur-sm' : 'text-gold-deep dark:text-gold'} px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap`}>
+      {score}% match{!compact && band ? <span className="font-normal opacity-80"> · {band}</span> : null}
     </span>
   );
 }
@@ -59,7 +58,7 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
               <MapPin className="w-3 h-3" />{[m.district, m.city].filter(Boolean).join(', ') || 'UAE'}
               {m.distance_km != null && <> · {m.distance_km} km away</>}
             </div>
-            <div className="mt-2"><ScoreBadge score={m.score} band={m.band} /></div>
+            <div className="mt-2"><ScoreBadge score={m.score} band={m.band} onDark /></div>
           </div>
         </div>
         {m.photos?.length > 1 && (
@@ -80,7 +79,7 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
       </div>}
 
       <div className={cx('space-y-4', !noPhotos && 'md:col-span-3')}>
-        {m.headline && <p className="font-display text-lg">{m.headline}</p>}
+        {m.headline && <p className="font-display italic text-base">{m.headline}</p>}
         <div className="flex flex-wrap gap-1.5 text-xs">
           {m.occupation && <Badge tone="slate"><Briefcase className="w-3 h-3" />{m.occupation}{m.company ? ` · ${m.company}` : ''}</Badge>}
           {(m.university || m.degree) && <Badge tone="slate"><GraduationCap className="w-3 h-3" />{[m.degree, m.university].filter(Boolean).join(', ')}</Badge>}
@@ -89,9 +88,9 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
           {m.work_verified && <Badge tone="green"><ShieldCheck className="w-3 h-3" />Work email verified</Badge>}
           {m.linkedin_url && <a href={m.linkedin_url} target="_blank" rel="noreferrer"><Badge><Link2 className="w-3 h-3" />LinkedIn</Badge></a>}
         </div>
-        {m.bio && <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-line">{m.bio}</p>}
+        {m.bio && <p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-line">{m.bio}</p>}
 
-        <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="grid grid-cols-2 gap-2 text-[13px]">
           <Fact k="Faith" v={[m.religion, m.religion_practice].filter(Boolean).join(' · ')} />
           <Fact k="Marriage" v={labelOf(TIMELINE, m.marriage_timeline)} />
           {m.marital_status && <Fact k="Marital status" v={labelOf(MARITAL_STATUS, m.marital_status)} />}
@@ -108,7 +107,7 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
         {!compact && answered.map((p) => (
           <div key={p.key} className="rounded-xl bg-slate-50 dark:bg-navy-3 p-4">
             <div className="text-[11px] uppercase tracking-widest text-gold mb-1">{p.question}</div>
-            <p className="text-sm whitespace-pre-line">{p.answer}</p>
+            <p className="text-[13px] leading-relaxed whitespace-pre-line">{p.answer}</p>
           </div>
         ))}
       </div>
@@ -120,7 +119,7 @@ function Fact({ k, v }: { k: string; v: string }) {
   return (
     <div className="rounded-xl bg-slate-50 dark:bg-navy-3 px-3 py-2">
       <div className="text-[10px] uppercase tracking-wider text-slate-500">{k}</div>
-      <div className="text-sm">{v || '—'}</div>
+      <div className="text-[13px]">{v || '—'}</div>
     </div>
   );
 }
@@ -222,7 +221,7 @@ function BirthChart({ z, self, preview, targetId }: { z: MemberCard['zodiac']; s
         {big3.map(([k, v]) => (
           <div key={k} className="rounded-lg bg-white/60 dark:bg-navy-3 p-2.5 text-center">
             <div className="text-xl leading-none text-gold">{v ? GLYPH[v] : '–'}</div>
-            <div className="text-sm mt-1">{v ?? '—'}</div>
+            <div className="text-[13px] mt-1">{v ?? '—'}</div>
             <div className="text-[10px] uppercase tracking-wider text-slate-500">{k}</div>
           </div>
         ))}
@@ -233,24 +232,24 @@ function BirthChart({ z, self, preview, targetId }: { z: MemberCard['zodiac']; s
           <div className="text-[10px] uppercase tracking-widest text-gold flex items-center gap-1"><Heart className="w-3 h-3" />Your zodiac match</div>
           {match.source === 'synastry' && match.band ? (
             <>
-              <p className="text-sm"><b>{match.band}</b>{match.score != null ? ` · ${Math.round(match.score)}/100` : ''}</p>
-              {zodiacReading(match).map((t, i) => <p key={i} className="text-sm text-slate-600 dark:text-slate-300">{t}</p>)}
+              <p className="text-[13px]"><b>{match.band}</b>{match.score != null ? ` · ${Math.round(match.score)}/100` : ''}</p>
+              {zodiacReading(match).map((t, i) => <p key={i} className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">{t}</p>)}
               <p className="text-[11px] text-slate-500">Based on both full birth charts. Astrology counts for 10% of your match %.</p>
             </>
           ) : match.element_match ? (
             <>
-              {zodiacReading(match).map((t, i) => <p key={i} className="text-sm text-slate-600 dark:text-slate-300">{t}</p>)}
+              {zodiacReading(match).map((t, i) => <p key={i} className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">{t}</p>)}
               <p className="text-[11px] text-slate-500">Sun signs only for now. Astrology counts for 10% of your match %.</p>
             </>
-          ) : <p className="text-sm text-slate-500">Not enough birth details yet.</p>}
+          ) : <p className="text-xs text-slate-500">Not enough birth details yet.</p>}
         </div>
       )}
 
       {(venus || mars) && (
         <div className="space-y-2">
           <div className="text-[10px] uppercase tracking-widest text-gold">{self ? 'Your love style' : preview ? 'Love style' : 'Their love style'}</div>
-          {venus && <p className="text-sm"><span className="text-gold">♀ Venus in {venus}:</span> {VENUS[venus]}</p>}
-          {mars && <p className="text-sm"><span className="text-gold">♂ Mars in {mars}:</span> {MARS[mars]}</p>}
+          {venus && <p className="text-xs leading-relaxed"><span className="text-gold">♀ Venus in {venus}:</span> {VENUS[venus]}</p>}
+          {mars && <p className="text-xs leading-relaxed"><span className="text-gold">♂ Mars in {mars}:</span> {MARS[mars]}</p>}
         </div>
       )}
 

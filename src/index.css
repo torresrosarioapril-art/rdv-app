@@ -47,5 +47,16 @@
 .pulse-dot { animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.45; } }
 
+/* New-match moment: gold rings ripple out and the title shimmers once */
+.match-burst { position: relative; width: 96px; height: 96px; margin: 0 auto 12px; }
+.match-burst span { position: absolute; inset: 0; border-radius: 9999px; border: 1.5px solid var(--color-gold); opacity: 0; animation: burst 1.8s ease-out infinite; }
+.match-burst span:nth-child(2) { animation-delay: .35s; } .match-burst span:nth-child(3) { animation-delay: .7s; }
+.match-burst i { position: absolute; inset: 38px; border-radius: 9999px; background: var(--color-gold); box-shadow: 0 0 24px rgba(201,162,74,.7); }
+@keyframes burst { 0% { transform: scale(.35); opacity: .9; } 100% { transform: scale(1.25); opacity: 0; } }
+.shimmer-gold { background: linear-gradient(100deg, var(--color-gold) 20%, #fff6dc 45%, var(--color-gold) 70%); background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 2.2s ease-in-out 1; }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .match-burst span, .shimmer-gold { animation: none; } }
+
 /* Icon discs: gold disc, navy icon, the same in both themes */
 .icon-disc { background: var(--color-gold); color: var(--color-navy); }
