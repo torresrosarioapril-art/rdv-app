@@ -59,4 +59,4 @@
 @media (prefers-reduced-motion: reduce) { .match-burst span, .shimmer-gold { animation: none; } }
 
 /* Icon discs: gold disc, navy icon, the same in both themes */
-.icon-disc { background: var(--color-gold); color: var(--color-navy); }
+.icon-disc { background: var(--color-gold-soft); color: var(--color-ink); }
