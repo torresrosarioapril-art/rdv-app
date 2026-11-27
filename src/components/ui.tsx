@@ -192,7 +192,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div className="fixed z-[60] bottom-24 sm:bottom-6 left-1/2 -translate-x-1/2 flex flex-col gap-2 w-[92%] max-w-sm">
         {items.map((t) => (
           <div key={t.id} className={cx('rounded-xl px-4 py-3 text-sm shadow-lg border', t.tone === 'ok'
-            ? 'bg-navy text-slate-100 border-gold/40' : 'bg-rose-950 text-rose-100 border-rose-400/40')}>
+            ? 'bg-ink text-ivory-2 border-gold/40' : 'bg-rose-950 text-rose-100 border-rose-400/40')}>
             {t.text}
           </div>
         ))}
