@@ -17,8 +17,8 @@ export const BRAND = {
   short: 'RDV',
   tagline: '“Where intention meets the moment.”',
   pitch: "We were right next to each other and had no idea.",
-  logo: '/assets/brand/rdv_mark_gold.png',      // gold monogram, transparent (brand guideline)
-  logoNavy: '/assets/brand/rdv_mark_navy.png', // solid navy variation for light backgrounds
+  logo: '/assets/brand/rdv_mark_gold.svg',      // gold monogram, transparent (brand guideline)
+  logoNavy: '/assets/brand/rdv_mark_navy.svg', // solid navy variation for light backgrounds
   icon: '/assets/brand/rdv_app_icon.png',
 };
 
