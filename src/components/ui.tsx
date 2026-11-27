@@ -9,9 +9,10 @@ export function Button({
   variant = 'gold', busy, className, children, ...rest
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant; busy?: boolean }) {
   const styles: Record<BtnVariant, string> = {
-    gold: 'bg-gold text-navy hover:brightness-110 font-semibold',
+    // Primary = the theme's contrast colour (navy on light, ivory on dark), gold stays the accent
+    gold: 'bg-navy text-ivory-2 hover:bg-navy-3 dark:bg-ivory-2 dark:text-navy dark:hover:bg-white font-semibold shadow-sm',
     ghost: 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5',
-    outline: 'border border-slate-300 dark:border-white/15 hover:border-gold text-slate-800 dark:text-slate-100',
+    outline: 'border border-navy/20 dark:border-white/15 hover:border-gold text-navy dark:text-ivory-2',
     danger: 'border border-rose-400/50 text-rose-600 dark:text-rose-300 hover:bg-rose-500/10',
   };
   return (
@@ -28,7 +29,7 @@ export function Button({
 
 export function Card({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cx('rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-navy-2 p-5', className)}>
+    <div className={cx('rounded-2xl border border-navy/10 bg-white shadow-[0_1px_2px_rgba(10,19,34,0.04)] dark:border-white/10 dark:bg-navy-2 dark:shadow-none p-5', className)}>
       {children}
     </div>
   );
@@ -207,3 +208,16 @@ export function useAction() {
   }, [toast]);
   return { busy, run };
 }
+
+/** The radar-rings mark from the brand creatives: three circles and a centre dot, in the current colour. */
+export function RadarRings({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="10" strokeWidth="1.4" opacity="0.5" />
+      <circle cx="12" cy="12" r="6.5" strokeWidth="1.6" opacity="0.75" />
+      <circle cx="12" cy="12" r="3" strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+

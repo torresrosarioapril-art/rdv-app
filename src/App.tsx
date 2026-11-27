@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { Compass, Heart, MessageCircle, Moon, Sun, UserRound, EyeOff, Settings, Waves } from 'lucide-react';
+import { Compass, Heart, MessageCircle, Moon, Sun, UserRound, EyeOff, Settings } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { confirmWorkEmail, myCalendar, myStatus, setPrivacy, updateMyLocation, type CalendarEvent, type Privacy, type Status } from '@/lib/api';
 import { BRAND } from '@/config/app';
-import { ToastProvider, Spinner, cx, useToast } from '@/components/ui';
+import { ToastProvider, Spinner, cx, useToast, RadarRings } from '@/components/ui';
 import AuthScreen from '@/screens/AuthScreen';
 import SetupWizard from '@/screens/SetupWizard';
 import PendingScreen from '@/screens/PendingScreen';
@@ -162,7 +162,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
 
   return (
     <div className="min-h-screen pb-20 sm:pb-0">
-      <header className="sticky top-0 z-40 backdrop-blur bg-ivory/85 dark:bg-navy/85 border-b border-slate-200 dark:border-white/10">
+      <header className="sticky top-0 z-40 bg-navy text-ivory-2 dark:bg-navy-2/95 dark:backdrop-blur border-b border-gold/40 dark:border-white/10">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-3">
           <button onClick={() => setTab('matches')} className="flex items-center gap-2 cursor-pointer min-w-0 text-left">
             <img src={BRAND.logo} alt="" className="w-8 h-8 rounded-full shrink-0" />
@@ -174,7 +174,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
           <nav className="hidden sm:flex items-center gap-1">
             {tabs.map((t) => (
               <button key={t.id} onClick={() => setTab(t.id)} className={cx('relative flex items-center gap-2 px-3 py-2 rounded-xl text-sm cursor-pointer',
-                (tab === t.id || (t.id === 'profile' && tab === 'settings')) ? 'bg-gold/15 text-gold' : 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5')}>
+                (tab === t.id || (t.id === 'profile' && tab === 'settings')) ? 'bg-gold/15 text-gold' : 'text-slate-300 hover:bg-white/10')}>
                 {t.icon}{t.label}
                 {t.id === 'chat' && unread > 0 && <span className="ml-1 rounded-full bg-gold text-navy text-[10px] px-1.5">{unread}</span>}
               </button>
@@ -203,9 +203,9 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
           theme={theme} onToggleTheme={toggleTheme} onOpenSettings={openSettings} onBack={() => setTab(prevTab)} />}
       </main>
 
-      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-navy-2/95 backdrop-blur border-t border-slate-200 dark:border-white/10 grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-navy dark:bg-navy-2/95 dark:backdrop-blur border-t border-gold/40 dark:border-white/10 grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
         {tabs.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={cx('relative flex flex-col items-center gap-0.5 py-2.5 text-[11px] cursor-pointer', (tab === t.id || (t.id === 'profile' && tab === 'settings')) ? 'text-gold' : 'text-slate-500')}>
+          <button key={t.id} onClick={() => setTab(t.id)} className={cx('relative flex flex-col items-center gap-0.5 py-2.5 text-[11px] cursor-pointer', (tab === t.id || (t.id === 'profile' && tab === 'settings')) ? 'text-gold' : 'text-slate-400')}>
             {t.icon}{t.label}
             {t.id === 'chat' && unread > 0 && <span className="absolute top-1.5 right-[30%] w-2 h-2 rounded-full bg-gold" />}
           </button>
@@ -215,7 +215,7 @@ function Shell({ status, refresh, theme, toggleTheme, onEditProfile }: {
   );
 }
 
-export const HEADER_ICON = 'p-1.5 rounded-lg text-gold dark:text-white hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer';
+export const HEADER_ICON = 'p-1.5 rounded-lg text-gold dark:text-white hover:bg-white/10 cursor-pointer';
 
 /** Header shortcut: how others see you on the radar (approximate or hidden). */
 function VisibilityShortcut({ status, refresh }: { status: Status; refresh: () => Promise<void> }) {
@@ -239,8 +239,8 @@ function VisibilityShortcut({ status, refresh }: { status: Status; refresh: () =
   return (
     <button title={hidden ? (zoneHidden ? 'Hidden by a Safe Zone · tap for Ghost' : 'Ghost · tap to be visible') : 'Visible (approximate) · tap for Ghost'}
       aria-label={hidden ? 'Ghost on, tap to be visible' : 'Visible, tap to go Ghost'} onClick={flip}
-      className={cx(HEADER_ICON, !hidden && '!text-emerald-500 dark:!text-emerald-300', busy && 'opacity-50')}>
-      {hidden ? <EyeOff className="w-[18px] h-[18px]" /> : <Waves className="w-[18px] h-[18px]" />}
+      className={cx(HEADER_ICON, !hidden && '!text-emerald-300', busy && 'opacity-50')}>
+      {hidden ? <EyeOff className="w-[18px] h-[18px]" /> : <RadarRings className="w-[18px] h-[18px]" />}
     </button>
   );
 }

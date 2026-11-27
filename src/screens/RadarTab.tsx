@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Eye, EyeOff, MapPin, MessageCircle, Radar as RadarIcon, ShieldCheck, Waves } from 'lucide-react';
+import { Eye, EyeOff, MapPin, MessageCircle, Radar as RadarIcon, ShieldCheck } from 'lucide-react';
 import {
   giveConsent, radar, startCheckout, radarConnect, setPrivacy, updateMyLocation, type MemberCard, type Privacy, type Status,
 } from '@/lib/api';
 import { DUBAI_AREAS, RADAR, VISIBILITY } from '@/config/app';
-import { Badge, Button, Card, Empty, Modal, Photo, Select, Toggle, cx, useToast } from '@/components/ui';
+import { Badge, Button, Card, Empty, Modal, Photo, Select, Toggle, cx, useToast, RadarRings } from '@/components/ui';
 import { getNearbyAlert, saveNearbyAlert, type NearbyAlert } from '@/lib/api';
 import { BellRing, ChevronDown } from 'lucide-react';
 import { SafeZones } from '@/screens/ProfileTab';
@@ -236,11 +236,11 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
 
         <h2 className="font-display text-lg pt-3">Radar settings</h2>
         <Card className="!p-0 divide-y divide-slate-200 dark:divide-white/10 overflow-hidden">
-          <SettingRow icon={privacy === 'ghost' ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />} title="How others see you" summary={visibilitySummary}>
+          <SettingRow icon={privacy === 'ghost' ? <EyeOff className="w-4 h-4" /> : <RadarRings className="w-4 h-4" />} title="How others see you" summary={visibilitySummary}>
             <div className="grid grid-cols-2 gap-2">
               {VISIBILITY.map((p) => (
                 <button key={p.id} onClick={() => changePrivacy(p.id as Privacy)} className={cx('rounded-xl border p-3 text-left cursor-pointer', privacy === p.id ? 'border-gold bg-gold/10' : 'border-slate-200 dark:border-white/10')}>
-                  <div className="flex items-center gap-1.5 text-sm font-medium">{p.id === 'ghost' ? <EyeOff className="w-4 h-4" /> : <Waves className="w-4 h-4" />}{p.label}</div>
+                  <div className="flex items-center gap-1.5 text-sm font-medium">{p.id === 'ghost' ? <EyeOff className="w-4 h-4" /> : <RadarRings className="w-4 h-4" />}{p.label}</div>
                   <div className="text-[11px] text-slate-500 mt-1">{p.hint}</div>
                 </button>
               ))}

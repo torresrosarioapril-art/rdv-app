@@ -72,7 +72,7 @@ export function NotificationBell({ uid, onOpenChat, onOpenRadar }: { uid: string
   return (
     <div className="relative">
       <button title="Notifications" aria-label="Notifications" onClick={toggle}
-        className="relative p-1.5 rounded-lg text-gold dark:text-white hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer">
+        className="relative p-1.5 rounded-lg text-gold dark:text-white hover:bg-white/10 cursor-pointer">
         <Bell className="w-[18px] h-[18px]" />
         {unread > 0 && <span className="absolute top-0 right-0 min-w-4 h-4 px-1 rounded-full bg-gold text-navy text-[10px] font-semibold leading-4 text-center">{unread > 9 ? '9+' : unread}</span>}
       </button>
