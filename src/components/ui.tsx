@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2, X } from 'lucide-react';
 import { signedUrl } from '@/lib/api';
 
@@ -93,8 +94,9 @@ export function Modal({ open, onClose, title, children, wide, actions }: {
     return () => window.removeEventListener('keydown', k);
   }, [open, onClose]);
   if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4" onClick={onClose}>
+  // Rendered at the top of the page so it always sits above the header, bottom menu and the chat panel
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
         className={cx('relative w-full max-h-[92dvh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl bg-white dark:bg-navy-2 border border-slate-200 dark:border-white/10', wide ? 'sm:max-w-3xl' : 'sm:max-w-lg')}
@@ -112,7 +114,8 @@ export function Modal({ open, onClose, title, children, wide, actions }: {
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
