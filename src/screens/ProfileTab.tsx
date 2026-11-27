@@ -461,9 +461,9 @@ export function SafeZones({ status, bare }: { status: Status; bare?: boolean }) 
       <p className={bare ? 'text-[11px] text-slate-500' : 'text-sm text-slate-500'}>Save places like home or the office. Whenever your location shows you're inside one, you're switched to Ghost automatically, even if you forgot to turn it on. You become visible again once you leave.</p>
       {!status.safe_zones_enabled ? (
         <div className={cx("rounded-xl border border-dashed border-gold/40 text-center space-y-2", bare ? "p-3" : "p-4")}>
-          <Lock className="w-5 h-5 text-gold mx-auto" />
-          <p className="text-sm">Safe Zones is a one-time add-on: automatic Ghost mode at the places you choose.</p>
-          <Button onClick={() => startCheckout('safe_zones').catch((e) => toast(e.message, 'err'))}>Unlock Safe Zones</Button>
+          <Lock className="w-4 h-4 text-gold mx-auto" />
+          <p className="text-xs text-slate-600 dark:text-slate-300">A one-time add-on: automatic Ghost mode at the places you choose.</p>
+          <Button className="!py-1.5 !px-3 text-xs" onClick={() => startCheckout('safe_zones').catch((e) => toast(e.message, 'err'))}>Unlock Safe Zones</Button>
         </div>
       ) : (
         <>

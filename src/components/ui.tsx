@@ -10,7 +10,7 @@ export function Button({
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant; busy?: boolean }) {
   const styles: Record<BtnVariant, string> = {
     // Primary = the theme's contrast colour (navy on light, ivory on dark), gold stays the accent
-    gold: 'bg-navy text-ivory-2 hover:bg-navy-3 dark:bg-ivory-2 dark:text-navy dark:hover:bg-white font-semibold shadow-sm',
+    gold: 'bg-ink text-ivory-2 hover:bg-ink-2 dark:bg-ivory-2 dark:text-navy dark:hover:bg-white font-semibold shadow-sm',
     ghost: 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5',
     outline: 'border border-navy/20 dark:border-white/15 hover:border-gold text-navy dark:text-ivory-2',
     danger: 'border border-rose-400/50 text-rose-600 dark:text-rose-300 hover:bg-rose-500/10',

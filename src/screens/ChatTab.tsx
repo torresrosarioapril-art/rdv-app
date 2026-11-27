@@ -187,7 +187,7 @@ function Thread({ m, me, gender, onBack, onChanged, focusInv, onFocused }: {
   };
 
   return (
-    <Card className="!p-0 flex flex-col h-[calc(100dvh-9.5rem)] md:h-full overflow-hidden">
+    <Card className="!p-0 flex flex-col overflow-hidden fixed inset-x-0 top-14 bottom-[calc(3.6rem+env(safe-area-inset-bottom))] z-30 rounded-none border-x-0 md:static md:inset-auto md:z-auto md:h-full md:rounded-2xl md:border-x">
       <div className="flex items-center gap-2 sm:gap-3 px-2.5 py-2 sm:p-3 border-b border-slate-200 dark:border-white/10">
         <button onClick={onBack} className="md:hidden p-1 shrink-0 cursor-pointer"><ArrowLeft className="w-5 h-5" /></button>
         <button onClick={() => setProfileOpen(true)} className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 text-left cursor-pointer">
@@ -333,7 +333,7 @@ function Bubble({ x, mine, inv, invs, me, partnerName, partnerId, act }: {
   if (x.kind === 'ping') {
     return (
       <div className={cx('flex', mine ? 'justify-end' : 'justify-start')}>
-        <div className="rounded-2xl border border-navy bg-navy text-ivory-2 dark:border-ivory-2 dark:bg-ivory-2 dark:text-navy px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm flex items-center gap-2">
+        <div className="rounded-2xl border border-ink bg-ink text-ivory-2 dark:border-ivory-2 dark:bg-ivory-2 dark:text-navy px-3 py-2 sm:px-4 sm:py-2.5 text-[13px] sm:text-sm flex items-center gap-2">
           <Hand className="w-4 h-4 text-gold" />{mine ? 'You sent a Ping: you would like to meet' : `${partnerName} would like to meet`}
         </div>
       </div>
