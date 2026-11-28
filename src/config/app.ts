@@ -48,12 +48,12 @@ export const RELIGIONS = [
 
 /** Branch / denomination choices shown under the main religion (optional, display only for now). */
 export const RELIGION_BRANCHES: Record<string, string[]> = {
-  Islam: ['Sunni', 'Shia', 'Ibadi', 'Sufi', 'Just Muslim'],
-  Christianity: ['Catholic', 'Orthodox', 'Coptic Orthodox', 'Armenian Apostolic', 'Syriac / Assyrian', 'Maronite', 'Protestant', 'Anglican', 'Evangelical', 'Pentecostal', 'Baptist', 'Non-denominational', 'Just Christian'],
-  Judaism: ['Orthodox', 'Conservative', 'Reform', 'Secular', 'Just Jewish'],
-  Hinduism: ['Vaishnava', 'Shaiva', 'Shakta', 'Smarta', 'Just Hindu'],
-  Buddhism: ['Theravada', 'Mahayana', 'Vajrayana (Tibetan)', 'Zen', 'Just Buddhist'],
-  Sikhism: ['Amritdhari', 'Sahajdhari', 'Just Sikh'],
+  Islam: ['Sunni', 'Shia', 'Ibadi', 'Sufi', 'Other'],
+  Christianity: ['Catholic', 'Orthodox', 'Coptic Orthodox', 'Armenian Apostolic', 'Syriac / Assyrian', 'Maronite', 'Protestant', 'Anglican', 'Evangelical', 'Pentecostal', 'Baptist', 'Non-denominational', 'Other'],
+  Judaism: ['Orthodox', 'Conservative', 'Reform', 'Secular', 'Other'],
+  Hinduism: ['Vaishnava', 'Shaiva', 'Shakta', 'Smarta', 'Other'],
+  Buddhism: ['Theravada', 'Mahayana', 'Vajrayana (Tibetan)', 'Zen', 'Other'],
+  Sikhism: ['Amritdhari', 'Sahajdhari', 'Other'],
 };
 
 export const NATIONALITIES = [
@@ -150,6 +150,14 @@ export const POLITICAL = [
 ] as const;
 
 /** Profile prompts (brief: Profile & Verification → Profile prompts). */
+/** Optional photo prompts: a photo + one of these + a caption of up to 40 characters. */
+export const PHOTO_PROMPTS = [
+  'My favourite place in Dubai', 'A perfect weekend looks like', 'Book I can\'t put down', 'I could eat this forever',
+  'Current favourite hobby', 'I geek out on', 'Feeling inspired by', 'Listening to & loving', 'My pet(s)',
+  'My new obsession', "I'm really proud of", 'Recently visited & loved', 'Where I feel most at peace',
+  'Our first rendez-vous could be here', 'Me, on a good day',
+];
+
 export const PROMPTS = [
   { key: 'manifesto', question: 'Personal manifesto' },
   { key: 'non_negotiables', question: 'My non-negotiable(s) / vision for marriage' },

@@ -162,7 +162,7 @@ function toCard(p: Record<string, any>, x: Record<string, any>): MemberCard {
     marriage_timeline: p.marriage_timeline, kids: p.kids, drinking: p.drinking, smoking: p.smoking, relocation: p.relocation,
     zodiac: { sun: p.zodiac_sun, moon: p.zodiac_moon, rising: p.zodiac_rising, element: ELEMENT[p.zodiac_sun] ?? null,
       placements: p.natal_placements, chart_path: p.natal_chart_path },
-    headline: p.headline, bio: p.bio, prompts: p.prompts ?? [], interests: p.interests ?? [], photos: p.photos ?? [],
+    headline: p.headline, bio: p.bio, prompts: p.prompts ?? [], photo_prompts: p.photo_prompts ?? [], interests: p.interests ?? [], photos: p.photos ?? [],
     voice_intro_path: p.voice_intro_path, linkedin_url: p.linkedin_url, verified: p.verification_status === 'approved',
   };
 }
