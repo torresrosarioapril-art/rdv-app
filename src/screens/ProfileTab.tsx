@@ -85,7 +85,7 @@ export default function ProfileTab({ view = 'profile', status, refresh, onEditPr
     [!!p.voice_intro_path, 'Record a voice intro', 'voice'],
     [!!p.headline, 'Write a headline', 4],
     [(p.bio ?? '').length >= 40, 'Tell your story', 4],
-    [(p.prompts ?? []).filter((x: any) => x.answer?.trim()).length >= 3, 'Answer 3 prompts', 4],
+    [(p.prompts ?? []).filter((x: any) => x.answer?.trim()).length >= 2, 'Answer 2 prompts', 4],
     [(p.interests ?? []).length >= 3, 'Pick a few interests', 4],
   ] : [];
   const done = checks.filter((c) => c[0]).length;
