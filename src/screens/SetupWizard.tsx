@@ -373,7 +373,7 @@ function StepLifestyle({ f, set }: StepProps) {
           <Field label="Smoking"><Select options={HABITS} value={f.smoking ?? ''} onChange={(e) => set('smoking', e.target.value)} /></Field>
         </Grid>
         <Grid>
-          <Field label="A partner who drinks" hint="Filters who you see (and who sees you)">
+          <Field label="A partner who drinks">
             <Select options={DRINKING_TOLERANCE} placeholder="Choose" value={f.drinking_tolerance ?? 'any'} onChange={(e) => set('drinking_tolerance', e.target.value || 'any')} /></Field>
           <Field label="A partner who smokes" hint="Occasionally is OK still favours non-smokers in your match %">
             <Select options={SMOKING_TOLERANCE} placeholder="Choose" value={f.smoking_tolerance ?? 'any'} onChange={(e) => set('smoking_tolerance', e.target.value || 'any')} /></Field>
