@@ -8,7 +8,7 @@ import { Photo, cx } from '@/components/ui';
 type Pos = { lat: number; lng: number };
 
 /** Free vector map tiles (OpenFreeMap, OpenStreetMap data): no API key, no monthly bill. */
-const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
+export const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
 
 const PALETTE = {
   light: { bg: '#f7f4ee', water: '#dde4ec', green: '#ebe5d4', build: '#ebe4d6', road: '#ffffff', major: '#eedcb4', text: '#646d7e', halo: '#f7f4ee' },
@@ -16,7 +16,7 @@ const PALETTE = {
 };
 
 /** Recolour the base map so it looks like RDV: ivory and gold in light mode, navy in dark mode. */
-function paintBrand(map: MLMap, dark: boolean) {
+export function paintBrand(map: MLMap, dark: boolean) {
   const c = dark ? PALETTE.dark : PALETTE.light;
   for (const l of map.getStyle().layers ?? []) {
     const id = l.id.toLowerCase();
@@ -60,7 +60,7 @@ function heatPoints(items: MemberCard[]): GeoJSON.FeatureCollection<GeoJSON.Poin
 }
 
 /** A heart outline sized w x h, point at the bottom centre (for the member pins). */
-function heartPath(w: number, h: number) {
+export function heartPath(w: number, h: number) {
   const x = (v: number) => ((v / 48) * w).toFixed(2), y = (v: number) => ((v / 44) * h).toFixed(2);
   return `M${x(24)} ${y(43)} C${x(24)} ${y(43)} ${x(1)} ${y(29)} ${x(1)} ${y(14)} C${x(1)} ${y(6)} ${x(7.5)} ${y(0.5)} ${x(14.5)} ${y(0.5)} `
     + `C${x(19)} ${y(0.5)} ${x(22.5)} ${y(3)} ${x(24)} ${y(6.5)} C${x(25.5)} ${y(3)} ${x(29)} ${y(0.5)} ${x(33.5)} ${y(0.5)} `

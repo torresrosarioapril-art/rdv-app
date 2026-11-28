@@ -9,6 +9,7 @@ export type Verification = 'incomplete' | 'pending' | 'approved' | 'rejected' | 
 export interface Prompt { key: string; question: string; answer: string }
 
 export interface PhotoPrompt { prompt: string; path: string; caption: string }
+export interface FavPlace { name: string; lat: number; lng: number; why: string }
 
 export interface MemberCard {
   id: string;
@@ -33,6 +34,7 @@ export interface MemberCard {
   religion_practice: string | null;
   religion_branch?: string | null;
   photo_prompts?: PhotoPrompt[];
+  fav_place?: FavPlace | null;
   marriage_timeline: string | null;
   kids: string | null;
   drinking: string | null;

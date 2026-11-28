@@ -7,6 +7,7 @@ import {
 import { Badge, Button, Card, Field, Input, Photo, Select, Spinner, Textarea, Toggle, cx, useToast } from '@/components/ui';
 import { Recorder } from '@/components/Recorder';
 import { PhotoPromptsEditor, PHOTO_PROMPT_SLOTS } from '@/components/PhotoPrompts';
+import { FavPlaceEditor } from '@/components/FavPlace';
 import { CityPicker } from '@/components/CityPicker';
 import { WorkEmailCard } from '@/components/WorkEmail';
 import { SafetyStandardsModal } from '@/components/SafetyStandardsModal';
@@ -35,7 +36,7 @@ type Form = Record<string, any>;
 
 const PROFILE_KEYS = ['display_name', 'gender', 'nationality', 'country_residence', 'city', 'district', 'occupation', 'company',
   'industry', 'university', 'degree', 'height_cm', 'political', 'religion', 'religion_branch', 'religion_practice', 'marriage_timeline', 'kids',
-  'drinking', 'smoking', 'relocation', 'headline', 'bio', 'prompts', 'photos', 'photo_prompts', 'voice_intro_path', 'linkedin_url',
+  'drinking', 'smoking', 'relocation', 'headline', 'bio', 'prompts', 'photos', 'photo_prompts', 'fav_place', 'voice_intro_path', 'linkedin_url',
   'marital_status', 'has_children', 'children_count'];
 const PRIVATE_KEYS = ['legal_name', 'birth_date', 'birth_time', 'birth_city', 'birth_country', 'religion_flexible', 'kids_flexible',
   'drinking_tolerance', 'smoking_tolerance', 'desired_age_min', 'desired_age_max', 'desired_nationalities', 'desired_religion',
@@ -94,6 +95,8 @@ export default function SetupWizard({ status, onDone, onCancel, initialStep }: {
     if (step === 1 && f.birth_date && (ageFrom(f.birth_date) ?? 0) < 18) out.push('You must be 18 or older');
     if (step === 3 && Number(f.desired_age_min) > Number(f.desired_age_max)) out.push('Age range');
     if (step === 4 && (!f.photos || f.photos.length === 0)) out.push('At least one photo');
+    if (step === 4 && (f.fav_place?.lat == null || !f.fav_place?.name?.trim())) out.push('Favourite place in Dubai (drop a pin)');
+    if (step === 4 && f.fav_place?.lat != null && !f.fav_place?.why?.trim()) out.push('Why you love your favourite place');
     return out;
   }, [f, step]);
 
@@ -481,6 +484,13 @@ function StepStory({ f, set }: StepProps) {
             </label>
           )}
         </div>
+      </Card>
+      <Card className="space-y-3">
+        <div>
+          <h3 className="font-display text-lg">My favourite place in Dubai</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Drop a pin on a place you love and say why in one line. It shows on your profile and makes a great first-date idea.</p>
+        </div>
+        <FavPlaceEditor value={f.fav_place ?? null} onChange={(v) => set('fav_place', v)} />
       </Card>
       <Card className="space-y-3">
         <div className="flex items-baseline justify-between gap-2">

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { PhotoPromptCards } from '@/components/PhotoPrompts';
+import { FavPlaceCard } from '@/components/FavPlace';
 import { Briefcase, ChevronLeft, ChevronRight, Flag, GraduationCap, Heart, Link2, MapPin, Ruler, ShieldCheck, Star } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { signedUrl, type MemberCard } from '@/lib/api';
@@ -102,6 +103,8 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
           <Fact k="Smoking" v={labelOf(HABITS, m.smoking)} />
           {m.political && <Fact k="Outlook" v={labelOf(POLITICAL, m.political)} />}
         </div>
+
+        {!compact && <FavPlaceCard place={m.fav_place} />}
 
         {!compact && <PhotoPromptCards items={m.photo_prompts} />}
 

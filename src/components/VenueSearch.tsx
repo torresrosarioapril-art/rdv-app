@@ -17,7 +17,9 @@ const DEFAULT_BIAS = { lat: 25.2048, lng: 55.2708 };
  * Phase 1: search restaurants, cafés and other places on the map (OpenStreetMap via Photon), or type a name.
  * Phase 2: RDV partner venues (table `venues`, active = true) appear first with their perk; nothing else changes.
  */
-export function VenueSearch({ value, onChange }: { value: PickedPlace | null; onChange: (p: PickedPlace | null) => void }) {
+export function VenueSearch({ value, onChange, label = 'Where', hint, placeholder = 'e.g. Zuma DIFC' }: {
+  value: PickedPlace | null; onChange: (p: PickedPlace | null) => void; label?: string; hint?: string; placeholder?: string;
+}) {
   const [q, setQ] = useState(value?.name ?? '');
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -60,10 +62,10 @@ export function VenueSearch({ value, onChange }: { value: PickedPlace | null; on
   const pick = (p: PickedPlace) => { onChange(p); setQ(p.name); setOpen(false); };
 
   return (
-    <Field label="Where" hint={value?.lat != null ? undefined : 'Search a restaurant or café and pick it from the list, or just type the name.'}>
+    <Field label={label} hint={value?.lat != null ? undefined : (hint ?? 'Search a restaurant or café and pick it from the list, or just type the name.')}>
       <div className="relative">
         <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-        <Input className="!pl-9" value={q} placeholder="e.g. Zuma DIFC"
+        <Input className="!pl-9" value={q} placeholder={placeholder}
           onChange={(e) => { setQ(e.target.value); setOpen(true); onChange(e.target.value.trim() ? { name: e.target.value, lat: null, lng: null, venueId: null } : null); }}
           onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 200)} />
         {value?.lat != null && <Check className="absolute right-3 top-3 w-4 h-4 text-emerald-500" />}

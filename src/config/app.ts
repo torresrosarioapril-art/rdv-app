@@ -159,7 +159,6 @@ export const PHOTO_PROMPTS = [
 ];
 
 export const PROMPTS = [
-  { key: 'fav_places', question: 'My favourite places in Dubai', example: 'e.g. Kite Beach at sunrise, Alserkal Avenue, a quiet café in Jumeirah' },
   { key: 'ideal_first', question: 'My ideal first rendez-vous', example: 'e.g. Coffee somewhere quiet, then a walk by the water' },
   { key: 'second_rdv', question: "Where I'd take you on our second rendez-vous", example: 'e.g. Dinner at my favourite spot in Al Fahidi', menOnly: true },
   { key: 'expectations', question: 'What are your expectations from a lifelong partner?', example: '' },
