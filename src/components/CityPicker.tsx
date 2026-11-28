@@ -6,7 +6,7 @@ import { Field, Input, Select } from './ui';
 export interface Place { city: string; country: string; countryCode: string; lat: number; lng: number }
 
 /** Country dropdown + city search that only accepts real places (with coordinates for the natal chart). */
-export function CityPicker({ value, onChange }: { value: Place | null; onChange: (p: Place | null) => void }) {
+export function CityPicker({ value, onChange, required }: { value: Place | null; onChange: (p: Place | null) => void; required?: boolean }) {
   const [code, setCode] = useState(value?.countryCode ?? '');
   const [q, setQ] = useState(value?.city ?? '');
   const [results, setResults] = useState<Place[]>([]);
@@ -42,11 +42,11 @@ export function CityPicker({ value, onChange }: { value: Place | null; onChange:
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <Field label="Country of birth" optional>
+      <Field label="Country of birth" optional={!required}>
         <Select value={code} placeholder="Select country…" options={COUNTRIES.map(([c, n]) => ({ value: c, label: n }))}
           onChange={(e) => { setCode(e.target.value); setQ(''); onChange(null); }} />
       </Field>
-      <Field label="City of birth" optional hint={value ? undefined : code ? 'Start typing, then pick your city from the list.' : 'Choose the country first.'}>
+      <Field label="City of birth" optional={!required} hint={value ? undefined : code ? 'Start typing, then pick your city from the list.' : 'Choose the country first.'}>
         <div className="relative">
           <Input value={q} disabled={!code} placeholder={code ? 'e.g. Manila' : ''}
             onChange={(e) => { setQ(e.target.value); setOpen(true); if (value) onChange(null); }}

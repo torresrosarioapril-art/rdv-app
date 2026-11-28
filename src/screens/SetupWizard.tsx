@@ -82,7 +82,7 @@ export default function SetupWizard({ status, onDone, onCancel, initialStep }: {
     const req: Record<number, [string, string][]> = {
       0: [['legal_name', 'Full legal name'], ['verification_video_path', 'Video ID'], ['terms', 'Terms'], ['biometric', 'ID video consent']],
       1: [['display_name', 'First name'], ['birth_date', 'Birth date'], ['gender', 'Gender'], ['nationality', 'Nationality'], ['city', 'City'], ['occupation', 'Occupation'], ['marital_status', 'Marital status']],
-      2: [['religion', 'Religion'], ['marriage_timeline', 'Marriage timeline'], ['kids', 'Kids'], ['drinking', 'Drinking'], ['smoking', 'Smoking'], ['relocation', 'Relocation']],
+      2: [['religion', 'Religion'], ['marriage_timeline', 'Marriage timeline'], ['kids', 'Kids'], ['drinking', 'Drinking'], ['smoking', 'Smoking'], ['relocation', 'Relocation'], ['birth_country', 'Country of birth'], ['birth_city', 'City of birth (pick it from the list)']],
       3: [],
       4: [],
     };
@@ -386,7 +386,7 @@ function StepLifestyle({ f, set }: StepProps) {
         </Grid>
       </Card>
       <Card className="space-y-3">
-        <p className="text-sm text-slate-500 dark:text-slate-400">Adding your time and place of birth gives the most accurate match compatibility reading (full natal chart). Without them we use your sun sign.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Your country and city of birth are needed for your birth chart and zodiac match. Time of birth is optional: add it if you know it for the most accurate reading (you can add it later in your profile).</p>
         <Grid>
           <Field label="Time of birth" optional><Input type="time" value={f.birth_time?.slice(0, 5) ?? ''} onChange={(e) => set('birth_time', e.target.value)} /></Field>
         </Grid>
@@ -396,6 +396,7 @@ function StepLifestyle({ f, set }: StepProps) {
             countryCode: COUNTRIES.find(([, n]) => n === f.birth_country)?.[0] ?? '',
           } : null}
           onChange={(pl) => { set('birth_city', pl?.city ?? null); set('birth_country', pl?.country ?? null); set('birth_lat', pl?.lat ?? null); set('birth_lng', pl?.lng ?? null); }}
+          required
         />
       </Card>
     </>
