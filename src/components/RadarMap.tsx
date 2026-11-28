@@ -198,9 +198,14 @@ export default function RadarMap({ pos, items, radiusKm, onSelect, youLabel }: {
         })}
         {me && (
           <div className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ left: me.x, top: me.y }}>
-            <span className="relative flex w-4 h-4">
-              <span className="absolute inset-0 rounded-full bg-gold/50 animate-ping" />
-              <span className="relative w-4 h-4 rounded-full bg-gold border-2 border-white dark:border-navy shadow" />
+            {/* You: a pulsing red heart, so it never looks like the gold hearts on members' pins */}
+            <span className="relative block w-6 h-[22px]">
+              <svg aria-hidden="true" viewBox="0 0 24 22" className="absolute inset-0 w-full h-full animate-ping opacity-60">
+                <path d={heartPath(24, 22)} fill="#e11d48" />
+              </svg>
+              <svg aria-hidden="true" viewBox="0 0 24 22" className="relative w-full h-full drop-shadow">
+                <path d={heartPath(24, 22)} fill="#e11d48" stroke="#ffffff" strokeWidth="1.8" />
+              </svg>
             </span>
             <span className="mt-1 rounded-full bg-white/90 dark:bg-navy-2/90 text-[10px] font-semibold text-gold-deep dark:text-gold px-1.5 py-px shadow-sm whitespace-nowrap">{youLabel ?? 'You'}</span>
           </div>
