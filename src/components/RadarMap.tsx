@@ -3,7 +3,7 @@ import maplibregl, { type GeoJSONSource, type Map as MLMap } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { LocateFixed, Minus, Plus } from 'lucide-react';
 import type { MemberCard } from '@/lib/api';
-import { cx } from '@/components/ui';
+import { Photo, cx } from '@/components/ui';
 
 type Pos = { lat: number; lng: number };
 
@@ -182,14 +182,17 @@ export default function RadarMap({ pos, items, radiusKm, onSelect, youLabel }: {
             <button key={m.id} onClick={() => onSelect(m)} aria-label={`${m.name}, ${m.score ?? ''}% match`}
               style={{ left: p.x, top: p.y }}
               className="pointer-events-auto absolute -translate-x-1/2 -translate-y-full flex flex-col items-center cursor-pointer group">
-              <span className="relative block w-[30px] h-[28px] drop-shadow-md group-active:scale-90 transition">
-                <svg aria-hidden="true" viewBox="0 0 30 28" className="absolute inset-0 w-full h-full">
-                  <path d={heartPath(30, 28)} fill={strong ? '#c9a24a' : '#e2c992'} stroke="#ffffff" strokeWidth="1.5" />
-                </svg>
-                <span className="absolute -top-2 left-[22px] rounded-full bg-ink text-gold-soft text-[9px] font-semibold px-1 py-px shadow whitespace-nowrap">{m.score ?? ''}%</span>
+              <span className={cx('relative block w-12 h-12 rounded-full border-[2.5px] shadow-lg bg-white dark:bg-navy-2 group-active:scale-95 transition',
+                strong ? 'border-gold' : 'border-gold-soft')}>
+                <span className="block w-full h-full rounded-full overflow-hidden">
+                  <Photo path={m.photos?.[0]} alt="" className="w-full h-full" />
+                </span>
+                <span className="absolute -top-1.5 -right-3 rounded-full bg-ink text-gold-soft text-[10px] font-semibold px-1.5 py-px shadow whitespace-nowrap">{m.score ?? ''}%</span>
               </span>
-              <span className="w-[2px] h-4 -mt-[3px] rounded-full bg-ink dark:bg-gold-soft" />
-              <span className="w-1.5 h-1.5 -mt-px rounded-full bg-ink dark:bg-gold-soft" />
+              <span className="w-[2px] h-3.5 rounded-full bg-ink dark:bg-gold-soft" />
+              <svg aria-hidden="true" viewBox="0 0 14 13" className="w-3.5 h-[13px] -mt-px drop-shadow">
+                <path d={heartPath(14, 13)} fill={strong ? '#c9a24a' : '#e2c992'} stroke="#ffffff" strokeWidth="1" />
+              </svg>
             </button>
           );
         })}
