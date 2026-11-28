@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { Eye, EyeOff, MapPin, MessageCircle, Radar as RadarIcon, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Heart, MapPin, MessageCircle, Radar as RadarIcon, ShieldCheck } from 'lucide-react';
 import {
   giveConsent, radar, startCheckout, radarConnect, setPrivacy, updateMyLocation, type MemberCard, type Privacy, type Status,
 } from '@/lib/api';
@@ -100,10 +100,20 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
     catch (e) { toast(e instanceof Error ? e.message : 'Could not change', 'err'); }
   };
 
+  const [mutual, setMutual] = useState<{ id: string; name: string } | null>(null);
   const connect = async (m: MemberCard) => {
     setBusy(true);
-    try { const id = await radarConnect(m.id); setSelected(null); onOpenChat(id); }
-    catch (e) { toast(e instanceof Error ? e.message : 'Could not connect', 'err'); }
+    try {
+      const r = await radarConnect(m.id);
+      if (r.matched && r.match_id) {
+        setSelected(null);
+        if (r.already) onOpenChat(r.match_id); else setMutual({ id: r.match_id, name: m.name });
+      } else {
+        setItems((xs) => xs.map((x) => (x.id === m.id ? { ...x, you_liked: true } : x)));
+        setSelected((s) => (s && s.id === m.id ? { ...s, you_liked: true } : s));
+        toast(`Interest sent. If ${m.name} is interested too, you'll match and can chat.`);
+      }
+    } catch (e) { toast(e instanceof Error ? e.message : 'Could not send', 'err'); }
     finally { setBusy(false); }
   };
 
@@ -202,6 +212,11 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
                   {[m.lat != null && m.lng != null ? nearestArea({ lat: m.lat, lng: m.lng }) && `Near ${nearestArea({ lat: m.lat, lng: m.lng })}` : null,
                     `~${m.distance_km} km`].filter(Boolean).join(' · ')}
                 </div>
+                {m.likes_you && !m.matched && (
+                  <div className="text-[11px] text-rose-600 dark:text-rose-400 leading-snug flex items-center gap-1 font-medium">
+                    <Heart className="w-3 h-3 fill-current" />Interested in you
+                  </div>
+                )}
                 {activeAgo(m.last_active_min) && (
                   <div className="text-[11px] text-emerald-600 dark:text-emerald-400 leading-snug flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-current" />{activeAgo(m.last_active_min)}
@@ -236,12 +251,33 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
         actions={selected && <SafetyMenu memberId={selected.id} name={selected.name} onDone={() => { setSelected(null); scan(); }} />}>
         {selected && (
           <>
+            {selected.likes_you && !selected.matched && (
+              <div className="mb-4 rounded-xl border border-gold/50 bg-gold/10 p-3 text-sm flex items-center gap-2">
+                <Heart className="w-4 h-4 text-rose-500 fill-rose-500 shrink-0" />{selected.name} is interested in you. Say yes to match and start chatting.
+              </div>
+            )}
             <ProfileView m={selected} />
             <div className="mt-5 flex justify-end">
-              <Button busy={busy} onClick={() => connect(selected)}><MessageCircle className="w-4 h-4" />Message & meet</Button>
+              {selected.matched
+                ? <Button busy={busy} onClick={() => connect(selected)}><MessageCircle className="w-4 h-4" />Open chat</Button>
+                : selected.you_liked
+                  ? <Button variant="outline" disabled><Heart className="w-4 h-4" />Interest sent</Button>
+                  : <Button busy={busy} onClick={() => connect(selected)}><Heart className="w-4 h-4" />I'm interested</Button>}
             </div>
           </>
         )}
+      </Modal>
+
+      <Modal open={!!mutual} onClose={() => setMutual(null)}>
+        <div className="text-center py-4">
+          <div className="match-burst" aria-hidden="true"><span /><span /><span /><i /></div>
+          <h2 className="text-3xl font-display italic shimmer-gold">It's mutual</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">You and {mutual?.name} are both interested. Open the chat and start with one of their prompts.</p>
+          <div className="mt-6 flex justify-center gap-2">
+            <Button variant="ghost" onClick={() => setMutual(null)}>Keep exploring</Button>
+            <Button onClick={() => { const id = mutual!.id; setMutual(null); onOpenChat(id); }}>Open chat</Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

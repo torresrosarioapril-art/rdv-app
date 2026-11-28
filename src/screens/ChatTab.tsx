@@ -245,7 +245,7 @@ function Thread({ m, me, gender, onBack, onChanged, focusInv, onFocused }: {
 
       <div className="border-t border-slate-200 dark:border-white/10 p-2 sm:p-3 space-y-2">
         <div className="flex flex-wrap gap-1.5 empty:hidden">
-          {gender === 'woman' && m.source !== 'radar' && (
+          {gender === 'woman' && (
             <Button variant="outline" className="!py-1.5 text-xs" onClick={() => act(() => sendPing(m.match_id), 'Ping sent')}><Hand className="w-3.5 h-3.5" />Ping: I'd like to meet</Button>
           )}
           {gender === 'man' && (

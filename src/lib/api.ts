@@ -35,6 +35,7 @@ export interface MemberCard {
   religion_branch?: string | null;
   photo_prompts?: PhotoPrompt[];
   fav_place?: FavPlace | null;
+  likes_you?: boolean; you_liked?: boolean; matched?: boolean;
   marriage_timeline: string | null;
   kids: string | null;
   drinking: string | null;
@@ -230,7 +231,7 @@ export const updateMyLocation = (lat: number, lng: number) =>
 export const setPrivacy = (mode: Privacy) => rpc<void>('set_privacy', { p_mode: mode });
 export const radar = (radiusKm: number, minScore: number) =>
   rpc<RadarResult>('radar', { p_radius_km: radiusKm, p_min_score: minScore });
-export const radarConnect = (target: string) => rpc<string>('radar_connect', { p_target: target });
+export const radarConnect = (target: string) => rpc<{ matched: boolean; match_id: string | null; already?: boolean }>('radar_connect', { p_target: target });
 export const addSafeZone = (label: string, lat: number, lng: number, radius?: number) =>
   rpc<string>('add_safe_zone', { p_label: label, p_lat: lat, p_lng: lng, p_radius_m: radius ?? null });
 export async function listSafeZones() {

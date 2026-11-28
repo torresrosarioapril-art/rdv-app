@@ -10,6 +10,8 @@ function describe(n: Notif): { text: string; icon: React.ReactNode; to?: { chat?
   const d = n.payload ?? {};
   const chat = d.match_id as string | undefined;
   switch (n.type) {
+    case 'radar_interest':
+      return { text: `${d.name ?? 'Someone nearby'} (${d.score ?? ''}% match) is interested in you. Open the radar to say yes`, icon: <MapPin className="w-4 h-4" />, to: { radar: true } };
     case 'nearby_match': {
       const where = d.within_m >= 1000 ? `${d.within_m / 1000} km` : `${d.within_m} m`;
       return { text: `${d.name ?? 'Someone new'} (${d.score}% match) is within ${where} of you. See them on the radar`, icon: <MapPin className="w-4 h-4" />, to: { radar: true } };

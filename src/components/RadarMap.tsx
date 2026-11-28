@@ -187,7 +187,10 @@ export default function RadarMap({ pos, items, radiusKm, onSelect, youLabel }: {
                 <span className="block w-full h-full rounded-full overflow-hidden">
                   <Photo path={m.photos?.[0]} alt="" className="w-full h-full" />
                 </span>
-                <span className="absolute -top-1.5 -right-3 rounded-full bg-ink text-gold-soft text-[10px] font-semibold px-1.5 py-px shadow whitespace-nowrap">{m.score ?? ''}%</span>
+                <span className="absolute -top-1.5 -right-3 rounded-full bg-ink text-gold-soft text-[10px] font-semibold px-1.5 py-px shadow whitespace-nowrap flex items-center gap-0.5">
+                  {m.likes_you && !m.matched && <svg aria-label="Interested in you" viewBox="0 0 24 22" className="w-2.5 h-2.5"><path d={heartPath(24, 22)} fill="#e11d48" /></svg>}
+                  {m.score ?? ''}%
+                </span>
               </span>
               <span className="w-[2px] h-3.5 rounded-full bg-ink dark:bg-gold-soft" />
               <svg aria-hidden="true" viewBox="0 0 14 13" className="w-3.5 h-[13px] -mt-px drop-shadow">
