@@ -202,14 +202,14 @@ export default function RadarMap({ pos, items, radiusKm, onSelect, youLabel }: {
         {me && (
           <>
             {/* You: a raspberry location pin with a beating white heart; the tip marks your spot */}
-            <span className="absolute -translate-x-1/2 -translate-y-1/2 w-7 h-2.5 rounded-[50%] bg-[#be185d]/35 animate-ping" style={{ left: me.x, top: me.y }} />
+            <span className="absolute -translate-x-1/2 -translate-y-1/2 w-7 h-2.5 rounded-[50%] bg-[#e11d48]/35 animate-ping" style={{ left: me.x, top: me.y }} />
             <svg aria-label="You" viewBox="0 0 32 42" className="absolute -translate-x-1/2 -translate-y-full w-9 h-[47px] drop-shadow-md" style={{ left: me.x, top: me.y + 1 }}>
-              <path d="M16 41C16 41 3 26.5 3 15.5a13 13 0 0 1 26 0C29 26.5 16 41 16 41Z" fill="#be185d" stroke="#ffffff" strokeWidth="1.5" />
+              <path d="M16 41C16 41 3 26.5 3 15.5a13 13 0 0 1 26 0C29 26.5 16 41 16 41Z" fill="#e11d48" stroke="#ffffff" strokeWidth="1.5" />
               <g className="heartbeat" style={{ transformOrigin: '16px 15px' }}>
                 <g transform="translate(9 8.6)"><path d={heartPath(14, 13)} fill="#ffffff" /></g>
               </g>
             </svg>
-            <span className="absolute -translate-x-1/2 mt-1.5 rounded-full bg-white/90 dark:bg-navy-2/90 text-[10px] font-semibold text-[#be185d] dark:text-rose-300 px-1.5 py-px shadow-sm whitespace-nowrap" style={{ left: me.x, top: me.y }}>{youLabel ?? 'You'}</span>
+            <span className="absolute -translate-x-1/2 mt-1.5 rounded-full bg-white/90 dark:bg-navy-2/90 text-[10px] font-semibold text-[#e11d48] dark:text-rose-300 px-1.5 py-px shadow-sm whitespace-nowrap" style={{ left: me.x, top: me.y }}>{youLabel ?? 'You'}</span>
           </>
         )}
       </div>
