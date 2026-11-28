@@ -363,7 +363,7 @@ function StepLifestyle({ f, set }: StepProps) {
       <Card className="space-y-4">
         <Grid>
           <Field label="Marriage timeline"><Select options={TIMELINE} value={f.marriage_timeline ?? ''} onChange={(e) => set('marriage_timeline', e.target.value)} /></Field>
-          <Field label="Children in the future" hint="Whether you want (more) children. Children you already have go in Basic info."><Select options={KIDS} value={f.kids ?? ''} onChange={(e) => set('kids', e.target.value)} /></Field>
+          <Field label="Children in the future" hint="Would you like to have children, or more children, in the future? Any children you already have are added in Basic info."><Select options={KIDS} value={f.kids ?? ''} onChange={(e) => set('kids', e.target.value)} /></Field>
         </Grid>
         <Toggle checked={!!f.kids_flexible} onChange={(v) => set('kids_flexible', v)} label="I'm flexible on children" />
       </Card>
