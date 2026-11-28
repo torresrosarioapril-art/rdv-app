@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, MapPin, Search, Sparkles } from 'lucide-react';
-import { GEOCODER_URL } from '@/config/app';
+import { DUBAI_AREAS, GEOCODER_URL } from '@/config/app';
 
 const UAE_BBOX = '51.4,22.5,56.5,26.3'; // minLon,minLat,maxLon,maxLat
 import { listVenues, type Venue } from '@/lib/api';
@@ -11,6 +11,28 @@ export interface PickedPlace { name: string; lat: number | null; lng: number | n
 
 // Searches lean towards Dubai unless the phone shares a location.
 const DEFAULT_BIAS = { lat: 25.2048, lng: 55.2708 };
+
+// Area words people add to a search ("Zuma DIFC", "sushi Marina"): used as the place to search around,
+// not as part of the name, so the branch in that area comes first.
+const AREA_WORDS: [RegExp, { lat: number; lng: number }][] = [
+  ...DUBAI_AREAS.map((a) => [new RegExp(`\\b${a.name.replace(/\s+/g, '\\s+')}\\b`, 'i'), a] as [RegExp, { lat: number; lng: number }]),
+  [/\bdowntown\b/i, DUBAI_AREAS.find((a) => a.name === 'Downtown Dubai')!],
+  [/\bmarina\b/i, DUBAI_AREAS.find((a) => a.name === 'Dubai Marina')!],
+  [/\bpalm\b/i, DUBAI_AREAS.find((a) => a.name === 'Palm Jumeirah')!],
+  [/\bcreek\b/i, DUBAI_AREAS.find((a) => a.name === 'Dubai Creek Harbour')!],
+  [/\bdubai\b/i, DEFAULT_BIAS],
+];
+function splitArea(q: string): { text: string; near: { lat: number; lng: number } | null } {
+  for (const [re, pt] of AREA_WORDS) {
+    if (pt && re.test(q)) {
+      const text = q.replace(re, ' ').replace(/[,\s]+/g, ' ').trim();
+      if (text.length >= 2) return { text, near: pt };
+    }
+  }
+  return { text: q, near: null };
+}
+const km = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) =>
+  Math.hypot((a.lat - b.lat) * 111, (a.lng - b.lng) * 111 * Math.cos((a.lat * Math.PI) / 180));
 
 /**
  * Venue finder for invitations.
@@ -39,14 +61,19 @@ export function VenueSearch({ value, onChange, label = 'Where', hint, placeholde
     timer.current = window.setTimeout(async () => {
       setLoading(true);
       try {
-        // UAE first: search inside the UAE, and only look further if nothing turns up there
-        const base = `${GEOCODER_URL}?q=${encodeURIComponent(q)}&limit=8&lang=en&lat=${bias.lat}&lon=${bias.lng}`;
+        // UAE first: search inside the UAE, and only look further if nothing turns up there.
+        // An area word in the search (DIFC, Marina…) becomes the place to search around.
+        const { text, near } = splitArea(q);
+        const centre = near ?? bias;
+        const base = `${GEOCODER_URL}?q=${encodeURIComponent(text)}&limit=15&lang=en&lat=${centre.lat}&lon=${centre.lng}&zoom=14&location_bias_scale=0.1`;
         let feats: any[] = (await (await fetch(`${base}&bbox=${UAE_BBOX}`)).json()).features ?? [];
         if (feats.length < 3) {
           const more: any[] = (await (await fetch(base)).json()).features ?? [];
           feats = [...feats, ...more.filter((m) => !feats.some((x) => x.properties?.osm_id === m.properties?.osm_id))];
         }
-        feats.sort((a, b) => Number(b.properties?.countrycode === 'AE') - Number(a.properties?.countrycode === 'AE'));
+        // UAE first, then nearest to the area typed (or to you)
+        const dist = (f: any) => km(centre, { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] });
+        feats.sort((a, b) => (Number(b.properties?.countrycode === 'AE') - Number(a.properties?.countrycode === 'AE')) || (dist(a) - dist(b)));
         setFound(feats.slice(0, 8).map((f: any) => {
           const p = f.properties ?? {};
           const detail = [p.street, p.district ?? p.locality, p.city].filter(Boolean).join(', ');

@@ -1,3 +1,4 @@
+import { DUBAI_AREAS } from '@/config/app';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, CalendarCheck, CalendarPlus, Check, Clock, Hand, ImagePlus, MapPin, MessageCircle, Mic, Send, Trash2, X,
@@ -17,11 +18,20 @@ import { VenueSearch, type PickedPlace } from '@/components/VenueSearch';
 
 const fmt = (d: string) => new Date(d).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const toLocalInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-// Opens Google Maps on the place by name (e.g. "Eden House DIFC"), kept to the UAE
+// Opens Google Maps on the place by name plus its area and city (e.g. "Zuma, DIFC, Dubai"),
+// so a chain with several branches opens the right one
 const mapUrl = (i: Invitation) => {
   const name = (i.venue_name ?? '').trim();
-  const q = name ? (/(dubai|abu dhabi|sharjah|ajman|ras al|fujairah|umm al|uae|emirates)/i.test(name) ? name : `${name}, UAE`)
-    : i.venue_lat != null && i.venue_lng != null ? `${i.venue_lat},${i.venue_lng}` : 'Dubai';
+  const hasPos = i.venue_lat != null && i.venue_lng != null;
+  if (!name) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hasPos ? `${i.venue_lat},${i.venue_lng}` : 'Dubai')}`;
+  let where = '';
+  if (hasPos) {
+    const p = { lat: i.venue_lat as number, lng: i.venue_lng as number };
+    const area = DUBAI_AREAS.map((a) => ({ a, d: Math.hypot((a.lat - p.lat) * 111, (a.lng - p.lng) * 105) })).sort((x, y) => x.d - y.d)[0];
+    const inDubai = p.lat > 24.75 && p.lat < 25.45 && p.lng > 54.85 && p.lng < 55.65;
+    where = [area && area.d <= 2.5 && !new RegExp(area.a.name, 'i').test(name) ? area.a.name : '', inDubai ? 'Dubai' : 'UAE'].filter(Boolean).join(', ');
+  } else where = 'UAE';
+  const q = /(dubai|abu dhabi|sharjah|ajman|ras al|fujairah|umm al|uae|emirates)/i.test(name) ? name : `${name}, ${where}`;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 };
 
