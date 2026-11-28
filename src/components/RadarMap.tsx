@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl, { type GeoJSONSource, type Map as MLMap } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { LocateFixed } from 'lucide-react';
+import { LocateFixed, Minus, Plus } from 'lucide-react';
 import type { MemberCard } from '@/lib/api';
 import { Photo, cx } from '@/components/ui';
 
@@ -193,6 +193,14 @@ export default function RadarMap({ pos, items, radiusKm, onSelect, youLabel }: {
           </div>
         )}
       </div>
+      {ready && (
+        <div className="absolute right-2.5 top-2.5 flex flex-col rounded-2xl overflow-hidden bg-white dark:bg-navy-2 border border-gold/40 shadow">
+          <button onClick={() => map?.zoomIn({ duration: 300 })} aria-label="Zoom in"
+            className="w-10 h-10 flex items-center justify-center text-gold-deep dark:text-gold cursor-pointer border-b border-gold/30"><Plus className="w-5 h-5" /></button>
+          <button onClick={() => map?.zoomOut({ duration: 300 })} aria-label="Zoom out"
+            className="w-10 h-10 flex items-center justify-center text-gold-deep dark:text-gold cursor-pointer"><Minus className="w-5 h-5" /></button>
+        </div>
+      )}
       {ready && (
         <button onClick={() => map?.flyTo({ center: [pos.lng, pos.lat], zoom: Math.max(map.getZoom(), 13), duration: 600 })}
           aria-label="Back to my location"
