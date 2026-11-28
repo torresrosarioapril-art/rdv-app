@@ -3,7 +3,7 @@ import { Check, ChevronLeft, ChevronRight, ImagePlus, Link2, Lock, Play, ShieldC
 import { supabase } from '@/lib/supabase';
 import { astroSync, dropsLine, radarLine, giveConsent, myProfile, saveProfile, signedUrl, submitForReview, uploadFile, type Status } from '@/lib/api';
 import {
-  BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELIGION_BRANCHES, RELOCATION, TIMELINE, UAE_CITIES, labelOf, DRINKING_TOLERANCE, SMOKING_TOLERANCE, MARITAL_STATUS, PARTNER_CHILDREN, DESIRED_MARITAL, desiredMaritalChoice, desiredMaritalValue } from '@/config/app';
+  BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELIGION_BRANCHES, MEN_ONLY_PROMPTS, RELOCATION, TIMELINE, UAE_CITIES, labelOf, DRINKING_TOLERANCE, SMOKING_TOLERANCE, MARITAL_STATUS, PARTNER_CHILDREN, DESIRED_MARITAL, desiredMaritalChoice, desiredMaritalValue } from '@/config/app';
 import { Badge, Button, Card, Field, Input, Photo, Select, Spinner, Textarea, Toggle, cx, useToast } from '@/components/ui';
 import { Recorder } from '@/components/Recorder';
 import { PhotoPromptsEditor, PHOTO_PROMPT_SLOTS } from '@/components/PhotoPrompts';
@@ -494,7 +494,7 @@ function StepStory({ f, set }: StepProps) {
         <Field label="Headline" optional><Input maxLength={90} placeholder="One line about you" value={f.headline ?? ''} onChange={(e) => set('headline', e.target.value)} /></Field>
         <Field label="About me" optional><Textarea maxLength={1200} value={f.bio ?? ''} onChange={(e) => set('bio', e.target.value)} /></Field>
       </Card>
-      {(f.prompts as any[]).map((p, i) => (
+      {(f.prompts as any[]).map((p, i) => (f.gender !== 'man' && MEN_ONLY_PROMPTS.includes(p.key)) ? null : (
         <Card key={p.key}>
           <Field label={p.question} optional hint="Shown on your profile, and used as conversation openers.">
             <Textarea maxLength={600} placeholder={PROMPTS.find((q) => q.key === p.key)?.example || undefined} value={p.answer ?? ''} onChange={(e) => {

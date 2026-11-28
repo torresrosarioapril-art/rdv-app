@@ -3,7 +3,7 @@ import { PhotoPromptCards } from '@/components/PhotoPrompts';
 import { Briefcase, ChevronLeft, ChevronRight, Flag, GraduationCap, Heart, Link2, MapPin, Ruler, ShieldCheck, Star } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { signedUrl, type MemberCard } from '@/lib/api';
-import { HABITS, KIDS, MARITAL_STATUS, POLITICAL, RELOCATION, TIMELINE, labelOf } from '@/config/app';
+import { HABITS, KIDS, MEN_ONLY_PROMPTS, MARITAL_STATUS, POLITICAL, RELOCATION, TIMELINE, labelOf } from '@/config/app';
 import { Badge, Photo, cx } from './ui';
 
 export function ScoreBadge({ score, band, compact, onDark }: { score?: number; band?: string; compact?: boolean; onDark?: boolean }) {
@@ -20,7 +20,7 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
   const [photo, setPhoto] = useState(0);
   const [voice, setVoice] = useState<string | null>(null);
   useEffect(() => { setPhoto(0); signedUrl('voice', m.voice_intro_path).then(setVoice); }, [m.id, m.voice_intro_path]);
-  const answered = (m.prompts ?? []).filter((p) => p.answer?.trim());
+  const answered = (m.prompts ?? []).filter((p) => p.answer?.trim() && (m.gender === 'man' || !MEN_ONLY_PROMPTS.includes(p.key)));
   const count = m.photos?.length ?? 0;
   const swipeX = useRef<number | null>(null);
   const go = (d: number) => count > 1 && setPhoto((i) => (i + d + count) % count);
