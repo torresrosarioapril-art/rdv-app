@@ -93,6 +93,8 @@ export default function RadarMap({ pos, items, radiusKm, onSelect, youLabel }: {
       });
     } catch { setFailed(true); return; }
     map.touchZoomRotate.disableRotation();
+    const ro = new ResizeObserver(() => map.resize());
+    ro.observe(box.current);
     mapRef.current = map;
     const bump = () => setTick((t) => t + 1);
     map.on('move', bump);
@@ -118,7 +120,7 @@ export default function RadarMap({ pos, items, radiusKm, onSelect, youLabel }: {
       setReady(true);
       bump();
     });
-    return () => { map.remove(); mapRef.current = null; };
+    return () => { ro.disconnect(); map.remove(); mapRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -160,7 +162,8 @@ export default function RadarMap({ pos, items, radiusKm, onSelect, youLabel }: {
 
   return (
     <div className="relative h-full w-full">
-      <div ref={box} className="absolute inset-0" />
+      {/* Inline size: the map library sets position: relative on this element, which would collapse an inset-0 box */}
+      <div ref={box} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {ready && items.map((m) => {
           if (m.lat == null || m.lng == null) return null;
