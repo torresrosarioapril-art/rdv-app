@@ -24,7 +24,7 @@ function stepForNote(note?: string | null): number {
     [/partner|looking for|age range|prefer/, 3],
     [/relig|faith|kids|children|smok|drink|reloc|timeline|birth (time|place|city)|zodiac|lifestyle/, 2],
     [/birth|date of birth|\bage\b|first name|nationality|city|occupation|job|marital|gender|height/, 1],
-    [/bio|headline|prompt|voice|story|about you|manifesto|interest/, 4],
+    [/bio|headline|prompt|voice|story|about you|rendez-vous|crossed|interest/, 4],
     [/plan|subscription/, 5],
   ];
   for (const [re, step] of rules) if (re.test(n)) return step;
@@ -66,9 +66,9 @@ export default function SetupWizard({ status, onDone, onCancel, initialStep }: {
   useEffect(() => {
     myProfile().then(({ profile, priv }) => {
       const merged: Form = { ...profile, ...priv };
-      if (!Array.isArray(merged.prompts) || merged.prompts.length === 0) {
-        merged.prompts = PROMPTS.map((p) => ({ key: p.key, question: p.question, answer: '' }));
-      }
+      // Always show the current prompt list; keep answers to prompts that are still in it
+      const old: any[] = Array.isArray(merged.prompts) ? merged.prompts : [];
+      merged.prompts = PROMPTS.map((p) => ({ key: p.key, question: p.question, answer: old.find((o) => o?.key === p.key)?.answer ?? '' }));
       if (!Array.isArray(merged.photo_prompts)) {
         merged.photo_prompts = [];
       }
@@ -497,7 +497,7 @@ function StepStory({ f, set }: StepProps) {
       {(f.prompts as any[]).map((p, i) => (
         <Card key={p.key}>
           <Field label={p.question} optional hint="Shown on your profile, and used as conversation openers.">
-            <Textarea maxLength={600} value={p.answer ?? ''} onChange={(e) => {
+            <Textarea maxLength={600} placeholder={PROMPTS.find((q) => q.key === p.key)?.example || undefined} value={p.answer ?? ''} onChange={(e) => {
               const next = [...f.prompts]; next[i] = { ...p, answer: e.target.value }; set('prompts', next);
             }} />
           </Field>

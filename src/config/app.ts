@@ -152,18 +152,18 @@ export const POLITICAL = [
 /** Profile prompts (brief: Profile & Verification → Profile prompts). */
 /** Optional photo prompts: a photo + one of these + a caption of up to 40 characters. */
 export const PHOTO_PROMPTS = [
-  'My favourite place in Dubai', 'A perfect weekend looks like', 'Book I can\'t put down', 'I could eat this forever',
+  'My favourite place in Dubai', 'Our first rendez-vous could be here', 'A perfect weekend looks like', 'Book I can\'t put down', 'I could eat this forever',
   'Current favourite hobby', 'I geek out on', 'Feeling inspired by', 'Listening to & loving', 'My pet(s)',
   'My new obsession', "I'm really proud of", 'Recently visited & loved', 'Where I feel most at peace',
-  'Our first rendez-vous could be here', 'Me, on a good day',
+  'Me, on a good day',
 ];
 
 export const PROMPTS = [
-  { key: 'manifesto', question: 'Personal manifesto' },
-  { key: 'non_negotiables', question: 'My non-negotiable(s) / vision for marriage' },
-  { key: 'why_rdv', question: 'Why I chose Rendez-vous' },
-  { key: 'ideal_first', question: 'My ideal first rendez-vous' },
-  { key: 'expectations', question: 'What are your expectations from a lifelong partner?' },
+  { key: 'paths_crossed', question: 'Where our paths may have already crossed', example: 'e.g. The bookshop at Dubai Mall, or Kite Beach at sunrise' },
+  { key: 'ideal_first', question: 'My ideal first rendez-vous', example: 'e.g. Coffee somewhere quiet, then a walk by the water' },
+  { key: 'second_rdv', question: "Where I'd take you on our second rendez-vous", example: 'e.g. Dinner at my favourite spot in Al Fahidi' },
+  { key: 'non_negotiables', question: 'My non-negotiable(s) / vision for marriage', example: '' },
+  { key: 'expectations', question: 'What are your expectations from a lifelong partner?', example: '' },
 ] as const;
 
 export const REPORT_REASONS = [
