@@ -7,7 +7,9 @@ export function Recorder({ kind, maxSeconds, onDone, label }: {
   kind: 'audio' | 'video'; maxSeconds: number; label?: string;
   onDone: (blob: Blob, seconds: number, ext: string) => void;
 }) {
-  const [state, setState] = useState<'idle' | 'rec' | 'error'>('idle');
+  const [state, setState] = useState<'idle' | 'count' | 'rec' | 'error'>('idle');
+  const [count, setCount] = useState(0);
+  const countTimer = useRef<number | null>(null);
   const [secs, setSecs] = useState(0);
   const [err, setErr] = useState('');
   const rec = useRef<MediaRecorder | null>(null);
@@ -32,6 +34,19 @@ export function Recorder({ kind, maxSeconds, onDone, label }: {
       const s = await navigator.mediaDevices.getUserMedia(kind === 'audio' ? { audio: true } : { audio: true, video: { facingMode: 'user' } });
       stream.current = s;
       if (preview.current && kind === 'video') { preview.current.srcObject = s; preview.current.play().catch(() => {}); }
+      // Video: show the camera with a 5-second countdown first, so people can get ready
+      if (kind === 'video') {
+        setState('count'); setCount(5);
+        await new Promise<void>((resolve, reject) => {
+          let n = 5;
+          countTimer.current = window.setInterval(() => {
+            if (!stream.current) { window.clearInterval(countTimer.current!); reject(new Error('cancelled')); return; }
+            n -= 1;
+            if (n <= 0) { window.clearInterval(countTimer.current!); countTimer.current = null; resolve(); }
+            else setCount(n);
+          }, 1000);
+        });
+      }
       const type = pickType();
       const r = new MediaRecorder(s, type ? { mimeType: type } : undefined);
       chunks.current = [];
@@ -53,7 +68,8 @@ export function Recorder({ kind, maxSeconds, onDone, label }: {
         setSecs(s2);
         if (s2 >= maxSeconds) stop();
       }, 250);
-    } catch {
+    } catch (e) {
+      if (e instanceof Error && e.message === 'cancelled') { setState('idle'); return; }
       setState('error');
       setErr(kind === 'audio' ? 'Microphone access was blocked. Allow it in your browser settings.' : 'Camera access was blocked. Allow it in your browser settings, or upload a video instead.');
     }
@@ -61,6 +77,7 @@ export function Recorder({ kind, maxSeconds, onDone, label }: {
 
   const stop = (silent = false) => {
     if (timer.current) window.clearInterval(timer.current);
+    if (countTimer.current) { window.clearInterval(countTimer.current); countTimer.current = null; }
     if (rec.current && rec.current.state !== 'inactive' && !silent) rec.current.stop();
     stream.current?.getTracks().forEach((t) => t.stop());
     stream.current = null;
@@ -70,9 +87,19 @@ export function Recorder({ kind, maxSeconds, onDone, label }: {
   return (
     <div className="space-y-2">
       {kind === 'video' && (
-        <video ref={preview} muted playsInline className={state === 'rec' ? 'w-full max-h-72 rounded-xl bg-black object-cover' : 'hidden'} />
+        <div className={state === 'rec' || state === 'count' ? 'relative' : 'hidden'}>
+          <video ref={preview} muted playsInline className="w-full max-h-72 rounded-xl bg-black object-cover" />
+          {state === 'count' && (
+            <div className="absolute inset-0 rounded-xl bg-black/40 flex flex-col items-center justify-center text-white">
+              <span key={count} className="font-display text-7xl leading-none text-gold-soft animate-pulse">{count}</span>
+              <span className="mt-2 text-xs">Get ready, recording starts soon</span>
+            </div>
+          )}
+        </div>
       )}
-      {state !== 'rec' ? (
+      {state === 'count' ? (
+        <Button type="button" variant="outline" onClick={() => { stop(true); setState('idle'); }}>Cancel</Button>
+      ) : state !== 'rec' ? (
         <Button type="button" variant="outline" onClick={start}>
           {kind === 'audio' ? <Mic className="w-4 h-4" /> : <Video className="w-4 h-4" />}{label ?? 'Record'}
         </Button>

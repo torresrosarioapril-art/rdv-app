@@ -212,6 +212,14 @@ function StepIdentity({ f, set, approved }: StepProps & { approved: boolean }) {
     finally { setUploading(false); }
   };
 
+  const removeVideo = async () => {
+    const path = f.verification_video_path;
+    set('verification_video_path', null);
+    setVideoUrl(null);
+    if (path) await supabase.storage.from('verification').remove([path]).catch(() => {});
+    toast('Video deleted. Record or upload a new one.');
+  };
+
   return (
     <>
       <Card>
@@ -230,7 +238,15 @@ function StepIdentity({ f, set, approved }: StepProps & { approved: boolean }) {
         </div>
         {f.verification_video_path ? (
           <div className="space-y-2">
-            <Badge tone="green"><Check className="w-3 h-3" />Video received</Badge>
+            <div className="flex items-center justify-between gap-2">
+              <Badge tone="green"><Check className="w-3 h-3" />Video received</Badge>
+              {!approved && (
+                <button type="button" onClick={removeVideo} aria-label="Delete this video"
+                  className="flex items-center gap-1 rounded-full border border-rose-300 dark:border-rose-400/40 text-rose-600 dark:text-rose-300 px-2.5 py-1 text-xs cursor-pointer hover:bg-rose-500/10">
+                  <Trash2 className="w-3.5 h-3.5" />Delete
+                </button>
+              )}
+            </div>
             {videoUrl && <video src={videoUrl} controls playsInline className="w-full max-h-64 rounded-xl bg-black" />}
           </div>
         ) : null}
