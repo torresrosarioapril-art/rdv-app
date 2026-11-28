@@ -37,6 +37,7 @@ Deno.serve(async (req) => {
         <p><a href="${link}" style="display:inline-block;background:#c9a24a;color:#0a1322;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:bold">Confirm work email</a></p>
         <p style="font-size:12px;color:#64748b">The link works once and expires in ${hours} hours. Your work email is never shown to other members. If you didn't ask for this, ignore this email.</p>
       </div>`);
+    if (!ok) return json({ error: "We couldn't send the confirmation email right now. Work email confirmation opens once RDV's email address is set up, so you can skip this for now." }, 503);
     return json({ ok: true, sent: ok });
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : 'Could not send the link' }, 400);
