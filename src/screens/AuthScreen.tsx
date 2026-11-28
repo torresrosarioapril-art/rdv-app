@@ -27,6 +27,7 @@ export default function AuthScreen({ theme, onToggleTheme }: { theme?: 'dark' | 
   const [showPw, setShowPw] = useState(false);
   const [charter, setCharter] = useState(false);
   const [charterOpen, setCharterOpen] = useState(false);
+  const [tried, setTried] = useState(false); // sign-up pressed: show what's still missing in red
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
 
@@ -53,6 +54,7 @@ export default function AuthScreen({ theme, onToggleTheme }: { theme?: 'dark' | 
         if (error) throw error;
         setSent('We sent a password reset link to ' + email);
       } else {
+        if (!charter || !adult) setTried(true);
         if (!charter) throw new Error('Please read and agree to the Community Charter.');
         if (!adult) throw new Error('Rendez-vous is for adults 18 and over.');
         const useCode = route === 'code';
@@ -144,23 +146,24 @@ export default function AuthScreen({ theme, onToggleTheme }: { theme?: 'dark' | 
               )}
 
               {mode === 'signup' && (
-                <div className="rounded-xl border border-gold/30 bg-gold/5 p-3 text-xs text-slate-700 dark:text-slate-200 space-y-2">
+                <div className={cx('rounded-xl border p-3 text-xs text-slate-700 dark:text-slate-200 space-y-2', tried && !charter ? 'border-rose-500 bg-rose-500/10 ring-2 ring-rose-500/30' : 'border-gold/30 bg-gold/5')}>
                   <p>Before you join, please read our Community Charter: real people only, video ID check, zero tolerance for harassment.</p>
+                  {tried && !charter && <p className="text-rose-600 dark:text-rose-400 font-semibold">Please read the Community Charter and tap “I agree to the Community Charter” to continue.</p>}
                   <div className="flex items-center justify-between gap-2">
                     <button type="button" onClick={() => setCharterOpen(true)} className="text-gold underline cursor-pointer">Read the Community Charter</button>
-                    {charter ? <span className="text-emerald-600 dark:text-emerald-300">✓ Agreed</span> : <span className="text-slate-500 dark:text-slate-400">Not yet agreed</span>}
+                    {charter ? <span className="text-emerald-600 dark:text-emerald-300">✓ Agreed</span> : <span className={tried ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-slate-500 dark:text-slate-400'}>Not yet agreed</span>}
                   </div>
                 </div>
               )}
 
               {mode === 'signup' && (
-                <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
+                <label className={cx('flex items-start gap-2 text-xs rounded-xl p-2 -m-2', tried && !adult ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10 ring-2 ring-rose-500/40' : 'text-slate-600 dark:text-slate-300')}>
                   <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} className="mt-0.5 accent-[#c9a24a]" />
                   I am 18 or older. I understand every member is verified by video ID before appearing to anyone, and that my age is checked during verification.
                 </label>
               )}
 
-              <Button type="submit" busy={busy} className="w-full" disabled={mode === 'signup' && ((!!opts && !opts.manual && !codesOpen) || !charter)}>
+              <Button type="submit" busy={busy} className="w-full" disabled={mode === 'signup' && !!opts && !opts.manual && !codesOpen}>
                 {mode === 'signin' ? <><KeyRound className="w-4 h-4" /> Sign in</> : mode === 'reset' ? 'Send reset link' : <><ShieldCheck className="w-4 h-4" /> Create my application</>}
               </Button>
 
