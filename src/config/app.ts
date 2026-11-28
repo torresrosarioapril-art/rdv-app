@@ -46,6 +46,16 @@ export const RELIGIONS = [
   'Islam', 'Christianity', 'Hinduism', 'Judaism', 'Buddhism', 'Sikhism', 'Spiritual', 'None', 'Other',
 ];
 
+/** Branch / denomination choices shown under the main religion (optional, display only for now). */
+export const RELIGION_BRANCHES: Record<string, string[]> = {
+  Islam: ['Sunni', 'Shia', 'Ibadi', 'Sufi', 'Just Muslim'],
+  Christianity: ['Catholic', 'Orthodox', 'Coptic Orthodox', 'Armenian Apostolic', 'Syriac / Assyrian', 'Maronite', 'Protestant', 'Anglican', 'Evangelical', 'Pentecostal', 'Baptist', 'Non-denominational', 'Just Christian'],
+  Judaism: ['Orthodox', 'Conservative', 'Reform', 'Secular', 'Just Jewish'],
+  Hinduism: ['Vaishnava', 'Shaiva', 'Shakta', 'Smarta', 'Just Hindu'],
+  Buddhism: ['Theravada', 'Mahayana', 'Vajrayana (Tibetan)', 'Zen', 'Just Buddhist'],
+  Sikhism: ['Amritdhari', 'Sahajdhari', 'Just Sikh'],
+};
+
 export const NATIONALITIES = [
   'Afghan', 'Albanian', 'Algerian', 'American', 'Argentinian', 'Armenian', 'Australian', 'Austrian',
   'Azerbaijani', 'Bahraini', 'Bangladeshi', 'Belarusian', 'Belgian', 'Bosnian', 'Brazilian', 'British',

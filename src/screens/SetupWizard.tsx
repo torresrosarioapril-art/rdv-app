@@ -3,7 +3,7 @@ import { Check, ChevronLeft, ChevronRight, ImagePlus, Link2, Lock, Play, ShieldC
 import { supabase } from '@/lib/supabase';
 import { astroSync, dropsLine, radarLine, giveConsent, myProfile, saveProfile, signedUrl, submitForReview, uploadFile, type Status } from '@/lib/api';
 import {
-  BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELOCATION, TIMELINE, UAE_CITIES, labelOf, DRINKING_TOLERANCE, SMOKING_TOLERANCE, MARITAL_STATUS, PARTNER_CHILDREN, DESIRED_MARITAL, desiredMaritalChoice, desiredMaritalValue } from '@/config/app';
+  BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELIGION_BRANCHES, RELOCATION, TIMELINE, UAE_CITIES, labelOf, DRINKING_TOLERANCE, SMOKING_TOLERANCE, MARITAL_STATUS, PARTNER_CHILDREN, DESIRED_MARITAL, desiredMaritalChoice, desiredMaritalValue } from '@/config/app';
 import { Badge, Button, Card, Field, Input, Photo, Select, Spinner, Textarea, Toggle, cx, useToast } from '@/components/ui';
 import { Recorder } from '@/components/Recorder';
 import { CityPicker } from '@/components/CityPicker';
@@ -33,7 +33,7 @@ function stepForNote(note?: string | null): number {
 type Form = Record<string, any>;
 
 const PROFILE_KEYS = ['display_name', 'gender', 'nationality', 'country_residence', 'city', 'district', 'occupation', 'company',
-  'industry', 'university', 'degree', 'height_cm', 'political', 'religion', 'religion_practice', 'marriage_timeline', 'kids',
+  'industry', 'university', 'degree', 'height_cm', 'political', 'religion', 'religion_branch', 'religion_practice', 'marriage_timeline', 'kids',
   'drinking', 'smoking', 'relocation', 'headline', 'bio', 'prompts', 'photos', 'voice_intro_path', 'linkedin_url',
   'marital_status', 'has_children', 'children_count'];
 const PRIVATE_KEYS = ['legal_name', 'birth_date', 'birth_time', 'birth_city', 'birth_country', 'religion_flexible', 'kids_flexible',
@@ -185,7 +185,7 @@ export default function SetupWizard({ status, onDone, onCancel, initialStep }: {
                   <button type="button" className="text-xs text-gold-deep dark:text-gold underline cursor-pointer" onClick={() => { setStep(STEPS.length - 1); window.scrollTo(0, 0); }}>See all steps</button>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-2">Make the change, then go to the last step and submit again.</p>
+              <p className="text-xs mt-2"><b>After making the change:</b> tap <b>Save &amp; continue</b> through to the last step, then tap <b>Submit for verification</b>. Our team reviews your profile again before it goes live.</p>
             </div>
           )}
         </div>
@@ -355,7 +355,12 @@ function StepLifestyle({ f, set }: StepProps) {
     <>
       <Card className="space-y-4">
         <Grid>
-          <Field label="Religion / faith"><Select options={RELIGIONS} value={f.religion ?? ''} onChange={(e) => set('religion', e.target.value)} /></Field>
+          <Field label="Religion / faith"><Select options={RELIGIONS} value={f.religion ?? ''} onChange={(e) => { set('religion', e.target.value); set('religion_branch', null); }} /></Field>
+          {RELIGION_BRANCHES[f.religion] && (
+            <Field label="Branch / denomination" optional>
+              <Select options={RELIGION_BRANCHES[f.religion]} placeholder="Select…" value={f.religion_branch ?? ''} onChange={(e) => set('religion_branch', e.target.value || null)} />
+            </Field>
+          )}
           <Field label="Observance" optional><Input placeholder="e.g. Practising, cultural" value={f.religion_practice ?? ''} onChange={(e) => set('religion_practice', e.target.value)} /></Field>
         </Grid>
         <Toggle checked={!!f.religion_flexible} onChange={(v) => set('religion_flexible', v)} label="I'm flexible on faith (open to a different faith if they are too)" />

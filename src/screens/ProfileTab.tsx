@@ -157,7 +157,7 @@ function toCard(p: Record<string, any>, x: Record<string, any>): MemberCard {
   return {
     id: p.id, name: p.display_name, age: ageOf(x.birth_date), gender: p.gender, nationality: p.nationality, city: p.city,
     district: p.district, occupation: p.occupation, company: p.company, industry: p.industry, university: p.university,
-    degree: p.degree, height_cm: p.height_cm, political: p.political, religion: p.religion, religion_practice: p.religion_practice,
+    degree: p.degree, height_cm: p.height_cm, political: p.political, religion: p.religion, religion_branch: p.religion_branch, religion_practice: p.religion_practice,
     marital_status: p.marital_status, has_children: p.has_children, children_count: p.children_count,
     marriage_timeline: p.marriage_timeline, kids: p.kids, drinking: p.drinking, smoking: p.smoking, relocation: p.relocation,
     zodiac: { sun: p.zodiac_sun, moon: p.zodiac_moon, rising: p.zodiac_rising, element: ELEMENT[p.zodiac_sun] ?? null,

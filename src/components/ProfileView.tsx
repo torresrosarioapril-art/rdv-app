@@ -91,7 +91,7 @@ export function ProfileView({ m, compact, self, preview, noPhotos }: { m: Member
         {m.bio && <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-line">{m.bio}</p>}
 
         <div className="grid grid-cols-2 gap-2 text-sm">
-          <Fact k="Faith" v={[m.religion, m.religion_practice].filter(Boolean).join(' · ')} />
+          <Fact k="Faith" v={[m.religion, m.religion_branch, m.religion_practice].filter(Boolean).join(' · ')} />
           <Fact k="Marriage" v={labelOf(TIMELINE, m.marriage_timeline)} />
           {m.marital_status && <Fact k="Marital status" v={labelOf(MARITAL_STATUS, m.marital_status)} />}
           {m.has_children != null && <Fact k="Has children" v={m.has_children ? `Yes${m.children_count ? ` (${m.children_count})` : ''}` : 'No'} />}

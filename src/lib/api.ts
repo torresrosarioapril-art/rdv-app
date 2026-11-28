@@ -29,6 +29,7 @@ export interface MemberCard {
   political: string | null;
   religion: string | null;
   religion_practice: string | null;
+  religion_branch?: string | null;
   marriage_timeline: string | null;
   kids: string | null;
   drinking: string | null;
