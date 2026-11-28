@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, ImagePlus, Link2, Play, ShieldCheck, Trash2, Upload } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, ImagePlus, Link2, Lock, Play, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { astroSync, dropsLine, radarLine, giveConsent, myProfile, saveProfile, signedUrl, submitForReview, uploadFile, type Status } from '@/lib/api';
 import {
@@ -233,8 +233,15 @@ function StepIdentity({ f, set, approved }: StepProps & { approved: boolean }) {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Record a short video (about 20 seconds): hold your Emirates ID or passport next to your face, then bring it close to the camera for 2–3 seconds so your <b>date of birth</b> can be read
             (on older Emirates IDs the date of birth is on the back, so show both sides). Then say your first name and today's date, and turn your head slowly left and right.
-            A founder reviews it by hand and checks your date of birth matches what you entered. It's never shown to other members.
+            A founder reviews it by hand and checks your date of birth matches what you entered.
           </p>
+          <div className="mt-3 rounded-xl border border-gold/40 bg-gold/5 dark:bg-navy-3 p-3 flex gap-2.5 text-xs leading-relaxed">
+            <Lock className="w-4 h-4 text-gold shrink-0 mt-0.5" />
+            <p>
+              <b>Private, for verification only.</b> Only the RDV review team watches this video, to confirm it's you and that you're 18+.
+              It's never shown to other members, in the app or on the website. We delete it automatically <b>15 days</b> after your application is reviewed.
+            </p>
+          </div>
         </div>
         {f.verification_video_path ? (
           <div className="space-y-2">
@@ -268,7 +275,7 @@ function StepIdentity({ f, set, approved }: StepProps & { approved: boolean }) {
       <Card className="space-y-3 text-sm">
         <label className="flex items-start gap-2">
           <input type="checkbox" className="mt-1 accent-[#c9a24a]" checked={!!f.biometric} disabled={approved} onChange={(e) => set('biometric', e.target.checked)} />
-          <span>I consent to Rendez-vous processing my ID video to verify my identity and age (UAE PDPL). It's stored privately and only seen by the review team.</span>
+          <span>I consent to Rendez-vous processing my ID video only to verify my identity and age (UAE PDPL). It's stored privately, seen only by the review team, and deleted automatically 15 days after my application is reviewed.</span>
         </label>
         <SafetyStandardsModal isOpen={charterOpen} onClose={() => setCharterOpen(false)} onAccept={approved ? undefined : () => set('terms', true)} />
         <label className="flex items-start gap-2">

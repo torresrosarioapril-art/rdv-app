@@ -1,7 +1,7 @@
 import { admin, cors, json } from '../_shared/util.ts';
 
 // Daily job: deletes ID videos of approved members once the retention period
-// (app_config.retention.verification_video_days, default 30) has passed, and logs each deletion.
+// (app_config.retention.verification_video_days, 15) has passed, for approved and rejected applications, and logs each deletion.
 // Returns only a count, so calling it without a key reveals nothing.
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
