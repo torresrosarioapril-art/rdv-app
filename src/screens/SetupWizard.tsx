@@ -24,7 +24,7 @@ function stepForNote(note?: string | null): number {
     [/partner|looking for|age range|prefer/, 3],
     [/relig|faith|kids|children|smok|drink|reloc|timeline|birth (time|place|city)|zodiac|lifestyle/, 2],
     [/birth|date of birth|\bage\b|first name|nationality|city|occupation|job|marital|gender|height/, 1],
-    [/bio|headline|prompt|voice|story|about you|rendez-vous|crossed|interest/, 4],
+    [/bio|headline|prompt|voice|story|about you|rendez-vous|crossed|favourite place|favorite place|interest/, 4],
     [/plan|subscription/, 5],
   ];
   for (const [re, step] of rules) if (re.test(n)) return step;
