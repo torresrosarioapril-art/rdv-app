@@ -175,7 +175,9 @@ export async function myProfile() {
 export type NearbyAlert = { enabled: boolean; radius_m: number; min_score: number };
 export async function getNearbyAlert(uid: string): Promise<NearbyAlert> {
   const { data } = await supabase.from('profile_private').select('nearby_alert').eq('user_id', uid).single();
-  return (data?.nearby_alert as NearbyAlert) ?? { enabled: false, radius_m: 500, min_score: 75 };
+  const pref = (data?.nearby_alert as NearbyAlert) ?? { enabled: false, radius_m: 300, min_score: 75 };
+  // 500 m was the old smallest option; the map now works to 300 m
+  return pref.radius_m === 500 ? { ...pref, radius_m: 300 } : pref;
 }
 export async function saveNearbyAlert(uid: string, pref: NearbyAlert) {
   friendly((await supabase.from('profile_private').update({ nearby_alert: pref }).eq('user_id', uid)).error);

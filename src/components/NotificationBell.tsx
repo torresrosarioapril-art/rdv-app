@@ -12,7 +12,7 @@ function describe(n: Notif): { text: string; icon: React.ReactNode; to?: { chat?
   switch (n.type) {
     case 'nearby_match': {
       const where = d.within_m >= 1000 ? `${d.within_m / 1000} km` : `${d.within_m} m`;
-      return { text: `${d.name ?? 'A match'} (${d.score}% match) was within ${where} of you`, icon: <MapPin className="w-4 h-4" />, to: { radar: true } };
+      return { text: `${d.name ?? 'Someone new'} (${d.score}% match) is within ${where} of you. See them on the radar`, icon: <MapPin className="w-4 h-4" />, to: { radar: true } };
     }
     case 'message': return { text: 'New message', icon: <MessageCircle className="w-4 h-4" />, to: { chat } };
     case 'new_match': return { text: "It's a match. Say hello", icon: <Heart className="w-4 h-4" />, to: { chat } };

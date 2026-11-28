@@ -251,7 +251,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
 export function NearbyAlerts({ uid }: { uid: string }) {
   const toast = useToast();
   const [pref, setPref] = useState<NearbyAlert | null>(null);
-  useEffect(() => { getNearbyAlert(uid).then(setPref).catch(() => setPref({ enabled: false, radius_m: 500, min_score: 75 })); }, [uid]);
+  useEffect(() => { getNearbyAlert(uid).then(setPref).catch(() => setPref({ enabled: false, radius_m: 300, min_score: 75 })); }, [uid]);
   if (!pref) return null;
   const save = async (next: NearbyAlert) => {
     const prev = pref; setPref(next);
@@ -259,7 +259,7 @@ export function NearbyAlerts({ uid }: { uid: string }) {
       await saveNearbyAlert(uid, next);
       if (next.enabled && !prev.enabled) {
         if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission().catch(() => {});
-        toast(`You'll be alerted when a ${next.min_score}%+ match is within ${next.radius_m >= 1000 ? next.radius_m / 1000 + ' km' : next.radius_m + ' m'}`);
+        toast(`You'll be alerted when someone new at ${next.min_score}%+ is within ${next.radius_m >= 1000 ? next.radius_m / 1000 + ' km' : next.radius_m + ' m'}`);
       }
     } catch (e) { setPref(prev); toast(e instanceof Error ? e.message : 'Could not save', 'err'); }
   };
@@ -271,12 +271,12 @@ export function NearbyAlerts({ uid }: { uid: string }) {
         <span className="text-sm">Alert me</span>
         <Toggle checked={pref.enabled} onChange={(v) => save({ ...pref, enabled: v })} label="" />
       </div>
-      <p className="text-[11px] text-slate-500">A notification when a match comes within range, so you don't have to keep checking. Only while you're visible, never their exact spot, at most once every 12 hours per person.</p>
+      <p className="text-[11px] text-slate-500">A notification when someone new you haven't matched with yet comes within range on the radar, so you don't have to keep checking. Only while you're visible, never their exact spot, at most once every 12 hours per person.</p>
       {pref.enabled && (
         <div className="grid grid-cols-2 gap-2">
           <label className="text-xs space-y-1"><span className="text-slate-500">Within</span>
             <Select value={String(pref.radius_m)} onChange={(e) => save({ ...pref, radius_m: Number(e.target.value) })} placeholder="Distance"
-              options={[{ value: '500', label: '500 m' }, { value: '1000', label: '1 km' }, { value: '2000', label: '2 km' }]} />
+              options={[{ value: '300', label: '300 m' }, { value: '1000', label: '1 km' }, { value: '2000', label: '2 km' }]} />
           </label>
           <label className="text-xs space-y-1"><span className="text-slate-500">Match of at least</span>
             <Select value={String(pref.min_score)} onChange={(e) => save({ ...pref, min_score: Number(e.target.value) })} placeholder="Match %"
