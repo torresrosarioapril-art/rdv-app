@@ -14,6 +14,22 @@ import { BrandLogo } from '@/components/BrandLogo';
 
 const STEPS = ['Identity & verification', 'Basic info', 'Marriage & lifestyle', 'Desired partner', 'Your story', 'Plan', 'Review'];
 
+/** Which step a reviewer's "please change…" note is most likely about, so the member can jump straight there. */
+function stepForNote(note?: string | null): number {
+  const n = (note ?? '').toLowerCase();
+  const rules: [RegExp, number][] = [
+    [/photo|picture|pic\b|pics|selfie|image/, 4],
+    [/video|emirates|passport|\bid\b|legal name|linkedin|work email/, 0],
+    [/partner|looking for|age range|prefer/, 3],
+    [/relig|faith|kids|children|smok|drink|reloc|timeline|birth (time|place|city)|zodiac|lifestyle/, 2],
+    [/birth|date of birth|\bage\b|first name|nationality|city|occupation|job|marital|gender|height/, 1],
+    [/bio|headline|prompt|voice|story|about you|manifesto|interest/, 4],
+    [/plan|subscription/, 5],
+  ];
+  for (const [re, step] of rules) if (re.test(n)) return step;
+  return STEPS.length - 1;
+}
+
 type Form = Record<string, any>;
 
 const PROFILE_KEYS = ['display_name', 'gender', 'nationality', 'country_residence', 'city', 'district', 'occupation', 'company',
@@ -159,7 +175,17 @@ export default function SetupWizard({ status, onDone, onCancel, initialStep }: {
             <div className="mt-2 rounded-xl border border-gold/50 bg-gold/10 p-3 text-sm">
               <div className="text-[10px] uppercase tracking-widest text-gold mb-0.5">Our team asked you to update your application</div>
               <p className="whitespace-pre-line">{status.review_note}</p>
-              <p className="text-xs text-slate-500 mt-1">Make the change, then go to the last step and submit again.</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {step !== stepForNote(status.review_note) && (
+                  <Button className="!py-1.5 text-xs" onClick={() => { setStep(stepForNote(status.review_note)); window.scrollTo(0, 0); }}>
+                    Go to {STEPS[stepForNote(status.review_note)]}<ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+                {step !== STEPS.length - 1 && stepForNote(status.review_note) !== STEPS.length - 1 && (
+                  <button type="button" className="text-xs text-gold-deep dark:text-gold underline cursor-pointer" onClick={() => { setStep(STEPS.length - 1); window.scrollTo(0, 0); }}>See all steps</button>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-2">Make the change, then go to the last step and submit again.</p>
             </div>
           )}
         </div>
