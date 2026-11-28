@@ -232,7 +232,7 @@ function StepIdentity({ f, set, approved }: StepProps & { approved: boolean }) {
           <h3 className="font-display text-lg">Video ID check</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Record a short video (about 20 seconds): hold your Emirates ID or passport next to your face, then bring it close to the camera for 2–3 seconds so your <b>date of birth</b> can be read
-            (on older Emirates IDs the date of birth is on the back, so show both sides). Then say your first name and today's date, and turn your head slowly left and right.
+            (on older Emirates IDs the date of birth is on the back, so show both sides). Then say your first name and today's date, and turn your head slowly left and right. Hold your phone upright at arm's length, in good light.
             A founder reviews it by hand and checks your date of birth matches what you entered.
           </p>
           <div className="mt-3 rounded-xl border border-gold/40 bg-gold/5 dark:bg-navy-3 p-3 flex gap-2.5 text-xs leading-relaxed">
@@ -254,7 +254,7 @@ function StepIdentity({ f, set, approved }: StepProps & { approved: boolean }) {
                 </button>
               )}
             </div>
-            {videoUrl && <video src={videoUrl} controls playsInline className="w-full max-h-64 rounded-xl bg-black" />}
+            {videoUrl && <video src={videoUrl} controls playsInline className="mx-auto block max-w-full max-h-[60vh] rounded-xl bg-black object-contain" />}
           </div>
         ) : null}
         <div className="flex flex-wrap gap-2 items-start">

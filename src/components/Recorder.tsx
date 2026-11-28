@@ -31,7 +31,17 @@ export function Recorder({ kind, maxSeconds, onDone, label }: {
   const start = async () => {
     setErr('');
     try {
-      const s = await navigator.mediaDevices.getUserMedia(kind === 'audio' ? { audio: true } : { audio: true, video: { facingMode: 'user' } });
+      // Ask for an upright (portrait) video at a normal size. Without a size, iPhones record a landscape
+      // frame that is then squeezed into portrait, which makes faces look wide (fisheye-like).
+      const portrait = window.innerHeight >= window.innerWidth;
+      const video: MediaTrackConstraints = {
+        facingMode: 'user',
+        width: { ideal: portrait ? 720 : 1280 }, height: { ideal: portrait ? 1280 : 720 },
+        aspectRatio: { ideal: portrait ? 9 / 16 : 16 / 9 },
+      };
+      let s: MediaStream;
+      try { s = await navigator.mediaDevices.getUserMedia(kind === 'audio' ? { audio: true } : { audio: true, video }); }
+      catch { s = await navigator.mediaDevices.getUserMedia(kind === 'audio' ? { audio: true } : { audio: true, video: { facingMode: 'user' } }); }
       stream.current = s;
       if (preview.current && kind === 'video') { preview.current.srcObject = s; preview.current.play().catch(() => {}); }
       // Video: show the camera with a 5-second countdown first, so people can get ready
@@ -88,7 +98,7 @@ export function Recorder({ kind, maxSeconds, onDone, label }: {
     <div className="space-y-2">
       {kind === 'video' && (
         <div className={state === 'rec' || state === 'count' ? 'relative' : 'hidden'}>
-          <video ref={preview} muted playsInline className="w-full max-h-72 rounded-xl bg-black object-cover" />
+          <video ref={preview} muted playsInline className="mx-auto max-w-full max-h-[60vh] rounded-xl bg-black object-contain" />
           {state === 'count' && (
             <div className="absolute inset-0 rounded-xl bg-black/40 flex flex-col items-center justify-center text-white">
               <span key={count} className="font-display text-7xl leading-none text-gold-soft animate-pulse">{count}</span>
