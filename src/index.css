@@ -56,7 +56,10 @@
 .shimmer-gold { background: linear-gradient(100deg, var(--color-gold) 20%, #fff6dc 45%, var(--color-gold) 70%); background-size: 250% 100%;
   -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 2.2s ease-in-out 1; }
 @keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
-@media (prefers-reduced-motion: reduce) { .match-burst span, .shimmer-gold { animation: none; } }
+/* Radar: your heart beats like a pulse */
+.heartbeat { transform-box: view-box; animation: heartbeat 1.3s ease-in-out infinite; }
+@keyframes heartbeat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.28); } 28% { transform: scale(1); } 42% { transform: scale(1.18); } 70% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .match-burst span, .shimmer-gold, .heartbeat { animation: none; } }
 
 /* Icon discs: gold disc, navy icon, the same in both themes */
 .icon-disc { background: var(--color-gold-soft); color: var(--color-ink); }

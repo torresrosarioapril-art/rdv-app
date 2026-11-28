@@ -200,18 +200,17 @@ export default function RadarMap({ pos, items, radiusKm, onSelect, youLabel }: {
           );
         })}
         {me && (
-          <div className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ left: me.x, top: me.y }}>
-            {/* You: a pulsing red heart, so it never looks like the gold hearts on members' pins */}
-            <span className="relative block w-6 h-[22px]">
-              <svg aria-hidden="true" viewBox="0 0 24 22" className="absolute inset-0 w-full h-full animate-ping opacity-60">
-                <path d={heartPath(24, 22)} fill="#e11d48" />
-              </svg>
-              <svg aria-hidden="true" viewBox="0 0 24 22" className="relative w-full h-full drop-shadow">
-                <path d={heartPath(24, 22)} fill="#e11d48" stroke="#ffffff" strokeWidth="1.8" />
-              </svg>
-            </span>
-            <span className="mt-1 rounded-full bg-white/90 dark:bg-navy-2/90 text-[10px] font-semibold text-gold-deep dark:text-gold px-1.5 py-px shadow-sm whitespace-nowrap">{youLabel ?? 'You'}</span>
-          </div>
+          <>
+            {/* You: a raspberry location pin with a beating white heart; the tip marks your spot */}
+            <span className="absolute -translate-x-1/2 -translate-y-1/2 w-7 h-2.5 rounded-[50%] bg-[#be185d]/35 animate-ping" style={{ left: me.x, top: me.y }} />
+            <svg aria-label="You" viewBox="0 0 32 42" className="absolute -translate-x-1/2 -translate-y-full w-9 h-[47px] drop-shadow-md" style={{ left: me.x, top: me.y + 1 }}>
+              <path d="M16 41C16 41 3 26.5 3 15.5a13 13 0 0 1 26 0C29 26.5 16 41 16 41Z" fill="#be185d" stroke="#ffffff" strokeWidth="1.5" />
+              <g className="heartbeat" style={{ transformOrigin: '16px 15px' }}>
+                <g transform="translate(9 8.6)"><path d={heartPath(14, 13)} fill="#ffffff" /></g>
+              </g>
+            </svg>
+            <span className="absolute -translate-x-1/2 mt-1.5 rounded-full bg-white/90 dark:bg-navy-2/90 text-[10px] font-semibold text-[#be185d] dark:text-rose-300 px-1.5 py-px shadow-sm whitespace-nowrap" style={{ left: me.x, top: me.y }}>{youLabel ?? 'You'}</span>
+          </>
         )}
       </div>
       {ready && (
