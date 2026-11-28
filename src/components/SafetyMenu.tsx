@@ -28,7 +28,7 @@ export function SafetyMenu({ memberId, name, onDone, target = 'profile', refId, 
       )}
 
       <Modal open={open === 'block'} onClose={() => setOpen(null)} title={`Block ${name}?`}>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">You won't see each other anywhere: radar, daily batch, curated drops or chat. They aren't told.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">You won't see each other anywhere: radar map, curated drops or chat. They aren't told.</p>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setOpen(null)}>Cancel</Button>
           <Button variant="danger" busy={busy} onClick={async () => {

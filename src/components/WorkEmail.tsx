@@ -55,7 +55,7 @@ export function WorkEmailCard({ bare }: { bare?: boolean }) {
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-medium">Hide from coworkers</div>
-              <div className="text-[11px] text-slate-500">Anyone with a verified email at the same company won't appear in your batches, drops or radar, and you won't appear in theirs. They're never told.</div>
+              <div className="text-[11px] text-slate-500">Anyone with a verified email at the same company won't appear in your drops or radar, and you won't appear in theirs. They're never told.</div>
             </div>
             <Toggle checked={!!st.hide_from_coworkers} onChange={hide} label="" />
           </div>

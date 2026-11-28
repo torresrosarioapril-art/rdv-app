@@ -64,12 +64,23 @@ export interface Batch {
   batch_id: string; source: string; refresh_at: string | null; cap: number; size: number; used: number;
   swipe_credits: number; items: MemberCard[];
 }
-export interface Drops { week_start: string; cap: number; next_drop_at: string; items: MemberCard[] }
-export interface RadarResult { radius_km: number; cap: number | null; items: MemberCard[]; hidden?: number; hidden_strong?: number; strong_min?: number; unlock_until?: string | null; unlock_price_aed?: number | null; unlock_hours?: number }
+export interface Drops { week_start: string; cap: number; per_day?: number | null; delivered?: number; next_drop_at: string; items: MemberCard[] }
+export interface RadarResult { radius_km: number; cap: number | null; blur_m?: number; items: MemberCard[]; hidden?: number; hidden_strong?: number; strong_min?: number; unlock_until?: string | null; unlock_price_aed?: number | null; unlock_hours?: number }
 
 export interface PlanLimits {
   plan: Plan; label: string; price_aed: number; swipes_per_day: number; drops_per_week: number;
-  radar_cap: number | null; consultations_per_month: number;
+  drops_per_day?: number | null; radar_cap: number | null; consultations_per_month: number;
+}
+
+/** Plan card wording for curated drops, e.g. "1 curated 75%+ match a day, up to 5 a week". */
+export function dropsLine(p: Pick<PlanLimits, 'drops_per_week' | 'drops_per_day'>): string {
+  if (p.drops_per_day) return `${p.drops_per_day} curated 75%+ match a day, up to ${p.drops_per_week} a week`;
+  return `${p.drops_per_week} curated 75%+ match${p.drops_per_week === 1 ? '' : 'es'} a week`;
+}
+
+/** Plan card wording for the radar map. */
+export function radarLine(p: Pick<PlanLimits, 'radar_cap'>): string {
+  return p.radar_cap == null ? 'Radar map: everyone compatible nearby' : `Radar map: up to ${p.radar_cap} compatible members`;
 }
 
 export interface Status {

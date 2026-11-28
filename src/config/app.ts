@@ -171,7 +171,7 @@ export const labelOf = <T extends { value: string; label: string }>(list: readon
 
 /** Location visibility on the radar. Exact sharing is off for safety (server: app_config.radar.allow_exact). */
 export const VISIBILITY = [
-  { id: 'blur', label: 'Approximate', hint: 'Shown to the nearest 500 m, never your exact spot' },
+  { id: 'blur', label: 'Approximate', hint: 'Shown to the nearest 300 m, never your exact spot' },
   { id: 'ghost', label: 'Hidden (Ghost)', hint: 'Invisible to everyone on the radar' },
 ] as const;
 

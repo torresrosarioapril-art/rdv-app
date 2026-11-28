@@ -233,7 +233,7 @@ function VisibilityShortcut({ status, refresh }: { status: Status; refresh: () =
     try {
       await setPrivacy(next); await refresh();
       toast(next === 'ghost' ? "Ghost on: you're hidden from the radar"
-        : status.in_safe_zone ? "Ghost off. You're still hidden while you're in a Safe Zone" : 'Visible: you show up approximately (500 m)');
+        : status.in_safe_zone ? "Ghost off. You're still hidden while you're in a Safe Zone" : 'Visible: you show up approximately (300 m)');
     } catch (e) { toast(e instanceof Error ? e.message : 'Could not change', 'err'); }
     finally { setBusy(false); }
   };

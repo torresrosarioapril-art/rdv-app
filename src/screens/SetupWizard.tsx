@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, ImagePlus, Link2, Play, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { astroSync, giveConsent, myProfile, saveProfile, signedUrl, submitForReview, uploadFile, type Status } from '@/lib/api';
+import { astroSync, dropsLine, radarLine, giveConsent, myProfile, saveProfile, signedUrl, submitForReview, uploadFile, type Status } from '@/lib/api';
 import {
   BRAND, GENDERS, HABITS, KIDS, NATIONALITIES, POLITICAL, PROMPTS, RELIGIONS, RELOCATION, TIMELINE, UAE_CITIES, labelOf, DRINKING_TOLERANCE, SMOKING_TOLERANCE, MARITAL_STATUS, PARTNER_CHILDREN, DESIRED_MARITAL, desiredMaritalChoice, desiredMaritalValue } from '@/config/app';
 import { Badge, Button, Card, Field, Input, Photo, Select, Spinner, Textarea, Toggle, cx, useToast } from '@/components/ui';
@@ -479,9 +479,8 @@ function StepPlan({ plans, status, f, set }: { plans: Record<string, any> | null
                 <div className="font-display text-lg mt-1">{p.label}</div>
                 <div className="text-2xl font-semibold mt-1">{p.price_aed ? `${p.price_aed} AED` : 'Free'}<span className="text-xs font-normal text-slate-500">{p.price_aed ? ' / month' : ''}</span></div>
                 <ul className="mt-3 space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
-                  <li>{p.swipes_per_day} daily profile swipes</li>
-                  <li>{p.drops_per_week} curated 75%+ drops a week</li>
-                  <li>Radar: {p.radar_cap == null ? 'all compatible members in range' : `up to ${p.radar_cap} compatible members`}</li>
+                  <li>{dropsLine(p)}</li>
+                  <li>{radarLine(p)}</li>
                   {p.consultations_per_month > 0 && <li>Weekly 1-on-1 matchmaking consultation</li>}
                 </ul>
               </Card>

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
-  addSafeZone, astroSync, cancelConsultation, manageSubscription, deleteAccount, deleteSafeZone, listSafeZones, myProfile, requestConsultation,
+  addSafeZone, astroSync, dropsLine, radarLine, cancelConsultation, manageSubscription, deleteAccount, deleteSafeZone, listSafeZones, myProfile, requestConsultation,
   saveNotifyPrefs, saveProfile, signedUrl, startCheckout, uploadFile, type MemberCard, type NotifyPrefs, type Status,
 } from '@/lib/api';
 import { ANDROID_IOS_RATING, SIGNUP_COPY, SUPPORT, DESIRED_MARITAL, desiredMaritalChoice, labelOf } from '@/config/app';
@@ -185,7 +185,7 @@ function LookingFor({ priv, onEdit }: { priv: Record<string, any>; onEdit: () =>
         <h3 className="font-display text-lg">What I'm looking for</h3>
         <Button variant="ghost" className="!py-1.5 text-xs" onClick={onEdit}><Pencil className="w-3.5 h-3.5" />Edit</Button>
       </div>
-      <p className="text-xs text-slate-500 mb-3">Only you see this. It decides who appears in your batch, drops and radar.</p>
+      <p className="text-xs text-slate-500 mb-3">Only you see this. It decides who appears in your curated drops and on your radar map.</p>
       <div className="grid sm:grid-cols-2 gap-2">
         {rows.map(([k, v]) => (
           <div key={k} className="rounded-xl bg-slate-50 dark:bg-navy-3 px-3 py-2">
@@ -348,9 +348,9 @@ function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<
         </div>
       )}
       <div className="grid grid-cols-3 gap-2 text-sm">
-        <Stat k="Daily profile swipes" v={String(status.limits.swipes_per_day)} />
-        <Stat k="Drops this week" v={`${status.drops_this_week} / ${status.limits.drops_per_week}`} />
-        <Stat k="Radar" v={status.limits.radar_cap == null ? 'Unlimited' : `Up to ${status.limits.radar_cap}`} />
+        <Stat k="Curated drops" v={status.limits.drops_per_day ? `${status.limits.drops_per_day} a day` : `${status.limits.drops_per_week} a week`} />
+        <Stat k="This week" v={`${status.drops_this_week} / ${status.limits.drops_per_week}`} />
+        <Stat k="Radar pins" v={status.limits.radar_cap == null ? 'Everyone' : `Up to ${status.limits.radar_cap}`} />
       </div>
       {plans && (
         <div className="grid gap-3">
@@ -363,9 +363,8 @@ function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<
                 <div key={k} className={cx('rounded-xl border p-4', current ? 'border-gold' : 'border-slate-200 dark:border-white/10')}>
                   <div className="flex items-baseline justify-between"><div className="font-display text-lg">{p.label}</div><div className="text-xl font-semibold">0 AED</div></div>
                   <ul className="text-xs text-slate-500 mt-2 space-y-1">
-                    <li>{p.swipes_per_day} daily profile swipes</li>
-                    <li>{p.drops_per_week} curated 75%+ drops a week</li>
-                    <li>Radar: up to {p.radar_cap}</li>
+                    <li>{dropsLine(p)}</li>
+                    <li>{radarLine(p)}</li>
                   </ul>
                   <div className="text-xs mt-3 text-slate-500">{current ? 'Your current plan' : cancelling ? `You move to Free on ${until}` : paid ? 'Cancel your subscription to move to Free at the end of the paid month' : (status.in_trial || status.comp) ? 'You move to this afterwards unless you upgrade' : 'Always available, no payment'}</div>
                 </div>
@@ -375,9 +374,8 @@ function PlanCard({ status, refresh }: { status: Status; refresh: () => Promise<
               <div key={k} className={cx('rounded-xl border p-4', k === 'plan2' ? 'border-gold/50' : 'border-slate-200 dark:border-white/10')}>
                 <div className="flex items-baseline justify-between"><div className="font-display text-lg">{p.label}</div><div className="text-xl font-semibold">{p.price_aed} AED<span className="text-xs font-normal text-slate-500"> / month</span></div></div>
                 <ul className="text-xs text-slate-500 mt-2 space-y-1">
-                  <li>{p.swipes_per_day} daily profile swipes</li>
-                  <li>{p.drops_per_week} curated 75%+ drops a week</li>
-                  <li>Radar: {p.radar_cap == null ? 'everyone compatible in range' : `up to ${p.radar_cap}`}</li>
+                  <li>{dropsLine(p)}</li>
+                  <li>{radarLine(p)}</li>
                   {p.consultations_per_month > 0 && <li>Weekly 1-on-1 consultation with our matchmaker</li>}
                 </ul>
                 {paid

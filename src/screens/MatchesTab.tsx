@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CalendarHeart, Heart, Hourglass, RefreshCw, Sparkles, X } from 'lucide-react';
+import { CalendarHeart, Heart, Hourglass, Sparkles, X } from 'lucide-react';
 import {
-  astroSync, getCuratedDrops, getDailyBatch, redeemSwipeCredit, startCheckout, swipe,
-  type Batch, type Drops, type MemberCard, type Status,
+  astroSync, getCuratedDrops, startCheckout, swipe,
+  type Drops, type MemberCard, type Status,
 } from '@/lib/api';
-import { Button, Card, Empty, Modal, Spinner, cx, useToast } from '@/components/ui';
+import { Button, Card, Empty, Modal, Spinner, useToast } from '@/components/ui';
 import { ProfileView } from '@/components/ProfileView';
 import { SafetyMenu } from '@/components/SafetyMenu';
 
@@ -19,8 +19,6 @@ function useCountdown(to: string | null) {
 }
 
 export default function MatchesTab({ status, onOpenChat }: { status: Status; onOpenChat: (matchId: string) => void }) {
-  const [view, setView] = useState<'daily' | 'drops'>('daily');
-  const [batch, setBatch] = useState<Batch | null>(null);
   const [drops, setDrops] = useState<Drops | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -29,78 +27,56 @@ export default function MatchesTab({ status, onOpenChat }: { status: Status; onO
 
   const load = useCallback(async () => {
     setLoading(true);
-    try {
-      const [b, d] = await Promise.all([getDailyBatch(), getCuratedDrops()]);
-      setBatch(b); setDrops(d);
-    } catch (e) { toast(e instanceof Error ? e.message : 'Could not load matches', 'err'); }
+    try { setDrops(await getCuratedDrops()); }
+    catch (e) { toast(e instanceof Error ? e.message : 'Could not load matches', 'err'); }
     finally { setLoading(false); }
   }, [toast]);
   useEffect(() => { load(); astroSync(); }, [load]);
 
-  const countdown = useCountdown(batch?.refresh_at ?? null);
+  const countdown = useCountdown(drops?.next_drop_at ?? null);
   useEffect(() => { if (countdown === '00:00:00') load(); }, [countdown, load]);
 
-  const current: MemberCard | undefined = view === 'daily'
-    ? batch?.items.find((i) => !i.answered)
-    : drops?.items.find((i) => i.status === 'pending');
+  const current: MemberCard | undefined = drops?.items.find((i) => i.status === 'pending');
 
   const answer = async (liked: boolean) => {
     if (!current) return;
     setBusy(true);
     try {
-      const r = await swipe(current.id, liked, view === 'daily' ? 'swipe' : 'drop');
+      const r = await swipe(current.id, liked, 'drop');
       if (r.matched && r.match_id) setMatched({ id: r.match_id, name: current.name });
-      if (view === 'daily') setBatch((b) => b && ({ ...b, used: b.used + 1, items: b.items.map((i) => i.id === current.id ? { ...i, answered: true, liked } : i) }));
-      else setDrops((d) => d && ({ ...d, items: d.items.map((i) => i.id === current.id ? { ...i, status: liked ? 'liked' : 'passed' } : i) }));
-      if (view === 'daily') {
-        const left = (batch?.items.filter((i) => !i.answered).length ?? 1) - 1;
-        if (left <= 0) setTimeout(load, 400);
-      }
+      setDrops((d) => d && ({ ...d, items: d.items.map((i) => i.id === current.id ? { ...i, status: liked ? 'liked' : 'passed' } : i) }));
     } catch (e) { toast(e instanceof Error ? e.message : 'Could not save', 'err'); }
-    finally { setBusy(false); }
-  };
-
-  const refreshNow = async () => {
-    setBusy(true);
-    try { setBatch(await redeemSwipeCredit()); toast('New batch unlocked'); }
-    catch (e) { toast(e instanceof Error ? e.message : 'Could not refresh', 'err'); }
     finally { setBusy(false); }
   };
 
   const removeCurrent = () => {
     if (!current) return;
-    if (view === 'daily') setBatch((b) => b && ({ ...b, items: b.items.filter((i) => i.id !== current.id) }));
-    else setDrops((d) => d && ({ ...d, items: d.items.filter((i) => i.id !== current.id) }));
+    setDrops((d) => d && ({ ...d, items: d.items.filter((i) => i.id !== current.id) }));
   };
 
-  if (loading && !batch) return <Spinner label="Preparing your matches…" />;
+  if (loading && !drops) return <Spinner label="Preparing your matches…" />;
 
-  const remaining = view === 'daily' ? batch?.items.filter((i) => !i.answered).length ?? 0 : drops?.items.filter((i) => i.status === 'pending').length ?? 0;
+  const remaining = drops?.items.filter((i) => i.status === 'pending').length ?? 0;
+  const perDay = drops?.per_day ?? status.limits.drops_per_day ?? null;
+  const cap = drops?.cap ?? status.limits.drops_per_week;
+  const weekFull = (drops?.delivered ?? drops?.items.length ?? 0) >= cap;
+  const nextLabel = drops?.next_drop_at
+    ? new Date(drops.next_drop_at).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })
+    : null;
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-display">{view === 'daily' ? <>Your daily <span className="italic text-gold">batch</span></> : <>Curated <span className="italic text-gold">drops</span> this week</>}</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {view === 'daily'
-              ? `${batch?.used ?? 0} of ${batch?.size ?? 0} reviewed today · your plan allows ${status.limits.swipes_per_day} daily profile swipes`
-              : `Hand-picked 75%+ matches · ${drops?.items.length ?? 0} of ${drops?.cap ?? 0} this week`}
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-200/70 dark:bg-navy-2 w-full sm:w-72">
-          {(['daily', 'drops'] as const).map((v) => (
-            <button key={v} onClick={() => setView(v)} className={cx('py-2 rounded-lg text-sm cursor-pointer', view === v ? 'bg-gold text-navy font-semibold' : 'text-slate-600 dark:text-slate-300')}>
-              {v === 'daily' ? 'Daily' : 'Curated'}
-            </button>
-          ))}
-        </div>
+      <div>
+        <h1 className="text-2xl font-display">Curated <span className="italic text-gold">drops</span></h1>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Hand-picked 75%+ matches · {perDay ? `${perDay} a day, ` : ''}{drops?.items.length ?? 0} of {cap} this week
+        </p>
       </div>
 
       {current ? (
         <Card className="!p-4 sm:!p-6">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-[11px] uppercase tracking-widest text-gold">{remaining} left</span>
+            <span className="text-[11px] uppercase tracking-widest text-gold">{remaining} waiting</span>
             <SafetyMenu memberId={current.id} name={current.name} onDone={removeCurrent} />
           </div>
           <ProfileView m={current} />
@@ -109,22 +85,18 @@ export default function MatchesTab({ status, onOpenChat }: { status: Status; onO
             <Button className="w-36 !rounded-full" busy={busy} onClick={() => answer(true)}><Heart className="w-4 h-4" />Interested</Button>
           </div>
         </Card>
-      ) : view === 'daily' ? (
-        <Card>
-          <Empty icon={<Hourglass className="w-6 h-6" />} title={batch?.size ? "You've reviewed today's batch" : 'No new profiles right now'}>
-            {countdown ? <p>Your next batch arrives in <span className="font-mono text-gold">{countdown}</span>.</p> : <p>New verified members are joining. Check back soon.</p>}
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
-              {(batch?.swipe_credits ?? 0) > 0
-                ? <Button busy={busy} onClick={refreshNow}><RefreshCw className="w-4 h-4" />Use a refresh ({batch?.swipe_credits} left)</Button>
-                : <Button variant="outline" onClick={() => startCheckout('swipe_refresh').catch((e) => toast(e.message, 'err'))}><RefreshCw className="w-4 h-4" />Get the next batch now</Button>}
-              <Button variant="ghost" onClick={() => setView('drops')}><Sparkles className="w-4 h-4" />See curated drops</Button>
-            </div>
-          </Empty>
-        </Card>
       ) : (
         <Card>
-          <Empty icon={<CalendarHeart className="w-6 h-6" />} title={drops?.items.length ? "You've reviewed this week's drops" : 'No 75%+ matches this week yet'}>
-            <p>New curated drops arrive {drops?.next_drop_at ? `on ${new Date(drops.next_drop_at).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })}` : 'next week'}.</p>
+          <Empty icon={perDay && !weekFull ? <Hourglass className="w-6 h-6" /> : <CalendarHeart className="w-6 h-6" />}
+            title={drops?.items.length ? (perDay && !weekFull ? "You've seen today's drop" : "You've reviewed this week's drops") : 'No 75%+ match for you yet'}>
+            {countdown && perDay && !weekFull
+              ? <p>Your next curated match arrives in <span className="font-mono text-gold">{countdown}</span>.</p>
+              : <p>New curated drops arrive {nextLabel ? `on ${nextLabel}` : 'next week'}.</p>}
+            {status.plan === 'free' && (
+              <div className="mt-5 flex justify-center">
+                <Button variant="outline" onClick={() => startCheckout('plan1').catch((e) => toast(e.message, 'err'))}><Sparkles className="w-4 h-4" />Get a curated match every day</Button>
+              </div>
+            )}
           </Empty>
         </Card>
       )}

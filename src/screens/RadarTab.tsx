@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Eye, EyeOff, MapPin, MessageCircle, Radar as RadarIcon, ShieldCheck } from 'lucide-react';
 import {
   giveConsent, radar, startCheckout, radarConnect, setPrivacy, updateMyLocation, type MemberCard, type Privacy, type Status,
@@ -10,6 +10,8 @@ import { BellRing, ChevronDown } from 'lucide-react';
 import { SafeZones } from '@/screens/ProfileTab';
 import { ProfileView, ScoreBadge } from '@/components/ProfileView';
 import { SafetyMenu } from '@/components/SafetyMenu';
+
+const RadarMap = lazy(() => import('@/components/RadarMap'));
 
 type Pos = { lat: number; lng: number };
 
@@ -94,7 +96,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
 
   const changePrivacy = async (p: Privacy) => {
     setPriv(p);
-    try { await setPrivacy(p); toast(p === 'ghost' ? "You're hidden from the radar" : 'You show up approximately (500 m)'); refreshStatus(); }
+    try { await setPrivacy(p); toast(p === 'ghost' ? "You're hidden from the radar" : 'You show up approximately (300 m)'); refreshStatus(); }
     catch (e) { toast(e instanceof Error ? e.message : 'Could not change', 'err'); }
   };
 
@@ -109,7 +111,7 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
     return (
       <Card className="max-w-xl mx-auto">
         <Empty icon={<RadarIcon className="w-6 h-6" />} title="You've probably already crossed paths">
-          <p>The radar shows verified, compatible members who are near you right now. We use your location only while the app is open. For your safety nobody ever sees your exact spot: you appear to the nearest 500 m, or not at all (Ghost).</p>
+          <p>The radar shows verified, compatible members who are near you right now. We use your location only while the app is open. For your safety nobody ever sees your exact spot: you appear to the nearest 300 m on the map, or not at all (Ghost).</p>
           <Button className="mt-5" onClick={async () => { try { await giveConsent('location'); setConsented(true); } catch (e) { toast(e instanceof Error ? e.message : 'Error', 'err'); } }}>
             <MapPin className="w-4 h-4" />Turn on the radar
           </Button>
@@ -118,9 +120,8 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
     );
   }
 
-  const R = 140;
   const zoneHidden = inZone && privacy !== 'ghost';
-  const visibilitySummary = privacy === 'ghost' ? 'Hidden (Ghost)' : zoneHidden ? 'Hidden by a Safe Zone' : 'Visible, to the nearest 500 m';
+  const visibilitySummary = privacy === 'ghost' ? 'Hidden (Ghost)' : zoneHidden ? 'Hidden by a Safe Zone' : 'Visible, to the nearest 300 m';
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
       <div className="lg:col-span-3 space-y-3">
@@ -140,36 +141,15 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
               <button key={k} onClick={() => setRadius(k)} className={cx('px-2.5 py-1 rounded-full text-xs border cursor-pointer', radius === k ? 'bg-gold text-navy border-gold font-semibold' : 'border-slate-300 dark:border-white/15')}>{k} km</button>
             ))}
           </div>
-          <div className="relative mx-auto aspect-square w-full max-w-[min(420px,46vh)]">
-            <svg viewBox={`-${R + 10} -${R + 10} ${2 * R + 20} ${2 * R + 20}`} className="w-full h-full">
-              {[1, 0.66, 0.33].map((f) => <circle key={f} r={R * f} fill="none" stroke="#c9a24a" strokeOpacity={0.25} />)}
-              <line x1={-R} x2={R} y1={0} y2={0} stroke="#c9a24a" strokeOpacity={0.12} />
-              <line y1={-R} y2={R} x1={0} x2={0} stroke="#c9a24a" strokeOpacity={0.12} />
-              <g className="radar-sweep"><path d={`M0 0 L${R} 0 A${R} ${R} 0 0 0 ${R * Math.cos(-0.6)} ${R * Math.sin(-0.6)} Z`} fill="#c9a24a" fillOpacity={0.12} /></g>
-              {pos && DUBAI_AREAS.map((a) => {
-                const { bearing, km } = bearingKm(pos, a);
-                if (km > radius || km < 0.4) return null;
-                const rr = (km / radius) * R * 0.92;
-                return (
-                  <text key={a.name} x={Math.sin(bearing) * rr} y={-Math.cos(bearing) * rr} textAnchor="middle"
-                    className="fill-slate-500 dark:fill-slate-400" style={{ fontSize: 7, letterSpacing: 0.3 }} opacity={0.85}>{a.name}</text>
-                );
-              })}
-              <circle r={6} fill="#c9a24a" />
-              {pos && <text y={16} textAnchor="middle" className="fill-gold" style={{ fontSize: 7 }}>{nearestArea(pos) ? `You · ${nearestArea(pos)}` : 'You'}</text>}
-            </svg>
-            {pos && items.map((m) => {
-              if (m.lat == null || m.lng == null) return null;
-              const { bearing, km } = bearingKm(pos, { lat: m.lat, lng: m.lng });
-              const r = Math.min(1, km / radius) * 0.46;
-              const x = 50 + Math.sin(bearing) * r * 100, y = 50 - Math.cos(bearing) * r * 100;
-              return (
-                <button key={m.id} onClick={() => setSelected(m)} style={{ left: `${x}%`, top: `${y}%` }}
-                  className={cx('absolute -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full overflow-hidden border-2 cursor-pointer shadow-lg', (m.score ?? 0) >= 75 ? 'border-gold' : 'border-white/60')}>
-                  <Photo path={m.photos?.[0]} alt={m.name} className="w-full h-full" />
-                </button>
-              );
-            })}
+          <div className="relative -mx-4 h-[58vh] min-h-[340px] max-h-[620px] overflow-hidden border-y border-gold/30 bg-ivory dark:bg-navy-2">
+            {pos ? (
+              <Suspense fallback={<div className="h-full flex items-center justify-center text-sm text-slate-500">Loading the map…</div>}>
+                <RadarMap pos={pos} items={items} radiusKm={radius} onSelect={setSelected}
+                  youLabel={nearestArea(pos) ? `You · ${nearestArea(pos)}` : 'You'} />
+              </Suspense>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-slate-500 px-6 text-center">{geoErr || 'Finding your location…'}</div>
+            )}
           </div>
           <div className="flex flex-wrap justify-center items-center gap-2 text-xs">
             {/* Small pill; the real dropdown sits invisibly on top at 16px so phones don't zoom */}
@@ -185,7 +165,6 @@ export default function RadarTab({ status, refreshStatus, onOpenChat, onOpenPlan
             {unlockUntil && <Badge>Everyone nearby until {new Date(unlockUntil).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</Badge>}
           </div>
           {geoErr && <p className="text-sm text-rose-500 text-center">{geoErr}</p>}
-          {!pos && !geoErr && <p className="text-sm text-slate-500 text-center">Finding your location…</p>}
           {zoneHidden && <p className="text-sm text-gold text-center flex items-center justify-center gap-1.5"><ShieldCheck className="w-4 h-4" />You're in one of your Safe Zones, so you're hidden automatically.</p>}
           {hidden.total > 0 && (
             <div className="rounded-xl border border-gold/40 bg-gold/10 dark:bg-navy-3 p-3 text-sm space-y-2">

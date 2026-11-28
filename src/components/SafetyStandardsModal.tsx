@@ -30,7 +30,7 @@ const RULES: { icon: React.ReactNode; title: string; body: string }[] = [
   {
     icon: <MapPin className="w-4 h-4" />,
     title: 'Privacy and location',
-    body: 'Nobody ever sees your exact location: you appear on the radar to the nearest 500 m, or not at all in Ghost mode. Safe Zones can hide you automatically at places like home or work. Never share another member\'s photos, messages or details outside the app.',
+    body: 'Nobody ever sees your exact location: you appear on the radar map to the nearest 300 m, or not at all in Ghost mode. Safe Zones can hide you automatically at places like home or work. Never share another member\'s photos, messages or details outside the app.',
   },
   {
     icon: <HeartHandshake className="w-4 h-4" />,
