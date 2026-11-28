@@ -447,7 +447,7 @@ function InvitationCard({ inv, invs, me, partnerName, act }: {
           <div className="flex flex-wrap gap-2 pt-1">
             <Button className="!py-1.5 text-xs" onClick={() => act(() => respondInvitation(inv.id, 'accept'), 'Date confirmed')}><Check className="w-3.5 h-3.5" />Accept</Button>
             <Button variant="outline" className="!py-1.5 text-xs" onClick={() => act(() => respondInvitation(inv.id, 'decline'))}><X className="w-3.5 h-3.5" />Decline</Button>
-            {!inv.counter_of && !isChange && <Button variant="ghost" className="!py-1.5 text-xs" onClick={() => setCounterOpen(true)}>Suggest another time or place</Button>}
+            {!inv.counter_of && !isChange && <Button variant="outline" className="!py-1.5 text-xs" onClick={() => setCounterOpen(true)}><CalendarPlus className="w-3.5 h-3.5" />Suggest another time or place</Button>}
           </div>
         )}
         {inv.status === 'accepted' && (
