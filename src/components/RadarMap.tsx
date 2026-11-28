@@ -59,6 +59,14 @@ function heatPoints(items: MemberCard[]): GeoJSON.FeatureCollection<GeoJSON.Poin
   };
 }
 
+/** A heart outline sized w x h, point at the bottom centre (for the member pins). */
+function heartPath(w: number, h: number) {
+  const x = (v: number) => ((v / 48) * w).toFixed(2), y = (v: number) => ((v / 44) * h).toFixed(2);
+  return `M${x(24)} ${y(43)} C${x(24)} ${y(43)} ${x(1)} ${y(29)} ${x(1)} ${y(14)} C${x(1)} ${y(6)} ${x(7.5)} ${y(0.5)} ${x(14.5)} ${y(0.5)} `
+    + `C${x(19)} ${y(0.5)} ${x(22.5)} ${y(3)} ${x(24)} ${y(6.5)} C${x(25.5)} ${y(3)} ${x(29)} ${y(0.5)} ${x(33.5)} ${y(0.5)} `
+    + `C${x(40.5)} ${y(0.5)} ${x(47)} ${y(6)} ${x(47)} ${y(14)} C${x(47)} ${y(29)} ${x(24)} ${y(43)} ${x(24)} ${y(43)} Z`;
+}
+
 function isDark() { return document.documentElement.classList.contains('dark'); }
 
 /**
@@ -174,12 +182,18 @@ export default function RadarMap({ pos, items, radiusKm, onSelect, youLabel }: {
             <button key={m.id} onClick={() => onSelect(m)} aria-label={`${m.name}, ${m.score ?? ''}% match`}
               style={{ left: p.x, top: p.y }}
               className="pointer-events-auto absolute -translate-x-1/2 -translate-y-full flex flex-col items-center cursor-pointer group">
-              <span className={cx('w-12 h-12 rounded-full overflow-hidden border-[2.5px] shadow-lg bg-white dark:bg-navy-2 group-active:scale-95 transition',
-                strong ? 'border-gold' : 'border-gold-soft')}>
-                <Photo path={m.photos?.[0]} alt="" className="w-full h-full" />
+              <span className="relative block w-[54px] h-[50px] drop-shadow-md group-active:scale-95 transition">
+                <svg aria-hidden="true" viewBox="0 0 54 50" className="absolute inset-0 w-full h-full">
+                  <path d={heartPath(54, 50)} fill={strong ? '#c9a24a' : '#e2c992'} />
+                </svg>
+                <span className="absolute left-[4px] top-[4px] w-[46px] h-[42px] overflow-hidden bg-white dark:bg-navy-2"
+                  style={{ clipPath: `path('${heartPath(46, 42)}')` }}>
+                  <Photo path={m.photos?.[0]} alt="" className="w-full h-full" />
+                </span>
+                <span className="absolute -top-1.5 -right-3 rounded-full bg-ink text-gold-soft text-[10px] font-semibold px-1.5 py-px shadow">{m.score ?? ''}%</span>
               </span>
-              <span className="-mt-2 rounded-full bg-ink text-gold-soft text-[10px] font-semibold px-1.5 py-px shadow">{m.score ?? ''}%</span>
-              <span className="w-0 h-0 border-x-[5px] border-x-transparent border-t-[6px] border-t-ink" />
+              <span className="w-[2px] h-4 -mt-[3px] rounded-full bg-ink dark:bg-gold-soft" />
+              <span className="w-1.5 h-1.5 -mt-px rounded-full bg-ink dark:bg-gold-soft" />
             </button>
           );
         })}
